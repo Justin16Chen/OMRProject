@@ -1,0 +1,7 @@
+{"patterns": [{
+    "bandWidth": 1,
+    "brightness": 0,
+    "name": "default",
+    "isClockwise": true,
+    "speed": 10
+}]}

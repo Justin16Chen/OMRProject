@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import org.example.patternControlPanel.utils.FilteredTextField?>
+
+<BorderPane prefHeight="643.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.patternControlPanel.controlPanel.ControlPanelController">
+   <center>
+      <VBox maxWidth="300.0" prefHeight="462.0" prefWidth="300.0" spacing="5.0" BorderPane.alignment="CENTER_LEFT">
+         <children>
+            <Label text="Monitor Settings">
+               <font>
+                  <Font size="18.0" />
+               </font>
+               <VBox.margin>
+                  <Insets />
+               </VBox.margin>
+            </Label>
+            <Label prefHeight="17.0" prefWidth="285.0" text="Control Panel Monitor Number (In Display Settings)">
+               <VBox.margin>
+                  <Insets top="8.0" />
+               </VBox.margin>
+            </Label>
+            <FilteredTextField fx:id="controlPanelMonitorTextField" onInputMethodTextChanged="#updateControlPanelMonitorFormat">
+               <padding>
+                  <Insets top="-4.0" />
+               </padding>
+            </FilteredTextField>
+            <Label prefHeight="17.0" prefWidth="263.0" text="Target Monitor Number (In Display Settings)" />
+            <FilteredTextField fx:id="targetMonitorTextField" onInputMethodTextChanged="#updateTargetMonitorFormat">
+               <padding>
+                  <Insets top="-4.0" />
+               </padding>
+            </FilteredTextField>
+            <Label text="Pattern Display">
+               <font>
+                  <Font size="18.0" />
+               </font>
+               <VBox.margin>
+                  <Insets top="8.0" />
+               </VBox.margin>
+            </Label>
+            <Label text="Direction">
+               <VBox.margin>
+                  <Insets top="-2.0" />
+               </VBox.margin></Label>
+            <HBox prefHeight="26.0" prefWidth="300.0" spacing="10.0">
+               <children>
+                  <Button fx:id="directionClockwiseButton" mnemonicParsing="false" onAction="#setDirectionClockwise" text="Clockwise" />
+                  <Button fx:id="directionCounterClockwiseButton" mnemonicParsing="false" onAction="#setDirectionCounterClockwise" text="Counter-clockwise" />
+               </children>
+            </HBox>
+            <Label text="Speed (Rotations/Minute)">
+               <VBox.margin>
+                  <Insets top="8.0" />
+               </VBox.margin>
+            </Label>
+            <FilteredTextField fx:id="speedTextField">
+               <padding>
+                  <Insets top="-4.0" />
+               </padding></FilteredTextField>
+            <Label text="Band Brightness (0=black, 1=white)">
+               <VBox.margin>
+                  <Insets top="8.0" />
+               </VBox.margin></Label>
+            <FilteredTextField fx:id="brightnessTextField">
+               <padding>
+                  <Insets top="-4.0" />
+               </padding></FilteredTextField>
+            <Label text="Band Width (cm)">
+               <VBox.margin>
+                  <Insets top="8.0" />
+               </VBox.margin></Label>
+            <FilteredTextField fx:id="bandWidthTextField">
+               <padding>
+                  <Insets top="-4.0" />
+               </padding></FilteredTextField>
+         </children>
+         <BorderPane.margin>
+            <Insets />
+         </BorderPane.margin>
+      </VBox>
+   </center>
+   <right>
+      <VBox prefHeight="267.0" prefWidth="240.0" spacing="10.0" BorderPane.alignment="CENTER_LEFT">
+         <children>
+            <Label text="Pattern Preview">
+               <font>
+                  <Font size="18.0" />
+               </font>
+            </Label>
+            <Canvas fx:id="patternPreviewCanvas" height="272.0" width="200.0">
+               <VBox.margin>
+                  <Insets top="-5.0" />
+               </VBox.margin></Canvas>
+            <HBox prefHeight="30.0" prefWidth="200.0" style="-fx-background-color: lightgray;">
+               <children>
+                  <Button fx:id="playPatternPreviewButton" mnemonicParsing="false" onAction="#togglePatternPreviewPlaying" prefHeight="35.0" prefWidth="82.0" text="Play/Pause">
+                     <HBox.margin>
+                        <Insets left="10.0" />
+                     </HBox.margin>
+                  </Button>
+               </children>
+               <padding>
+                  <Insets bottom="5.0" top="5.0" />
+               </padding>
+               <VBox.margin>
+                  <Insets top="-10.0" />
+               </VBox.margin>
+            </HBox>
+            <Label fx:id="patternNameLabel" prefHeight="17.0" prefWidth="201.0" text="Current Pattern: default" />
+            <HBox prefHeight="25.0" prefWidth="160.0" spacing="20.0" VBox.vgrow="ALWAYS">
+               <children>
+                  <Button fx:id="saveNewPatternButton" mnemonicParsing="false" onAction="#openPatternSaveWindow" prefHeight="25.0" prefWidth="60.0" text="Save As" />
+                  <Button fx:id="savePatternButton" mnemonicParsing="false" onAction="#savePattern" prefHeight="25.0" prefWidth="60.0" text="Save" />
+               </children>
+               <padding>
+                  <Insets left="10.0" />
+               </padding>
+            </HBox>
+            <Button fx:id="useSavedPatternButton" mnemonicParsing="false" onAction="#openSavedPatternsWindow" prefHeight="25.0" prefWidth="158.0" text="Use Saved Patterns" />
+            <Button fx:id="runCurrentPatternButton" mnemonicParsing="false" onAction="#runPatternDisplay" prefHeight="25.0" prefWidth="158.0" text="Run Current Pattern" />
+         </children>
+         <BorderPane.margin>
+            <Insets />
+         </BorderPane.margin>
+         <padding>
+            <Insets left="20.0" right="20.0" />
+         </padding>
+      </VBox>
+   </right>
+   <padding>
+      <Insets bottom="70.0" left="50.0" right="50.0" top="50.0" />
+   </padding>
+   <top>
+      <Label text="Pattern Control" BorderPane.alignment="CENTER">
+         <font>
+            <Font size="22.0" />
+         </font>
+         <BorderPane.margin>
+            <Insets />
+         </BorderPane.margin>
+         <padding>
+            <Insets bottom="10.0" />
+         </padding>
+      </Label>
+   </top>
+</BorderPane>
