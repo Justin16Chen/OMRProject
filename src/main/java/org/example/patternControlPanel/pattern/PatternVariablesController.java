@@ -4,7 +4,7 @@ package org.example.patternControlPanel.pattern;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
-import org.example.patternControlPanel.controlPanel.ControlPanelController;
+import org.example.patternControlPanel.controlPanel.TrialConfigController;
 
 public class PatternVariablesController {
 
@@ -28,8 +28,8 @@ public class PatternVariablesController {
 	@FXML
 	private ComboBox<String> patternSelectDropdown;
 	
-	private ControlPanelController controlPanelController;
-	public void setControlPanelController(ControlPanelController controller) {
+	private TrialConfigController controlPanelController;
+	public void setControlPanelController(TrialConfigController controller) {
 		this.controlPanelController = controller;
 	}
 	

@@ -19,7 +19,7 @@ import org.example.patternControlPanel.utils.FilteredTextField;
 
 import java.io.IOException;
 
-public class ControlPanelController {
+public class TrialConfigController {
 
 	@FXML
 	private FilteredTextField controlPanelMonitorTextField;

@@ -16,4 +16,6 @@ dependencies {
     implementation 'org.json:json:20240303'
 }
 
-mainClassName = 'org.example.patternControlPanel.controlPanel.ControlPanelApplication'
+application {
+    mainClass = 'org.example.Main'
+}
