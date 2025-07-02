@@ -1,4 +1,4 @@
-package org.example.patternControlPanel.controlPanel;
+package org.example.patternControlPanel.pattern;
 
 public enum PatternDirection {
 	CLOCKWISE,

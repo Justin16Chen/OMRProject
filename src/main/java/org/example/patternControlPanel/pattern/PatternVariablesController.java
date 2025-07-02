@@ -4,7 +4,7 @@ package org.example.patternControlPanel.pattern;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
-import org.example.patternControlPanel.controlPanel.TrialConfigController;
+import org.example.patternControlPanel.trialConfig.TrialConfigController;
 
 public class PatternVariablesController {
 

@@ -10,7 +10,7 @@
 <?import javafx.scene.text.Font?>
 <?import org.example.patternControlPanel.utils.FilteredTextField?>
 
-<BorderPane prefHeight="643.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.patternControlPanel.controlPanel.TrialConfigController">
+<BorderPane prefHeight="643.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.patternControlPanel.trialConfig.TrialConfigController">
    <center>
       <VBox maxWidth="300.0" prefHeight="462.0" prefWidth="300.0" spacing="5.0" BorderPane.alignment="CENTER_LEFT">
          <children>

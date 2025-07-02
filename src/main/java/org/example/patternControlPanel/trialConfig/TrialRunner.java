@@ -1,4 +1,4 @@
-package org.example.patternControlPanel.trial;
+package org.example.patternControlPanel.trialConfig;
 
 import java.util.ArrayList;
 
@@ -9,7 +9,9 @@ public class TrialRunner {
 
     private ArrayList<Integer> omrCounts; // index 0 = first trial, omrCounts.get(0) = # times omr happened on first trial
 
-    public TrialRunner() {
-
+    public TrialRunner(TrialConfig trialConfig) {
+        this.trialConfig = trialConfig;
     }
+
+
 }

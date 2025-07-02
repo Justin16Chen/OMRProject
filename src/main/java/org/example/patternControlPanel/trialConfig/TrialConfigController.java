@@ -1,4 +1,4 @@
-package org.example.patternControlPanel.controlPanel;
+package org.example.patternControlPanel.trialConfig;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;

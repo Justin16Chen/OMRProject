@@ -2,7 +2,6 @@ package org.example.patternControlPanel.pattern;
 
 
 import org.json.JSONObject;
-import org.example.patternControlPanel.controlPanel.PatternDirection;
 
 
 public class Pattern {
@@ -27,7 +26,7 @@ public class Pattern {
 	public String toStringDetails() {
 		return  name + " | " + direction + " | " + speed + " rot/min | " + brightness + " brightness | " + bandWidth + " cm bands";
 	}
-	
+
 	public String getName() {
 		return name;
 	}
