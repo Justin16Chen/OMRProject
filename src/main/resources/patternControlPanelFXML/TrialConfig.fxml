@@ -1,20 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.canvas.Canvas?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Font?>
-<?import org.example.patternControlPanel.utils.FilteredTextField?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.canvas.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<?import org.example.patternControlPanel.utils.*?>
 
-<BorderPane prefHeight="643.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.patternControlPanel.trialConfig.TrialConfigController">
+<BorderPane prefHeight="620.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.patternControlPanel.trialConfig.TrialConfigController">
    <center>
       <VBox maxWidth="300.0" prefHeight="462.0" prefWidth="300.0" spacing="5.0" BorderPane.alignment="CENTER_LEFT">
          <children>
-            <Label text="Monitor Settings">
+            <Label text="Pattern Parameters">
                <font>
                   <Font size="18.0" />
                </font>
@@ -22,65 +19,121 @@
                   <Insets />
                </VBox.margin>
             </Label>
-            <Label prefHeight="17.0" prefWidth="285.0" text="Control Panel Monitor Number (In Display Settings)">
+            <GridPane vgap="7.0">
+              <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="144.0" minWidth="10.0" prefWidth="106.0" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="194.0" minWidth="10.0" prefWidth="194.0" />
+              </columnConstraints>
+              <rowConstraints>
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+              </rowConstraints>
+               <children>
+                  <Label text="Direction">
+                     <GridPane.margin>
+                        <Insets top="10.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Label text="Speed (RPM)" GridPane.rowIndex="1">
+                     <GridPane.margin>
+                        <Insets top="10.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Label text="Light Band Color" GridPane.rowIndex="2">
+                     <GridPane.margin>
+                        <Insets top="10.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Label text="Band Width (cm)" GridPane.rowIndex="4">
+                     <GridPane.margin>
+                        <Insets top="10.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <HBox alignment="BOTTOM_LEFT" prefHeight="26.0" prefWidth="300.0" spacing="10.0" GridPane.columnIndex="1">
+                     <children>
+                        <Button fx:id="directionCCButton" mnemonicParsing="false" onAction="#handleDirectionCCClick" text="CC" />
+                        <Button fx:id="directionCCWButton" mnemonicParsing="false" onAction="#handleDirectionCCWClick" text="CCW" />
+                        <Button fx:id="directionBothButton" mnemonicParsing="false" onAction="#handleDirectionBothClick" text="Both" />
+                     </children>
+                  </HBox>
+                  <FilteredTextField fx:id="speedTextField" prefHeight="61.0" prefWidth="149.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                     <padding>
+                        <Insets top="-4.0" />
+                     </padding>
+                  </FilteredTextField>
+                  <Slider fx:id="brightnessLightSlider" max="255.0" onDragDropped="#handleBrightnessLightDrag" style="-fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #000000, #ffffff);;" value="255.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                     <GridPane.margin>
+                        <Insets top="10.0" />
+                     </GridPane.margin>
+                  </Slider>
+                  <FilteredTextField fx:id="bandWidthTextField" GridPane.columnIndex="1" GridPane.rowIndex="4">
+                     <padding>
+                        <Insets top="-4.0" />
+                     </padding>
+                  </FilteredTextField>
+                  <Label text="Dark Band Color" GridPane.rowIndex="3">
+                     <GridPane.margin>
+                        <Insets top="10.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Slider fx:id="brightnessDarkSlider" max="255.0" onDragDropped="#handleBrightnessDarkDrag" style="-fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #000000, #ffffff);;" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                     <GridPane.margin>
+                        <Insets top="10.0" />
+                     </GridPane.margin>
+                  </Slider>
+               </children>
                <VBox.margin>
-                  <Insets top="8.0" />
+                  <Insets top="2.0" />
                </VBox.margin>
-            </Label>
-            <FilteredTextField fx:id="controlPanelMonitorTextField" onInputMethodTextChanged="#updateControlPanelMonitorFormat">
-               <padding>
-                  <Insets top="-4.0" />
-               </padding>
-            </FilteredTextField>
-            <Label prefHeight="17.0" prefWidth="263.0" text="Target Monitor Number (In Display Settings)" />
-            <FilteredTextField fx:id="targetMonitorTextField" onInputMethodTextChanged="#updateTargetMonitorFormat">
-               <padding>
-                  <Insets top="-4.0" />
-               </padding>
-            </FilteredTextField>
-            <Label text="Pattern Display">
+            </GridPane>
+            <Label text="Trial Parameters">
                <font>
                   <Font size="18.0" />
                </font>
                <VBox.margin>
-                  <Insets top="8.0" />
+                  <Insets top="30.0" />
                </VBox.margin>
             </Label>
-            <Label text="Direction">
-               <VBox.margin>
-                  <Insets top="-2.0" />
-               </VBox.margin></Label>
-            <HBox prefHeight="26.0" prefWidth="300.0" spacing="10.0">
+            <GridPane vgap="9.0">
+              <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="140.0" minWidth="10.0" prefWidth="79.0" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="222.0" minWidth="10.0" prefWidth="221.0" />
+              </columnConstraints>
+              <rowConstraints>
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+              </rowConstraints>
                <children>
-                  <Button fx:id="directionClockwiseButton" mnemonicParsing="false" onAction="#setDirectionClockwise" text="Clockwise" />
-                  <Button fx:id="directionCounterClockwiseButton" mnemonicParsing="false" onAction="#setDirectionCounterClockwise" text="Counter-clockwise" />
+                  <FilteredTextField fx:id="dimPercentTextField" GridPane.columnIndex="1" />
+                  <FilteredTextField fx:id="maxTestsTextField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <Label text="Dim Percent">
+                     <GridPane.margin>
+                        <Insets top="10.0" />
+                     </GridPane.margin></Label>
+                  <Label text="Max Tests" GridPane.rowIndex="1">
+                     <GridPane.margin>
+                        <Insets top="10.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Label text="Test Time" GridPane.rowIndex="2">
+                     <GridPane.margin>
+                        <Insets top="10.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Label text="Rest Time" GridPane.rowIndex="3">
+                     <GridPane.margin>
+                        <Insets top="10.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <FilteredTextField fx:id="maxTimeTextField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                  <FilteredTextField fx:id="restTimeTextField" prefHeight="62.0" prefWidth="221.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                </children>
-            </HBox>
-            <Label text="Speed (Rotations/Minute)">
-               <VBox.margin>
-                  <Insets top="8.0" />
-               </VBox.margin>
-            </Label>
-            <FilteredTextField fx:id="speedTextField">
-               <padding>
-                  <Insets top="-4.0" />
-               </padding></FilteredTextField>
-            <Label text="Band Brightness (0=black, 1=white)">
-               <VBox.margin>
-                  <Insets top="8.0" />
-               </VBox.margin></Label>
-            <FilteredTextField fx:id="brightnessTextField">
-               <padding>
-                  <Insets top="-4.0" />
-               </padding></FilteredTextField>
-            <Label text="Band Width (cm)">
-               <VBox.margin>
-                  <Insets top="8.0" />
-               </VBox.margin></Label>
-            <FilteredTextField fx:id="bandWidthTextField">
-               <padding>
-                  <Insets top="-4.0" />
-               </padding></FilteredTextField>
+            </GridPane>
          </children>
          <BorderPane.margin>
             <Insets />
@@ -88,7 +141,7 @@
       </VBox>
    </center>
    <right>
-      <VBox prefHeight="267.0" prefWidth="240.0" spacing="10.0" BorderPane.alignment="CENTER_LEFT">
+      <VBox prefHeight="366.0" prefWidth="240.0" spacing="10.0" BorderPane.alignment="CENTER_LEFT">
          <children>
             <Label text="Pattern Preview">
                <font>
@@ -114,18 +167,15 @@
                   <Insets top="-10.0" />
                </VBox.margin>
             </HBox>
-            <Label fx:id="patternNameLabel" prefHeight="17.0" prefWidth="201.0" text="Current Pattern: default" />
-            <HBox prefHeight="25.0" prefWidth="160.0" spacing="20.0" VBox.vgrow="ALWAYS">
+            <HBox prefHeight="29.0" prefWidth="200.0" spacing="10.0">
                <children>
-                  <Button fx:id="saveNewPatternButton" mnemonicParsing="false" onAction="#openPatternSaveWindow" prefHeight="25.0" prefWidth="60.0" text="Save As" />
-                  <Button fx:id="savePatternButton" mnemonicParsing="false" onAction="#savePattern" prefHeight="25.0" prefWidth="60.0" text="Save" />
+                  <Button fx:id="saveTrialButton" mnemonicParsing="false" text="Save Trial" />
+                  <Button fx:id="backToStartButton" mnemonicParsing="false" prefHeight="25.0" prefWidth="90.0" text="Back To Start" />
                </children>
-               <padding>
-                  <Insets left="10.0" />
-               </padding>
+               <VBox.margin>
+                  <Insets top="10.0" />
+               </VBox.margin>
             </HBox>
-            <Button fx:id="useSavedPatternButton" mnemonicParsing="false" onAction="#openSavedPatternsWindow" prefHeight="25.0" prefWidth="158.0" text="Use Saved Patterns" />
-            <Button fx:id="runCurrentPatternButton" mnemonicParsing="false" onAction="#runPatternDisplay" prefHeight="25.0" prefWidth="158.0" text="Run Current Pattern" />
          </children>
          <BorderPane.margin>
             <Insets />
@@ -139,7 +189,7 @@
       <Insets bottom="70.0" left="50.0" right="50.0" top="50.0" />
    </padding>
    <top>
-      <Label text="Pattern Control" BorderPane.alignment="CENTER">
+      <Label text="Trial Configuration" BorderPane.alignment="CENTER">
          <font>
             <Font size="22.0" />
          </font>

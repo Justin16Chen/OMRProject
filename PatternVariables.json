@@ -1,6 +1,7 @@
 {"patterns": [{
     "bandWidth": 1,
-    "brightness": 0,
+    "lightBrightness": 255,
+    "darkBrightness": 0,
     "name": "fsagdvd",
     "isClockwise": true,
     "speed": 10

@@ -19,12 +19,13 @@ public class MonitorFormat {
         return screenNumber <= ge.getScreenDevices().length;
 	}
 
-	// width and height in cm does not have 3 sig figs, 3 decimal places were chosen for visuals
 	private static final DecimalFormat df = new DecimalFormat("0.000");
-	private int monitorNumber; // 1 is first monitor - this is not an index - this is a number
-	private int widthPixels, heightPixels; // width and height of monitor in pixels
-	private double widthCM, heightCM; // width and height of monitor in centimeters
-	private double scale; // scale of screen ex: 1, 1.25, 1.5, 1.75, 2
+
+	// width and height in cm does not have 3 sig figs, 3 decimal places were chosen for visuals
+	private final int monitorNumber; // 1 is first monitor - this is not an index - this is a number
+	private final int widthPixels, heightPixels; // width and height of monitor in pixels
+	private final double widthCM, heightCM; // width and height of monitor in centimeters
+	private final double scale; // scale of screen ex: 1, 1.25, 1.5, 1.75, 2
 	
 	// there MUST be a JavaFX application running for this to work
 	public MonitorFormat(int monitorNumber) {
@@ -55,8 +56,8 @@ public class MonitorFormat {
         double dpi = screens2.get(monitorIndex).getDpi() * scale;
 
         // Convert pixels to centimeters
-        widthCM = (widthPixels / (double) dpi) * 2.54;
-        heightCM = (heightPixels / (double) dpi) * 2.54;
+        widthCM = (widthPixels / dpi) * 2.54;
+        heightCM = (heightPixels / dpi) * 2.54;
 			
     }
 	

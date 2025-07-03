@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="FilteredTextField">
+    <output-path>$PROJECT_DIR$/out/artifacts/FilteredTextField</output-path>
+    <root id="archive" name="FilteredTextField.jar">
+      <element id="dir-copy" path="$PROJECT_DIR$/build/classes/java/main/org/example/patternControlPanel" />
+    </root>
+  </artifact>
+</component>

@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class TrialDataManager {
-    private static final TrialConfig DEFAULT_TRIAL = new TrialConfig("defaultTrial", new Pattern("", PatternDirection.CLOCKWISE, 1, 1, 1), 1, 1, 1, 1);
+    public static final TrialConfig DEFAULT_TRIAL = new TrialConfig("defaultTrial", new Pattern("", PatternDirection.CLOCKWISE, 1, 1, 0, 1), 1, 1, 1, 1);
     private static final ArrayList<TrialConfig> savedTrials = new ArrayList<>(List.of(DEFAULT_TRIAL));
 
     public static ArrayList<TrialConfig> getSavedTrials() {

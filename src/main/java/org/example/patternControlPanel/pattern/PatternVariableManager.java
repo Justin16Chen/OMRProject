@@ -14,7 +14,7 @@ import java.util.ArrayList;
 public class PatternVariableManager {
 	// monitor patternControlPanel.pattern parameters: 30, 2560, 2
 	public static final String FILE_PATH = "PatternVariables.json";
-	public static final Pattern DEFAULT_PATTERN_DATA = new Pattern("default", PatternDirection.CLOCKWISE, 10, 0.5, 2);
+	public static final Pattern DEFAULT_PATTERN_DATA = new Pattern("default", PatternDirection.CLOCKWISE, 10, 0.5, 0, 2);
 	
 	// get singular patternControlPanel.pattern from file
 	public static Pattern getPatternDataFromFile(String name) {
@@ -50,7 +50,8 @@ public class PatternVariableManager {
 				jsonPattern.getString("name"),
 				jsonPattern.getBoolean("isClockwise") ? PatternDirection.CLOCKWISE : PatternDirection.COUNTER_CLOCKWISE,
 				jsonPattern.getDouble("speed"),
-				jsonPattern.getDouble("brightness"),
+				jsonPattern.getDouble("lightBrightness"),
+				jsonPattern.getDouble("darkBrightness"),
 				jsonPattern.getDouble("bandWidth")
 		);
 	}

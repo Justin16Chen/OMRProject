@@ -6,7 +6,7 @@
 
 <fx:root type="javafx.scene.layout.VBox" 
 xmlns:fx="http://javafx.com/fxml/1" 
-xmlns="http://javafx.com/javafx/21">
+xmlns="http://javafx.com/javafx/21.0.7">
     <children>
         <Label fx:id="errorLabel" textFill="#ff2121"/>
         <TextField fx:id="textField" promptText="enter text" />

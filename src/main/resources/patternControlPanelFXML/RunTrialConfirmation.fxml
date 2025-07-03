@@ -1,14 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller=""
-            prefHeight="400.0" prefWidth="600.0">
-
+<AnchorPane prefHeight="226.0" prefWidth="319.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.patternControlPanel.startMenu.RunTrialConfirmationController">
+    <VBox layoutX="45.0" layoutY="38.0" prefHeight="166.0" prefWidth="230.0" spacing="5.0">
+        <Label text="Run Trials">
+            <font>
+                <Font size="18.0" />
+            </font>
+        </Label>
+        <Label text="Select OMR Chamber Monitor Number">
+            <VBox.margin>
+                <Insets top="15.0" />
+            </VBox.margin>
+        </Label>
+        <ComboBox fx:id="availableMonitorsDropdown" prefWidth="150.0" />
+        <Button mnemonicParsing="false" onAction="#handleRunClick" text="Run">
+            <VBox.margin>
+                <Insets top="15.0" />
+            </VBox.margin>
+        </Button>
+    </VBox>
 </AnchorPane>

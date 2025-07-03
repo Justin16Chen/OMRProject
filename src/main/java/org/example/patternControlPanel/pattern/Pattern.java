@@ -9,13 +9,14 @@ public class Pattern {
 	private String name;
 	private PatternDirection direction;
 	// speed in rotations per minute, brightness from 0 to 1, bandWidth in centimeters
-	private double speed, brightness, bandWidth;
+	private double speed, lightBrightness, darkBrightness, bandWidth;
 	
-	public Pattern(String name, PatternDirection direction, double speed, double brightness, double bandWidth) {
+	public Pattern(String name, PatternDirection direction, double speed, double lightBrightness, double darkBrightness, double bandWidth) {
 		this.name = name;
 		this.direction = direction;
 		this.speed = speed;
-		this.brightness = brightness;
+		this.lightBrightness = lightBrightness;
+		this.darkBrightness = darkBrightness;
 		this.bandWidth = bandWidth;
 	}
 
@@ -24,7 +25,7 @@ public class Pattern {
 		return name;
 	}
 	public String toStringDetails() {
-		return  name + " | " + direction + " | " + speed + " rot/min | " + brightness + " brightness | " + bandWidth + " cm bands";
+		return  name + " | " + direction + " | " + speed + " rot/min | " + lightBrightness + ", " + darkBrightness + " brightness | " + bandWidth + " cm bands";
 	}
 
 	public String getName() {
@@ -50,20 +51,25 @@ public class Pattern {
 		this.speed = speed;
 	}
 	
-	public double getBrightness() {
-		return brightness;
+	public double getLightBrightness() {
+		return lightBrightness;
 	}
-	public void setBrightness(double brightness) {
-		if (brightness < 0 || brightness > 1)
-			throw new IllegalArgumentException("brightness has to be between 0 and 1");
-		this.brightness = brightness;
+	public void setLightBrightness(double lightBrightness) {
+		if (lightBrightness < 0 || lightBrightness > 255)
+			throw new IllegalArgumentException("lightBrightness has to be between 0 and 255");
+		this.lightBrightness = lightBrightness;
+	}
+	public void setDarkBrightness(double darkBrightness) {
+		if (darkBrightness < 0 || darkBrightness > 255)
+			throw new IllegalArgumentException("darkBrightness has to be between 0 and 255");
+		this.darkBrightness = darkBrightness;
 	}
 	
 	public double getBandWidth() {
 		return bandWidth;
 	}
 	public void setBandWidth(double bandWidth) {
-		if (brightness < 0)
+		if (bandWidth < 0)
 			throw new IllegalArgumentException("bandwidth has to be positive");
 		this.bandWidth = bandWidth;
 	}
@@ -73,7 +79,8 @@ public class Pattern {
 		obj.put("name", name);
 		obj.put("isClockwise", direction == PatternDirection.CLOCKWISE);
 		obj.put("speed", speed);
-		obj.put("brightness", brightness);
+		obj.put("lightBrightness", lightBrightness);
+		obj.put("darkBrightness", darkBrightness);
 		obj.put("bandWidth", bandWidth);
 		return obj;
 	}

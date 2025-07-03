@@ -1,4 +1,4 @@
-package org.example.patternControlPanel.display;
+package org.example.patternControlPanel.omrChamberDisplay;
 
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;

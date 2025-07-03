@@ -3,19 +3,11 @@ package org.example.patternControlPanel.startMenu;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
-import org.example.patternControlPanel.SceneManager.Controller;
+import org.example.patternControlPanel.sceneManager.CustomController;
 import org.example.patternControlPanel.trialConfig.TrialConfig;
 import org.example.patternControlPanel.trialDataManager.TrialDataManager;
 
-import java.util.ArrayList;
-
-public class QueueTrialController extends Controller {
-
-    private QueueTrialApplication application;
-
-    public void setApplication(QueueTrialApplication application) {
-        this.application = application;
-    }
+public class QueueTrialController extends CustomController {
 
     @FXML
     private ComboBox<TrialConfig> savedTrialsComboBox;
@@ -31,6 +23,6 @@ public class QueueTrialController extends Controller {
     private void handleAddTrialToQueueClick() {
         getSceneManager().getStartMenuController().getQueuedTrials().add(savedTrialsComboBox.getValue());
         getSceneManager().getStartMenuController().updateQueuedTrialsTextArea();
-        application.closeApplication();
+        getStage().close();
     }
 }

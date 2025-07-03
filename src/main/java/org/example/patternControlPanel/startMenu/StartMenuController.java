@@ -1,19 +1,18 @@
 package org.example.patternControlPanel.startMenu;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
-import org.example.patternControlPanel.SceneManager.Controller;
+import org.example.patternControlPanel.sceneManager.CustomController;
+import org.example.patternControlPanel.pattern.MonitorFormat;
 import org.example.patternControlPanel.pattern.Pattern;
 import org.example.patternControlPanel.pattern.PatternDirection;
 import org.example.patternControlPanel.trialConfig.TrialConfig;
-import org.example.patternControlPanel.trialDataManager.TrialDataManager;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class StartMenuController extends Controller {
+public class StartMenuController extends CustomController {
 
     private ArrayList<TrialConfig> queuedTrials;
 
@@ -21,15 +20,21 @@ public class StartMenuController extends Controller {
         return queuedTrials;
     }
 
-    @FXML
-    private void initialize() {
-        queuedTrialsTextArea.setEditable(false);
-        queuedTrials = new ArrayList<>(List.of(new TrialConfig("defaultTrial", new Pattern("", PatternDirection.CLOCKWISE, 1, 1, 1), 1, 1, 1, 1)));
-        updateQueuedTrialsTextArea();
+    private MonitorFormat startMenuMonitorFormat, OMRChamberMonitorFormat;
+    public MonitorFormat getStartMenuMonitorFormat() {
+        return startMenuMonitorFormat;
+    }
+    public void setStartMenuMonitorFormat(MonitorFormat mf) {
+        startMenuMonitorFormat = mf;
     }
 
     @FXML
-    private Button createTrialButton;
+    private void initialize() {
+        queuedTrialsTextArea.setEditable(false);
+        queuedTrials = new ArrayList<>(List.of(new TrialConfig("defaultTrial", new Pattern("", PatternDirection.CLOCKWISE, 1, 1, 1, 0), 1, 1, 1, 1)));
+        updateQueuedTrialsTextArea();
+    }
+
     @FXML
     private void handleCreateTrialButtonClick() {
         getSceneManager().getPrimaryStage().setScene(getSceneManager().getTrialConfigScene());
@@ -46,26 +51,18 @@ public class StartMenuController extends Controller {
     }
 
     @FXML
-    private Button queueTrialButton;
-    @FXML
     private void handleQueueTrialButtonClick() {
-        QueueTrialApplication queueTrialApplication = new QueueTrialApplication();
+        QueueTrialApplication queueTrialApplication = new QueueTrialApplication(getSceneManager());
         queueTrialApplication.start(new Stage());
-        queueTrialApplication.getController().setSceneManager(getSceneManager());
-        queueTrialApplication.getController().updateSavedTrialsComboBox();
     }
 
-    @FXML
-    private Button clearQueuedTrialsButton;
     @FXML
     private void handleClearQueuedTrialsButtonClick() {
         queuedTrials.clear();
         updateQueuedTrialsTextArea();
     }
     @FXML
-    private Button runQueueButton;
-    @FXML
     private void handleRunQueueButtonClick() {
-
+        new RunTrialConfirmationApplication(getSceneManager()).start(new Stage());
     }
 }

@@ -41,6 +41,12 @@ public class PatternDrawer extends AnimationTimer {
             stop();
     }
 
+    public void showBlank() {
+        GraphicsContext g = canvas.getGraphicsContext2D();
+        g.setFill(Color.rgb(0, 0, 0));
+        g.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
+    }
+
     @Override
     public void start() {
         super.start();
@@ -71,7 +77,7 @@ public class PatternDrawer extends AnimationTimer {
         // Set line width and stroke color based on brightness
         double bandWidth = patternData.getBandWidth() * monitorFormat.getVirtualPixelsPerCenti();
 
-        int colorValue = (int) Math.max(Math.min(255, Math.round(patternData.getBrightness() * 255)), 0);
+        int colorValue = (int) patternData.getLightBrightness();
         g.setStroke(Color.rgb(colorValue, colorValue, colorValue));
         
         // Calculate the offset and total amount of lines to draw
@@ -111,7 +117,7 @@ public class PatternDrawer extends AnimationTimer {
         	double bandX = radius * Math.tan(-Math.PI / 4 + angularOffset + bandAngle * (i - 0.5));
         	double nextBandX = radius * Math.tan(-Math.PI / 4 + angularOffset + bandAngle * (i + 0.5));
 
-            int colorValue = (int) Math.max(Math.min(255, Math.round(patternData.getBrightness() * 255)), 0);
+            int colorValue = (int) Math.max(Math.min(255, Math.round(patternData.getLightBrightness() * 255)), 0);
             g.setStroke(Color.rgb(colorValue, colorValue, colorValue));
         	g.setLineWidth(nextBandX - bandX);
             g.beginPath();
