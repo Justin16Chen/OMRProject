@@ -14,6 +14,11 @@ javafx {
 
 dependencies {
     implementation 'org.json:json:20240303'
+
+    implementation 'ai.djl:api:0.33.0'
+    implementation 'ai.djl.pytorch:pytorch-engine:0.33.0' // PyTorch engine
+    implementation 'ai.djl:model-zoo:0.33.0' // Model zoo (pretrained models)
+    implementation 'ai.djl.pytorch:pytorch-native-cpu:2.5.1' // Native PyTorch runtime (CPU version)
 }
 
 application {
