@@ -8,6 +8,7 @@ import org.example.patternControlPanel.pattern.MonitorFormat;
 import org.example.patternControlPanel.pattern.Pattern;
 import org.example.patternControlPanel.pattern.PatternDirection;
 import org.example.patternControlPanel.trialConfig.TrialConfig;
+import org.example.patternControlPanel.trialDataManager.TrialDataManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +64,9 @@ public class StartMenuController extends CustomController {
     }
     @FXML
     private void handleRunQueueButtonClick() {
-        new RunTrialConfirmationApplication(getSceneManager()).start(new Stage());
+        int num = startMenuMonitorFormat.getMonitorNumber() + 1;
+        if (num > MonitorFormat.getNumScreens())
+            num = 1;
+        getSceneManager().setupOMRChamberStage(new MonitorFormat(num), TrialDataManager.DEFAULT_TRIAL);
     }
 }
