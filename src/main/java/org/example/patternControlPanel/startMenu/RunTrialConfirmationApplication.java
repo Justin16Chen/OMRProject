@@ -6,23 +6,20 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-public class StartMenuApplication extends Application {
+public class RunTrialConfirmationApplication extends Application {
     @Override
     public void start(Stage stage) {
         try {
-            // load FXML file
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/StartMenu.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/RunTrialConfirmation.fxml"));
 
-            // load parent node and create a scene
             Parent root = loader.load();
 
-            // setup stage and scene
             stage.setTitle("Start Menu");
             stage.setScene(new Scene(root));
             stage.show();
 
         } catch(Exception e) {
-            e.printStackTrace();
+            System.out.println("QUEUE TRIAL APP FAILED TO LAUNCH");
         }
     }
 }

@@ -1,10 +1,17 @@
 package org.example;
 
 import javafx.application.Application;
-import org.example.patternControlPanel.startMenu.StartMenuApplication;
+import javafx.stage.Stage;
+import org.example.patternControlPanel.SceneManager.SceneManager;
 
-public class Main {
+public class Main extends Application{
     public static void main(String[] args) {
-        Application.launch(StartMenuApplication.class, args);
+        launch(args);
+    }
+
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+        SceneManager sceneManager = new SceneManager();
+        sceneManager.init(primaryStage);
     }
 }

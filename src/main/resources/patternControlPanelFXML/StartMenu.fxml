@@ -30,16 +30,17 @@
                      </VBox.margin>
                   </Label>
                   <TextArea fx:id="queuedTrialsTextArea" prefHeight="82.0" prefWidth="272.0" />
-                  <HBox prefHeight="100.0" prefWidth="200.0" spacing="20.0">
+                  <HBox prefHeight="100.0" prefWidth="200.0" spacing="10.0">
                      <children>
                         <Button fx:id="queueTrialButton" mnemonicParsing="false" onAction="#handleQueueTrialButtonClick" text="Queue Trial" />
+                        <Button fx:id="clearQueuedTrialsButton" mnemonicParsing="false" onAction="#handleClearQueuedTrialsButtonClick" text="Clear Queue" />
                         <Button fx:id="runQueueButton" mnemonicParsing="false" onAction="#handleRunQueueButtonClick" text="Run Queue" />
                      </children>
                      <VBox.margin>
                         <Insets />
                      </VBox.margin>
                      <padding>
-                        <Insets left="10.0" top="10.0" />
+                        <Insets top="10.0" />
                      </padding>
                   </HBox>
                </children>

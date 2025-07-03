@@ -10,6 +10,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.example.patternControlPanel.SceneManager.Controller;
 import org.example.patternControlPanel.confirmationWindow.ConfirmationWindow;
 import org.example.patternControlPanel.display.DisplayController;
 import org.example.patternControlPanel.display.TimerWindow;
@@ -19,7 +20,7 @@ import org.example.patternControlPanel.utils.FilteredTextField;
 
 import java.io.IOException;
 
-public class TrialConfigController {
+public class TrialConfigController extends Controller {
 
 	@FXML
 	private FilteredTextField controlPanelMonitorTextField;

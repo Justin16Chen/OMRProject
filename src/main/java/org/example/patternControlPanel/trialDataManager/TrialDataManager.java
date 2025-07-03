@@ -11,7 +11,6 @@ import java.util.List;
 public class TrialDataManager {
     private static final TrialConfig DEFAULT_TRIAL = new TrialConfig("defaultTrial", new Pattern("", PatternDirection.CLOCKWISE, 1, 1, 1), 1, 1, 1, 1);
     private static final ArrayList<TrialConfig> savedTrials = new ArrayList<>(List.of(DEFAULT_TRIAL));
-    private static final ArrayList<TrialConfig> queuedTrials = new ArrayList<>();
 
     public static ArrayList<TrialConfig> getSavedTrials() {
         return savedTrials;
@@ -28,16 +27,4 @@ public class TrialDataManager {
     }
     public static void saveTrials(String filePath) {
     }
-
-    public static ArrayList<TrialConfig> getQueuedTrials() {
-        return queuedTrials;
-    }
-    public static void removeQueuedTrial(String trialConfigName) {
-        for (int i=0; i<queuedTrials.size(); i++)
-            if (queuedTrials.get(i).name().equals(trialConfigName)) {
-                queuedTrials.remove(i);
-                return;
-            }
-    }
-
 }
