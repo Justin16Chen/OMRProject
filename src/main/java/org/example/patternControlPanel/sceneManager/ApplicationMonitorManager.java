@@ -13,6 +13,7 @@ public class ApplicationMonitorManager {
 
     public ApplicationMonitorManager(Stage stage) {
         monitorFormat = findCurrentMonitorFormat(stage.getX(), stage.getY());
+        System.out.println(monitorFormat);
 
         stage.xProperty().addListener((obs, oldX, newX) -> {
             handleStartMenuMoved(newX.doubleValue(), stage.getY());
@@ -32,8 +33,10 @@ public class ApplicationMonitorManager {
     }
 
     private MonitorFormat findCurrentMonitorFormat(double x, double y) {
-        for (int i=1; i< MonitorFormat.getNumScreens(); i++) {
+        System.out.println("finding current mf");
+        for (int i=1; i<=MonitorFormat.getNumScreens(); i++) {
             MonitorFormat monitorFormat = new MonitorFormat(i);
+            System.out.println(monitorFormat);
             if (inBounds(x, y, monitorFormat.getBounds()))
                 return monitorFormat;
         }
@@ -42,7 +45,7 @@ public class ApplicationMonitorManager {
 
     private void handleStartMenuMoved(double x, double y) {
         // still on same monitor
-        if (inBounds(x, y, monitorFormat.getBounds()))
+        if (monitorFormat != null && inBounds(x, y, monitorFormat.getBounds()))
             return;
 
         // need to look for which monitor the screen moved to (this is def bad code but whatever, performance don't matter ;) )

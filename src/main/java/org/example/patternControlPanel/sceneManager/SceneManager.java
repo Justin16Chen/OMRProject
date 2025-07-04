@@ -33,7 +33,6 @@ public class SceneManager {
             // setup stages first so controllers don't get null pointers when calling getters
             this.primaryStage = primaryStage; // control panel stage
             primaryStage.setTitle("AutoOMR");
-            primaryStageMonitorManager = new ApplicationMonitorManager(primaryStage);
 
             OMRChamberStage = new Stage(); // stage to be shown in OMR chamber
             OMRChamberStage.setTitle("OMR Chamber");
@@ -45,7 +44,6 @@ public class SceneManager {
             startMenuController = loader.getController();
             startMenuController.setSceneManager(this);
             startMenuController.setup();
-            primaryStageMonitorManager.setMonitorFormatConsumer(mf -> startMenuController.setStartMenuMonitorFormat(mf));
 
             FXMLLoader loader2 = getLoaderFromResources("/patternControlPanelFXML/TrialConfig.fxml");
             trialConfigScene = new Scene(loader2.load());
@@ -63,6 +61,10 @@ public class SceneManager {
             // show primary stage
             primaryStage.setScene(startMenuScene);
             primaryStage.show();
+
+            // setup primary stage monitor format
+            primaryStageMonitorManager = new ApplicationMonitorManager(primaryStage);
+            primaryStageMonitorManager.setMonitorFormatConsumer(mf -> startMenuController.setStartMenuMonitorFormat(mf));
 
         } catch(Exception e) {
             System.out.println("FAILED TO LOAD STAGE IN SCENE MANAGER");

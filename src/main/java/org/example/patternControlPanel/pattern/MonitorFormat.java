@@ -19,7 +19,7 @@ public class MonitorFormat {
         return screenNumber <= ge.getScreenDevices().length;
 	}
 
-	private static final DecimalFormat df = new DecimalFormat("0.000");
+	private static final DecimalFormat df = new DecimalFormat("0.00");
 
 	// width and height in cm does not have 3 sig figs, 3 decimal places were chosen for visuals
 	private final int monitorNumber; // 1 is first monitor - this is not an index - this is a number
@@ -97,5 +97,8 @@ public class MonitorFormat {
 	@Override
 	public String toString() {
 		return monitorNumber + ": " + widthPixels + "x" + heightPixels + " pixels, " + df.format(widthCM) + "x" + df.format(heightCM) + " cm";
+	}
+	public String getSpecs() {
+		return widthPixels + "x" + heightPixels + "px, " + df.format(widthCM) + "x" + df.format(heightCM) + "cm";
 	}
 }

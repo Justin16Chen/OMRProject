@@ -1,6 +1,7 @@
 package org.example.patternControlPanel.startMenu;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 import org.example.patternControlPanel.sceneManager.CustomController;
@@ -27,6 +28,8 @@ public class StartMenuController extends CustomController {
     }
     public void setStartMenuMonitorFormat(MonitorFormat mf) {
         startMenuMonitorFormat = mf;
+        monitorNumberLabel.setText("Current Monitor: " + mf.getMonitorNumber());
+        monitorSpecsLabel.setText("Monitor Specs: " + mf.getSpecs());
     }
 
     @FXML
@@ -69,4 +72,9 @@ public class StartMenuController extends CustomController {
             num = 1;
         getSceneManager().setupOMRChamberStage(new MonitorFormat(num), TrialDataManager.DEFAULT_TRIAL);
     }
+
+    @FXML
+    private Label monitorNumberLabel;
+    @FXML
+    private Label monitorSpecsLabel;
 }
