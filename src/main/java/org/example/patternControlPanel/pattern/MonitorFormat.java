@@ -98,7 +98,10 @@ public class MonitorFormat {
 	public String toString() {
 		return monitorNumber + ": " + widthPixels + "x" + heightPixels + " pixels, " + df.format(widthCM) + "x" + df.format(heightCM) + " cm";
 	}
-	public String getSpecs() {
-		return widthPixels + "x" + heightPixels + "px, " + df.format(widthCM) + "x" + df.format(heightCM) + "cm";
+	public String getSizeSpecs() {
+		return df.format(widthCM) + "x" + df.format(heightCM) + "cm";
+	}
+	public String getResolutionSpecs() {
+		return widthPixels + "x" + heightPixels + "px";
 	}
 }

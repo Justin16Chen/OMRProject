@@ -28,8 +28,9 @@ public class StartMenuController extends CustomController {
     }
     public void setStartMenuMonitorFormat(MonitorFormat mf) {
         startMenuMonitorFormat = mf;
-        monitorNumberLabel.setText("Current Monitor: " + mf.getMonitorNumber());
-        monitorSpecsLabel.setText("Monitor Specs: " + mf.getSpecs());
+        monitorNumberLabel.setText("" + mf.getMonitorNumber());
+        monitorResolutionLabel.setText(mf.getResolutionSpecs());
+        monitorSizeLabel.setText(mf.getSizeSpecs());
     }
 
     @FXML
@@ -37,6 +38,9 @@ public class StartMenuController extends CustomController {
         queuedTrialsTextArea.setEditable(false);
         queuedTrials = new ArrayList<>(List.of(new TrialConfig("defaultTrial", new Pattern("", PatternDirection.CLOCKWISE, 1, 1, 1, 0), 1, 1, 1, 1)));
         updateQueuedTrialsTextArea();
+        chamberMonitorNumberLabel.setText("");
+        chamberMonitorResolutionLabel.setText("");
+        chamberMonitorSizeLabel.setText("");
     }
 
     @FXML
@@ -70,11 +74,16 @@ public class StartMenuController extends CustomController {
         int num = startMenuMonitorFormat.getMonitorNumber() + 1;
         if (num > MonitorFormat.getNumScreens())
             num = 1;
-        getSceneManager().setupOMRChamberStage(new MonitorFormat(num), TrialDataManager.DEFAULT_TRIAL);
+        MonitorFormat chamberMonitorFormat = new MonitorFormat(num);
+        getSceneManager().setupOMRChamberStage(chamberMonitorFormat, TrialDataManager.DEFAULT_TRIAL);
+
+        chamberMonitorNumberLabel.setText("" + chamberMonitorFormat.getMonitorNumber());
+        chamberMonitorResolutionLabel.setText(chamberMonitorFormat.getResolutionSpecs());
+        chamberMonitorSizeLabel.setText(chamberMonitorFormat.getSizeSpecs());
     }
 
     @FXML
-    private Label monitorNumberLabel;
+    private Label monitorNumberLabel, monitorResolutionLabel, monitorSizeLabel;
     @FXML
-    private Label monitorSpecsLabel;
+    private Label chamberMonitorNumberLabel, chamberMonitorResolutionLabel, chamberMonitorSizeLabel;
 }
