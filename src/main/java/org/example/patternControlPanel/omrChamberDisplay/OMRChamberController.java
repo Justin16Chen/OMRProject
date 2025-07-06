@@ -36,7 +36,7 @@ public class OMRChamberController extends CustomController {
 	}
 
 	public void initPatternDrawer() {
-		patternDrawer = new PatternDrawer(monitorFormat, trialConfig.initialPattern(), canvas, SimulatedSurface.CIRCULAR);
+		patternDrawer = new PatternDrawer(monitorFormat, trialConfig.getInitialPattern(), canvas, SimulatedSurface.CIRCULAR);
 	}
 
 	public void startTrials() {

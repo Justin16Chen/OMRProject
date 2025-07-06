@@ -1,0 +1,14 @@
+{"trials": [{
+    "restTime": 2,
+    "name": "default",
+    "testTime": 2,
+    "initialPattern": {
+        "bandWidth": 1,
+        "lightBrightness": 255,
+        "darkBrightness": 0,
+        "speed": 10,
+        "direction": "CLOCKWISE"
+    },
+    "maxTests": 10,
+    "dimPercent": 10
+}]}

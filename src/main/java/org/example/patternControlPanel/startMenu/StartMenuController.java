@@ -4,12 +4,12 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
+import org.example.patternControlPanel.pattern.TrialSaver;
 import org.example.patternControlPanel.sceneManager.CustomController;
 import org.example.patternControlPanel.pattern.MonitorFormat;
 import org.example.patternControlPanel.pattern.Pattern;
 import org.example.patternControlPanel.pattern.PatternDirection;
 import org.example.patternControlPanel.trialConfig.TrialConfig;
-import org.example.patternControlPanel.trialDataManager.TrialDataManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +36,7 @@ public class StartMenuController extends CustomController {
     @FXML
     private void initialize() {
         queuedTrialsTextArea.setEditable(false);
-        queuedTrials = new ArrayList<>(List.of(new TrialConfig("defaultTrial", new Pattern("", PatternDirection.CLOCKWISE, 1, 1, 1, 0), 1, 1, 1, 1)));
+        queuedTrials = new ArrayList<>(List.of(new TrialConfig("defaultTrial", new Pattern(PatternDirection.CLOCKWISE, 1, 1, 1, 0), 1, 1, 1, 1)));
         updateQueuedTrialsTextArea();
         chamberMonitorNumberLabel.setText("");
         chamberMonitorResolutionLabel.setText("");
@@ -54,7 +54,7 @@ public class StartMenuController extends CustomController {
         queuedTrialsTextArea.setText("");
         for (int i = 0; i< queuedTrials.size(); i++) {
             String newLine = i < queuedTrials.size() - 1 ? "\n" : "";
-            queuedTrialsTextArea.setText(queuedTrialsTextArea.getText() + queuedTrials.get(i).name() + newLine);
+            queuedTrialsTextArea.setText(queuedTrialsTextArea.getText() + queuedTrials.get(i).getName() + newLine);
         }
     }
 
@@ -75,7 +75,7 @@ public class StartMenuController extends CustomController {
         if (num > MonitorFormat.getNumScreens())
             num = 1;
         MonitorFormat chamberMonitorFormat = new MonitorFormat(num);
-        getSceneManager().setupOMRChamberStage(chamberMonitorFormat, TrialDataManager.DEFAULT_TRIAL);
+        getSceneManager().setupOMRChamberStage(chamberMonitorFormat, TrialSaver.DEFAULT_TRIAL);
 
         chamberMonitorNumberLabel.setText("" + chamberMonitorFormat.getMonitorNumber());
         chamberMonitorResolutionLabel.setText(chamberMonitorFormat.getResolutionSpecs());

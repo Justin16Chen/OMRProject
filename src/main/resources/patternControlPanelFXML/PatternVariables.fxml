@@ -9,14 +9,14 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane prefHeight="224.0" prefWidth="327.0" xmlns="http://javafx.com/javafx/21.0.7" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.patternControlPanel.pattern.PatternVariablesController">
+<BorderPane prefHeight="224.0" prefWidth="327.0" xmlns="http://javafx.com/javafx/21.0.7" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.patternControlPanel.pattern.TrialVariablesController">
    <center>
       <BorderPane prefHeight="400.0" prefWidth="400.0" BorderPane.alignment="CENTER">
          <center>
             <VBox alignment="TOP_CENTER" fillWidth="false" prefHeight="142.0" prefWidth="267.0" spacing="10.0" BorderPane.alignment="CENTER">
                <children>
                   <Label text="Choose a Pattern" />
-                  <ComboBox fx:id="patternSelectDropdown" prefWidth="150" />
+                  <ComboBox fx:id="trialSelectDropdown" prefWidth="150" />
                   <HBox alignment="CENTER" prefHeight="39.0" prefWidth="200.0" spacing="20.0">
                      <children>
                         <Button fx:id="selectPatternButton" mnemonicParsing="false" onAction="#activateSelectedPattern" text="Select" />

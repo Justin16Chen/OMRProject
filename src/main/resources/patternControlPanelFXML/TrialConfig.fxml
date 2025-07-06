@@ -1,15 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import javafx.scene.canvas.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 <?import org.example.patternControlPanel.utils.*?>
 
-<BorderPane prefHeight="620.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.patternControlPanel.trialConfig.TrialConfigController">
+<BorderPane prefHeight="620.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.patternControlPanel.trialConfig.TrialConfigController">
    <center>
-      <VBox maxWidth="300.0" prefHeight="462.0" prefWidth="300.0" spacing="5.0" BorderPane.alignment="CENTER_LEFT">
+      <VBox maxWidth="300.0" prefHeight="458.0" prefWidth="263.0" spacing="5.0" BorderPane.alignment="CENTER_LEFT">
          <children>
             <Label text="Pattern Parameters">
                <font>
@@ -21,8 +28,8 @@
             </Label>
             <GridPane vgap="7.0">
               <columnConstraints>
-                <ColumnConstraints hgrow="SOMETIMES" maxWidth="144.0" minWidth="10.0" prefWidth="106.0" />
-                <ColumnConstraints hgrow="SOMETIMES" maxWidth="194.0" minWidth="10.0" prefWidth="194.0" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="144.0" minWidth="10.0" prefWidth="101.0" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="194.0" minWidth="10.0" prefWidth="171.0" />
               </columnConstraints>
               <rowConstraints>
                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
@@ -79,7 +86,7 @@
                         <Insets top="10.0" />
                      </GridPane.margin>
                   </Label>
-                  <Slider fx:id="brightnessDarkSlider" max="255.0" onDragDropped="#handleBrightnessDarkDrag" style="-fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #000000, #ffffff);;" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                  <Slider fx:id="brightnessDarkSlider" max="255.0" onDragDropped="#handleBrightnessDarkDrag" prefHeight="14.0" prefWidth="163.0" style="-fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #000000, #ffffff);;" GridPane.columnIndex="1" GridPane.rowIndex="3">
                      <GridPane.margin>
                         <Insets top="10.0" />
                      </GridPane.margin>
@@ -99,8 +106,8 @@
             </Label>
             <GridPane vgap="9.0">
               <columnConstraints>
-                <ColumnConstraints hgrow="SOMETIMES" maxWidth="140.0" minWidth="10.0" prefWidth="79.0" />
-                <ColumnConstraints hgrow="SOMETIMES" maxWidth="222.0" minWidth="10.0" prefWidth="221.0" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="140.0" minWidth="10.0" prefWidth="75.0" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="222.0" minWidth="10.0" prefWidth="197.0" />
               </columnConstraints>
               <rowConstraints>
                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
@@ -130,7 +137,7 @@
                         <Insets top="10.0" />
                      </GridPane.margin>
                   </Label>
-                  <FilteredTextField fx:id="maxTimeTextField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                  <FilteredTextField fx:id="testTimeTextField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                   <FilteredTextField fx:id="restTimeTextField" prefHeight="62.0" prefWidth="221.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                </children>
             </GridPane>
@@ -141,7 +148,7 @@
       </VBox>
    </center>
    <right>
-      <VBox prefHeight="366.0" prefWidth="240.0" spacing="10.0" BorderPane.alignment="CENTER_LEFT">
+      <VBox prefHeight="458.0" prefWidth="268.0" spacing="10.0" BorderPane.alignment="CENTER_LEFT">
          <children>
             <Label text="Pattern Preview">
                <font>
@@ -154,7 +161,7 @@
                </VBox.margin></Canvas>
             <HBox prefHeight="30.0" prefWidth="200.0" style="-fx-background-color: lightgray;">
                <children>
-                  <Button fx:id="playPatternPreviewButton" mnemonicParsing="false" onAction="#togglePatternPreviewPlaying" prefHeight="35.0" prefWidth="82.0" text="Play/Pause">
+                  <Button mnemonicParsing="false" onAction="#handlePlayPatternPreviewClick" prefHeight="35.0" prefWidth="82.0" text="Play/Pause">
                      <HBox.margin>
                         <Insets left="10.0" />
                      </HBox.margin>
@@ -167,13 +174,20 @@
                   <Insets top="-10.0" />
                </VBox.margin>
             </HBox>
+            <Label fx:id="trialNameLabel" prefHeight="17.0" prefWidth="126.0" text="Current Trial: [name]">
+               <VBox.margin>
+                  <Insets top="5.0" />
+               </VBox.margin>
+            </Label>
             <HBox prefHeight="29.0" prefWidth="200.0" spacing="10.0">
                <children>
-                  <Button fx:id="saveTrialButton" mnemonicParsing="false" text="Save Trial" />
-                  <Button fx:id="backToStartButton" mnemonicParsing="false" prefHeight="25.0" prefWidth="90.0" text="Back To Start" />
+                  <Button mnemonicParsing="false" onAction="#handleBackToStartClick" prefHeight="25.0" prefWidth="44.0" text="Back" />
+                  <Button mnemonicParsing="false" onAction="#handleViewTrialsClick" text="View Trials" />
+                  <Button mnemonicParsing="false" onAction="#handleSaveTrialClick" text="Save" />
+                  <Button mnemonicParsing="false" onAction="#handleEditTrialClick" text="Edit" />
                </children>
                <VBox.margin>
-                  <Insets top="10.0" />
+                  <Insets top="5.0" />
                </VBox.margin>
             </HBox>
          </children>

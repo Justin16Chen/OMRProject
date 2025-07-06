@@ -2,6 +2,7 @@ package org.example;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
+import org.example.patternControlPanel.pattern.TrialSaver;
 import org.example.patternControlPanel.sceneManager.CustomApplication;
 import org.example.patternControlPanel.sceneManager.SceneManager;
 
@@ -18,13 +19,14 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        TrialSaver.initializeTrialSaver();
         SceneManager sceneManager = new SceneManager();
         sceneManager.init(primaryStage);
     }
 
     private void runSSDEvaluations() {
         String pythonPath = "C:\\Users\\justi\\anaconda3\\envs\\omrEnv\\python.exe";
-        String scriptPath = "python\\ssdEval.py";
+        String scriptPath = "python\\omrPythonSide.py";
         ProcessBuilder pb = new ProcessBuilder(pythonPath, scriptPath);
         try {
             Process process = pb.start();

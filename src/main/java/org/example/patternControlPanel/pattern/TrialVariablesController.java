@@ -6,27 +6,23 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import org.example.patternControlPanel.trialConfig.TrialConfigController;
 
-public class PatternVariablesController {
+public class TrialVariablesController {
 
 	@FXML
-	private Button selectPatternButton;
-	@FXML
 	private void activateSelectedPattern() {
-		String selectedName = patternSelectDropdown.getValue();
+		String selectedName = trialSelectDropdown.getValue();
 		// use default patternControlPanel.pattern if user selects empty dropdown option
-		controlPanelController.usePattern(selectedName == null ? PatternVariableManager.DEFAULT_PATTERN_DATA.getName() : selectedName);
+		controlPanelController.useTrial(selectedName == null ? TrialSaver.DEFAULT_TRIAL.getName() : selectedName);
 	}
 		
 	@FXML
-	private Button deletePatternButton;
-	@FXML
 	private void deleteSelectedPattern() {
-		PatternVariableManager.removePattern(patternSelectDropdown.getValue());
+		TrialSaver.removeTrial(trialSelectDropdown.getValue());
 		updateDropdown();
 	}
 	
 	@FXML
-	private ComboBox<String> patternSelectDropdown;
+	private ComboBox<String> trialSelectDropdown;
 	
 	private TrialConfigController controlPanelController;
 	public void setControlPanelController(TrialConfigController controller) {
@@ -40,8 +36,8 @@ public class PatternVariablesController {
 	
 	// updates the contents of the dropdown menu to match the JSON file
 	private void updateDropdown() {
-		patternSelectDropdown.getItems().clear();
-		for (Pattern pattern : PatternVariableManager.getAllPatternsFromFile())
-			patternSelectDropdown.getItems().add(pattern.getName());
+		trialSelectDropdown.getItems().clear();
+		for (String trialName : TrialSaver.getAllTrialNames())
+			trialSelectDropdown.getItems().add(trialName);
 	}
 }

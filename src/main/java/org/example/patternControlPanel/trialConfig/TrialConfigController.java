@@ -1,40 +1,20 @@
 package org.example.patternControlPanel.trialConfig;
 
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
-import javafx.stage.Stage;
 import org.example.patternControlPanel.sceneManager.CustomController;
 import org.example.patternControlPanel.pattern.*;
 import org.example.patternControlPanel.pattern.PatternDrawer.SimulatedSurface;
 import org.example.patternControlPanel.utils.FilteredTextField;
 
-import java.io.IOException;
+import java.util.Arrays;
 
 public class TrialConfigController extends CustomController {
-	// initial pattern params
-	@FXML
-	private FilteredTextField speedTextField, bandWidthTextField;
-	@FXML
-	private Slider brightnessLightSlider, brightnessDarkSlider;
-
-	// trial params
-	@FXML
-	private FilteredTextField dimPercentTextField, maxTestsTextField, testTimeTextField, restTimeTextField;
-
-	// stores current patternControlPanel.pattern data
-	private Pattern currentPattern;
-	@FXML
-	private Canvas patternPreviewCanvas;
-	private PatternDrawer patternPreviewDrawer; // draws the patternControlPanel.pattern preview onto the canvas
-
 	@FXML
 	public void initialize() {
-		currentPattern = new Pattern("default", PatternDirection.CLOCKWISE, 0, 0, 0, 0);
-		 
 		speedTextField.setErrorMessage("Enter a non-negative number");
 		speedTextField.setValidationFunction(input -> FilteredTextField.isDouble(input)
 				&& Double.parseDouble(input) >= 0);
@@ -42,22 +22,49 @@ public class TrialConfigController extends CustomController {
 		bandWidthTextField.setErrorMessage("Enter a number greater than 0");
 		bandWidthTextField.setValidationFunction(input -> FilteredTextField.isDouble(input)
 				&& Double.parseDouble(input) > 0);
+
+		dimPercentTextField.setErrorMessage("Enter a number from 0-100 (inclusive)");
+		dimPercentTextField.setValidationFunction(input -> FilteredTextField.VALID_DOUBLE.test(input)
+				&& Double.parseDouble(input) >= 0 && Double.parseDouble(input) <= 100);
 	}
+
+	// initial pattern params
+	@FXML
+	private Button directionCCButton, directionCCWButton, directionBothButton;
+	@FXML
+	private FilteredTextField speedTextField, bandWidthTextField;
+	@FXML
+	private Slider brightnessLightSlider, brightnessDarkSlider;
+
+	// trial params
+	@FXML
+	private Label trialNameLabel;
+	@FXML
+	private FilteredTextField dimPercentTextField, maxTestsTextField, testTimeTextField, restTimeTextField;
+
+
+	@FXML
+	private Canvas patternPreviewCanvas;
+
+	// stores current trial data
+	private TrialConfig currentTrial;
+	// draws the patternControlPanel.pattern preview onto the canvas
+	private PatternDrawer patternPreviewDrawer;
 
 	@Override
 	public void setup() {
-		patternPreviewDrawer = new PatternDrawer(getSceneManager().getStartMenuController().getStartMenuMonitorFormat(), currentPattern, patternPreviewCanvas, SimulatedSurface.FLAT);
-		usePattern(PatternVariableManager.getFirstPatternName());
+		currentTrial = TrialSaver.DEFAULT_TRIAL;
+		patternPreviewDrawer = new PatternDrawer(getSceneManager().getStartMenuController().getStartMenuMonitorFormat(), currentTrial.getInitialPattern(), patternPreviewCanvas, SimulatedSurface.FLAT);
+		useTrial(TrialSaver.getAllTrialNames()[0]);
 	}
-
 	@FXML
 	private void handleDirectionCCClick() {
-		currentPattern.setDirection(PatternDirection.CLOCKWISE);
+		currentTrial.getInitialPattern().setDirection(PatternDirection.CLOCKWISE);
 	}
 	@FXML
-	private void handleDirectionCCWClick() { currentPattern.setDirection(PatternDirection.COUNTER_CLOCKWISE); }
+	private void handleDirectionCCWClick() { currentTrial.getInitialPattern().setDirection(PatternDirection.COUNTER_CLOCKWISE); }
 	@FXML
-	private void handleDirectionBothClick() { currentPattern.setDirection(PatternDirection.BOTH); }
+	private void handleDirectionBothClick() { currentTrial.getInitialPattern().setDirection(PatternDirection.BOTH); }
 
 	@FXML
 	private void handleBrightnessLightDrag() {
@@ -68,94 +75,113 @@ public class TrialConfigController extends CustomController {
 
 	}
 
-	public void usePattern(String name) {
-		currentPattern = PatternVariableManager.getPatternDataFromFile(name);
-		
-		speedTextField.getTextField().setText("" + currentPattern.getSpeed());
-		brightnessLightSlider.setValue(currentPattern.getLightBrightness());
-		brightnessDarkSlider.setValue(0);
-		bandWidthTextField.getTextField().setText("" + currentPattern.getBandWidth());
-		patternPreviewDrawer.setPatternData(currentPattern);
-	}
-	private boolean areTextFieldsValid() {
-		return speedTextField.hasValidInput()
-				&& bandWidthTextField.hasValidInput();
-	}
-	private void updateCurrentPatternToTextFields() {
-		if (speedTextField.hasValidInput())
-			currentPattern.setSpeed(speedTextField.getDoubleInput());
-		currentPattern.setLightBrightness(brightnessLightSlider.getValue());
-		currentPattern.setDarkBrightness(brightnessDarkSlider.getValue());
-		if (bandWidthTextField.hasValidInput())
-			currentPattern.setBandWidth(bandWidthTextField.getDoubleInput());
-	}
-	
-	// only saves patternControlPanel.pattern if all text fields have valid input
-	@FXML
-	private void saveNewPattern() {
-		updateCurrentPatternToTextFields();
-		
-		// only save if all valid
-		if (areTextFieldsValid()) {
-			PatternVariableManager.addPattern(currentPattern);
+	public void useTrial(String name) {
+		currentTrial = TrialSaver.getTrial(name);
+
+		trialNameLabel.setText("Current Trial: " + currentTrial.getName());
+
+		switch (currentTrial.getInitialPattern().getDirection()) {
+			case CLOCKWISE -> directionCCButton.fire();
+			case COUNTER_CLOCKWISE -> directionCCWButton.fire();
+			case BOTH -> directionBothButton.fire();
 		}
+		speedTextField.getTextField().setText("" + currentTrial.getInitialPattern().getSpeed());
+		brightnessLightSlider.setValue(currentTrial.getInitialPattern().getLightBrightness());
+		brightnessDarkSlider.setValue(0);
+		bandWidthTextField.getTextField().setText("" + currentTrial.getInitialPattern().getBandWidth());
+		patternPreviewDrawer.setPatternData(currentTrial.getInitialPattern());
+
+		dimPercentTextField.getTextField().setText("" + currentTrial.getDimPercent());
+		maxTestsTextField.getTextField().setText("" + currentTrial.getMaxTests());
+		testTimeTextField.getTextField().setText("" + currentTrial.getTestTime());
+		restTimeTextField.getTextField().setText("" + currentTrial.getRestTime());
 	}
-	
-	// saves the new params to the current patternControlPanel.pattern
-	@FXML
-	private void savePattern() {
-		updateCurrentPatternToTextFields();
-		
-		// only save if all valid
-		if (areTextFieldsValid() && PatternVariableManager.hasPattern(currentPattern.getName()))
-				PatternVariableManager.updateSavedPattern(currentPattern);
+
+	private boolean allTextFieldsValid() {
+		return speedTextField.hasValidInput()
+				&& bandWidthTextField.hasValidInput()
+				&& dimPercentTextField.hasValidInput();
+	}
+
+	private void updateCurrentTrialToTextFields() {
+		if (speedTextField.hasValidInput())
+			currentTrial.getInitialPattern().setSpeed(speedTextField.getDoubleInput());
+		currentTrial.getInitialPattern().setLightBrightness(brightnessLightSlider.getValue());
+		currentTrial.getInitialPattern().setDarkBrightness(brightnessDarkSlider.getValue());
+		if (bandWidthTextField.hasValidInput())
+			currentTrial.getInitialPattern().setBandWidth(bandWidthTextField.getDoubleInput());
+
+		currentTrial.setName("");
+		if (dimPercentTextField.hasValidInput())
+			currentTrial.setDimPercent(dimPercentTextField.getDoubleInput());
+		currentTrial.setMaxTests(maxTestsTextField.getIntegerInput());
+		currentTrial.setTestTime(testTimeTextField.getDoubleInput());
+		currentTrial.setRestTime(restTimeTextField.getDoubleInput());
 	}
 
 	// window that allows user to name and save new patternControlPanel.pattern
-	@FXML
-	private void openPatternSaveWindow() {
-		FXMLLoader loader = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/SavePattern.fxml"));
-		
-	    Parent secondaryRoot;
-		try {
-			secondaryRoot = loader.load();
-			
-			SavePatternController controller = loader.getController();
-			controller.setPattern(currentPattern);
-			
-		    Stage secondaryStage = new Stage();
-		    secondaryStage.setTitle("Save New Pattern");
-		    secondaryStage.setScene(new Scene(secondaryRoot, 300, 200));
-		    secondaryStage.show();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+//	@FXML
+//	private void openPatternSaveWindow() {
+//		FXMLLoader loader = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/SavePattern.fxml"));
+//
+//	    Parent secondaryRoot;
+//		try {
+//			secondaryRoot = loader.load();
+//
+//			SaveTrialController controller = loader.getController();
+//			controller.setPattern(currentPattern);
+//
+//		    Stage secondaryStage = new Stage();
+//		    secondaryStage.setTitle("Save New Pattern");
+//		    secondaryStage.setScene(new Scene(secondaryRoot, 300, 200));
+//		    secondaryStage.show();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//	}
+//
+//	// window that opens the saved patterns
+//	@FXML
+//	public void openSavedPatternsWindow() {
+//		FXMLLoader loader = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/PatternVariables.fxml"));
+//
+//	    Parent secondaryRoot;
+//		try {
+//			secondaryRoot = loader.load();
+//
+//			TrialVariablesController controller = loader.getController();
+//			controller.setControlPanelController(this);
+//
+//		    Stage secondaryStage = new Stage();
+//		    secondaryStage.setTitle("Pattern Variables");
+//		    secondaryStage.setScene(new Scene(secondaryRoot, 300, 200));
+//		    secondaryStage.show();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//	}
 	
-	// window that opens the saved patterns
 	@FXML
-	public void openSavedPatternsWindow() {
-		FXMLLoader loader = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/PatternVariables.fxml"));
-		
-	    Parent secondaryRoot;
-		try {
-			secondaryRoot = loader.load();
-			
-			PatternVariablesController controller = loader.getController();
-			controller.setControlPanelController(this);
-		    			
-		    Stage secondaryStage = new Stage();
-		    secondaryStage.setTitle("Pattern Variables");
-		    secondaryStage.setScene(new Scene(secondaryRoot, 300, 200));
-		    secondaryStage.show();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	@FXML
-	private void togglePatternPreviewPlaying() {
+	private void handlePlayPatternPreviewClick() {
 		patternPreviewDrawer.togglePlaying();
+	}
+
+	@FXML
+	private void handleBackToStartClick() {
+		getSceneManager().getPrimaryStage().setScene(getSceneManager().getStartMenuScene());
+	}
+	@FXML
+	private void handleViewTrialsClick() {
+		System.out.println(Arrays.toString(TrialSaver.getAllTrialNames()));
+	}
+	@FXML
+	private void handleSaveTrialClick() {
+		updateCurrentTrialToTextFields();
+		TrialSaver.addTrial(currentTrial);
+	}
+	@FXML
+	private void handleEditTrialClick() {
+
 	}
 	
 }
