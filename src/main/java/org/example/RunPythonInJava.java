@@ -33,6 +33,5 @@ public class RunPythonInJava {
         catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
-        System.out.println("hellow world");
     }
 }
