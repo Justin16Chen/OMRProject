@@ -12,7 +12,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="460.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.startMenu.StartMenuController">
+<AnchorPane prefHeight="460.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/21.0.7" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.startMenu.StartMenuController">
    <HBox layoutX="45.0" layoutY="16.0" prefHeight="383.0" prefWidth="504.0">
       <VBox prefHeight="324.0" prefWidth="274.0">
          <Label prefHeight="30.0" prefWidth="154.0" text="Create new trial">

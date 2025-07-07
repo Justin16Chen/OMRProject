@@ -14,7 +14,7 @@
 <?import javafx.scene.text.Font?>
 <?import org.example.trialControlPanel.utils.FilteredTextField?>
 
-<BorderPane prefHeight="620.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.trialConfig.TrialConfigController">
+<BorderPane prefHeight="620.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/21.0.7" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.trialConfig.TrialConfigController">
    <center>
       <VBox maxWidth="300.0" prefHeight="458.0" prefWidth="263.0" spacing="5.0" BorderPane.alignment="CENTER_LEFT">
          <children>

@@ -10,7 +10,7 @@
 <?import javafx.scene.text.Font?>
 
 
-<AnchorPane prefHeight="319.0" prefWidth="509.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.omrChamberDisplay.RunningTrialInfoController">
+<AnchorPane prefHeight="319.0" prefWidth="509.0" xmlns="http://javafx.com/javafx/21.0.7" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.omrChamberDisplay.RunningTrialInfoController">
    <children>
       <GridPane layoutX="42.0" layoutY="98.0" prefHeight="104.0" prefWidth="167.0">
         <columnConstraints>
