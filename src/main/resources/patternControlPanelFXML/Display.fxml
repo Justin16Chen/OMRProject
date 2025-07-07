@@ -6,6 +6,6 @@
 <?import javafx.scene.layout.AnchorPane?>
 <AnchorPane prefHeight="106.0" prefWidth="243.0" xmlns="http://javafx.com/javafx/21.0.7"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="org.example.patternControlPanel.omrChamberDisplay.OMRChamberController">
+            fx:controller="org.example.trialControlPanel.omrChamberDisplay.OMRChamberController">
    <Canvas fx:id="canvas" height="200.0" width="200.0"/>
 </AnchorPane>

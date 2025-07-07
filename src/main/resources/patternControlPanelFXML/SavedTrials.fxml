@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<BorderPane prefHeight="224.0" prefWidth="327.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.patternControlPanel.trialConfig.SavedTrialsController">
+<BorderPane prefHeight="224.0" prefWidth="327.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.trialConfig.SavedTrialsController">
    <center>
       <BorderPane prefHeight="400.0" prefWidth="400.0" BorderPane.alignment="CENTER">
          <center>

@@ -1,18 +1,30 @@
-{
-    "trials": [
-        {
-            "name": "default",
-            "initialPattern": {
-                "bandWidth": 1,
-                "lightBrightness": 255,
-                "darkBrightness": 0,
-                "direction":  "clockwise",
-                "speed": 10
-            },
-            "testTime": 2,
-            "restTime": 2,
-            "dimPercent": 10,
-            "maxTests": 10
-        }
-    ]
-}
+{"trials": [
+    {
+        "restTime": 1,
+        "name": "newTrial",
+        "testTime": 1,
+        "maxTests": 1,
+        "initialPattern": {
+            "bandWidth": 2,
+            "lightBrightness": 214,
+            "darkBrightness": 72,
+            "speed": 10,
+            "direction": "COUNTER_CLOCKWISE"
+        },
+        "dimPercent": 1
+    },
+    {
+        "restTime": 1,
+        "name": "defaultTrial",
+        "testTime": 1,
+        "maxTests": 1,
+        "initialPattern": {
+            "bandWidth": 1,
+            "lightBrightness": 181,
+            "darkBrightness": 72,
+            "speed": 1,
+            "direction": "BOTH"
+        },
+        "dimPercent": 1
+    }
+]}

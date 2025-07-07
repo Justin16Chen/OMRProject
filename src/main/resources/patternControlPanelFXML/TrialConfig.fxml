@@ -12,9 +12,9 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
-<?import org.example.patternControlPanel.utils.FilteredTextField?>
+<?import org.example.trialControlPanel.utils.FilteredTextField?>
 
-<BorderPane prefHeight="620.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.patternControlPanel.trialConfig.TrialConfigController">
+<BorderPane prefHeight="620.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.trialConfig.TrialConfigController">
    <center>
       <VBox maxWidth="300.0" prefHeight="458.0" prefWidth="263.0" spacing="5.0" BorderPane.alignment="CENTER_LEFT">
          <children>
@@ -26,7 +26,7 @@
                   <Insets />
                </VBox.margin>
             </Label>
-            <GridPane vgap="7.0">
+            <GridPane vgap="10.0">
               <columnConstraints>
                 <ColumnConstraints hgrow="SOMETIMES" maxWidth="144.0" minWidth="10.0" prefWidth="101.0" />
                 <ColumnConstraints hgrow="SOMETIMES" maxWidth="194.0" minWidth="10.0" prefWidth="171.0" />
@@ -73,7 +73,7 @@
                   </FilteredTextField>
                   <FilteredTextField fx:id="bandWidthTextField" GridPane.columnIndex="1" GridPane.rowIndex="4">
                      <padding>
-                        <Insets top="-4.0" />
+                        <Insets top="4.0" />
                      </padding>
                   </FilteredTextField>
                   <Label text="Dark Band Color" GridPane.rowIndex="3">
@@ -81,19 +81,33 @@
                         <Insets top="15.0" />
                      </GridPane.margin>
                   </Label>
-                  <HBox prefHeight="100.0" prefWidth="200.0" spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                  <HBox prefHeight="100.0" prefWidth="200.0" spacing="8.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
                      <children>
-                        <Slider fx:id="brightnessLightSlider" max="255.0" onDragDropped="#handleBrightnessLightDrag" prefHeight="14.0" prefWidth="143.0" style="-fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #000000, #ffffff);;" value="255.0" />
-                        <Label fx:id="brightnessLightLabel" text="255" />
+                        <Slider fx:id="brightnessLightSlider" max="255.0" prefHeight="14.0" prefWidth="130.0" style="-fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #000000, #ffffff);;" value="255.0">
+                           <HBox.margin>
+                              <Insets top="15.0" />
+                           </HBox.margin></Slider>
+                        <FilteredTextField fx:id="brightnessLightTextField" prefHeight="42.0" prefWidth="99.0">
+                           <padding>
+                              <Insets top="-4.0" />
+                           </padding>
+                        </FilteredTextField>
                      </children>
                      <padding>
                         <Insets top="15.0" />
                      </padding>
                   </HBox>
-                  <HBox prefHeight="100.0" prefWidth="200.0" spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                  <HBox prefHeight="100.0" prefWidth="200.0" spacing="8.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
                      <children>
-                        <Slider fx:id="brightnessDarkSlider" max="255.0" onDragDropped="#handleBrightnessDarkDrag" prefHeight="14.0" prefWidth="143.0" style="-fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #000000, #ffffff);;" />
-                        <Label fx:id="brightnessDarkLabel" text="0" />
+                        <Slider fx:id="brightnessDarkSlider" max="255.0" prefHeight="14.0" prefWidth="130.0" style="-fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #000000, #ffffff);;">
+                           <HBox.margin>
+                              <Insets top="15.0" />
+                           </HBox.margin></Slider>
+                        <FilteredTextField fx:id="brightnessDarkTextField" prefHeight="42.0" prefWidth="99.0">
+                           <padding>
+                              <Insets top="-4.0" />
+                           </padding>
+                        </FilteredTextField>
                      </children>
                      <GridPane.margin>
                         <Insets />
@@ -166,7 +180,7 @@
                   <Font size="18.0" />
                </font>
             </Label>
-            <Canvas fx:id="patternPreviewCanvas" height="272.0" width="200.0">
+            <Canvas fx:id="patternPreviewCanvas" height="154.0" width="227.0">
                <VBox.margin>
                   <Insets top="-5.0" />
                </VBox.margin></Canvas>
@@ -187,7 +201,7 @@
             </HBox>
             <HBox prefHeight="25.0" prefWidth="228.0">
                <children>
-                  <Label prefHeight="17.0" prefWidth="126.0" text="Trial Name">
+                  <Label prefHeight="17.0" prefWidth="107.0" text="Trial Name">
                      <HBox.margin>
                         <Insets top="20.0" />
                      </HBox.margin>
@@ -195,10 +209,10 @@
                   <FilteredTextField fx:id="trialNameTextField" prefHeight="42.0" prefWidth="207.0" />
                </children>
                <VBox.margin>
-                  <Insets top="-10.0" />
+                  <Insets top="40.0" />
                </VBox.margin>
             </HBox>
-            <HBox prefHeight="29.0" prefWidth="200.0" spacing="10.0">
+            <HBox alignment="TOP_CENTER" prefHeight="29.0" prefWidth="200.0" spacing="10.0">
                <children>
                   <Button mnemonicParsing="false" onAction="#handleBackToStartClick" prefHeight="25.0" prefWidth="44.0" text="Back" />
                   <Button mnemonicParsing="false" onAction="#handleEditClick" text="Edit" />
