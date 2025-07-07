@@ -2,6 +2,7 @@ package org.example;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
+import org.example.cameraCode.CameraManager;
 import org.example.trialControlPanel.trialConfig.TrialSaver;
 import org.example.trialControlPanel.sceneManager.SceneManager;
 
@@ -10,8 +11,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class Main extends Application {
+    static {
+        // loading openCV
+        System.load("C:\\Users\\czhao\\Downloads\\opencv\\build\\java\\x64\\opencv_java4110.dll");
+    }
 
     public static void main(String[] args) {
+        startCameraTracking();
         launch(args);
         // runSSDEvaluations();
     }
@@ -23,7 +29,12 @@ public class Main extends Application {
         sceneManager.init(primaryStage);
     }
 
-    private void runSSDEvaluations() {
+    private static void startCameraTracking() {
+        CameraManager cameraManager = new CameraManager();
+        cameraManager.start();
+    }
+
+    private static void runSSDEvaluations() {
         String pythonPath = "C:\\Users\\justi\\anaconda3\\envs\\omrEnv\\python.exe";
         String scriptPath = "python\\omrPythonSide.py";
         ProcessBuilder pb = new ProcessBuilder(pythonPath, scriptPath);
