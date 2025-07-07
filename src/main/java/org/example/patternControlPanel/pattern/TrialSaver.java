@@ -88,7 +88,7 @@ public class TrialSaver {
 	public static TrialConfig getTrial(String name) {
 		for (TrialConfig trial : trials)
 			if (trial.getName().equals(name))
-				return trial;
+				return trial.deepCopy();
 		throw new IllegalArgumentException(name + " is not a name of a trial");
 	}
 	public static boolean hasTrial(String trialName) {
@@ -103,11 +103,13 @@ public class TrialSaver {
 	public static void addTrial(TrialConfig newTrial) {
 		for (int i=0; i<trials.size(); i++) {
 			if (trials.get(i).getName().equals(newTrial.getName())) {
+				System.out.println("removing " + trials.get(i));
 				trials.remove(i);
 				break;
 			}
 		}
-		trials.add(newTrial);
+		trials.add(newTrial.deepCopy());
+		System.out.println("adding " + newTrial);
 		writeToJSONFile();
 	}
 

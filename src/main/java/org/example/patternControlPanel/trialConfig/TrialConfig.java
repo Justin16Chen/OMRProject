@@ -63,4 +63,15 @@ public class TrialConfig {
     public String toString() {
         return name;
     }
+
+    public TrialConfig deepCopy() {
+        return new TrialConfig(
+                name,
+                initialPattern,
+                testTime,
+                restTime,
+                dimPercent,
+                maxTests
+        );
+    }
 }

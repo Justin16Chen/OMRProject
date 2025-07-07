@@ -26,6 +26,12 @@ public class TrialConfigController extends CustomController {
 		dimPercentTextField.setErrorMessage("Enter a number from 0-100 (inclusive)");
 		dimPercentTextField.setValidationFunction(input -> FilteredTextField.VALID_DOUBLE.test(input)
 				&& Double.parseDouble(input) >= 0 && Double.parseDouble(input) <= 100);
+
+		trialNameTextField.setErrorMessage("Cannot be empty");
+		trialNameTextField.setValidationFunction(FilteredTextField.NON_EMPTY);
+		trialNameTextField.getTextField().textProperty().addListener((observer, oldText, newText) -> {
+			updateSaveButtonsEnabled();
+		});
 	}
 
 	// initial pattern params
@@ -35,12 +41,12 @@ public class TrialConfigController extends CustomController {
 	private FilteredTextField speedTextField, bandWidthTextField;
 	@FXML
 	private Slider brightnessLightSlider, brightnessDarkSlider;
+	@FXML
+	private Label brightnessLightLabel, brightnessDarkLabel;
 
 	// trial params
 	@FXML
-	private Label trialNameLabel;
-	@FXML
-	private FilteredTextField dimPercentTextField, maxTestsTextField, testTimeTextField, restTimeTextField;
+	private FilteredTextField trialNameTextField, dimPercentTextField, maxTestsTextField, testTimeTextField, restTimeTextField;
 
 
 	@FXML
@@ -68,17 +74,19 @@ public class TrialConfigController extends CustomController {
 
 	@FXML
 	private void handleBrightnessLightDrag() {
-
+		currentTrial.getInitialPattern().setLightBrightness(brightnessLightSlider.getValue());
+		brightnessLightLabel.setText("" + brightnessLightSlider.getValue());
 	}
 	@FXML
 	private void handleBrightnessDarkDrag() {
-
+		currentTrial.getInitialPattern().setDarkBrightness(brightnessDarkSlider.getValue());
+		brightnessDarkLabel.setText("" + brightnessDarkSlider.getValue());
 	}
 
 	public void useTrial(String name) {
 		currentTrial = TrialSaver.getTrial(name);
 
-		trialNameLabel.setText("Current Trial: " + currentTrial.getName());
+		trialNameTextField.getTextField().setText(currentTrial.getName());
 
 		switch (currentTrial.getInitialPattern().getDirection()) {
 			case CLOCKWISE -> directionCCButton.fire();
@@ -117,6 +125,8 @@ public class TrialConfigController extends CustomController {
 		currentTrial.setMaxTests(maxTestsTextField.getIntegerInput());
 		currentTrial.setTestTime(testTimeTextField.getDoubleInput());
 		currentTrial.setRestTime(restTimeTextField.getDoubleInput());
+		if (trialNameTextField.hasValidInput())
+			currentTrial.setName(trialNameTextField.getText());
 	}
 
 	// window that allows user to name and save new patternControlPanel.pattern
@@ -166,22 +176,37 @@ public class TrialConfigController extends CustomController {
 		patternPreviewDrawer.togglePlaying();
 	}
 
+	private void updateSaveButtonsEnabled() {
+		if (!trialNameTextField.hasValidInput()) {
+			saveAsButton.setDisable(true);
+			saveButton.setDisable(true);
+		}
+		else if (TrialSaver.hasTrial(trialNameTextField.getText())) {
+			saveAsButton.setDisable(true);
+			saveButton.setDisable(false);
+		}
+		else {
+			saveAsButton.setDisable(false);
+			saveButton.setDisable(true);
+		}
+	}
 	@FXML
 	private void handleBackToStartClick() {
 		getSceneManager().getPrimaryStage().setScene(getSceneManager().getStartMenuScene());
 	}
 	@FXML
-	private void handleViewTrialsClick() {
+	private void handleEditClick() {
 		System.out.println(Arrays.toString(TrialSaver.getAllTrialNames()));
 	}
 	@FXML
-	private void handleSaveTrialClick() {
+	private Button saveAsButton;
+	@FXML
+	private Button saveButton;
+	@FXML
+	private void handleSaveClick() {
 		updateCurrentTrialToTextFields();
 		TrialSaver.addTrial(currentTrial);
-	}
-	@FXML
-	private void handleEditTrialClick() {
-
+		updateSaveButtonsEnabled();
 	}
 	
 }

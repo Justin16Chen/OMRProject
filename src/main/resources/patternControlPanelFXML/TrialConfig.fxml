@@ -12,7 +12,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
-<?import org.example.patternControlPanel.utils.*?>
+<?import org.example.patternControlPanel.utils.FilteredTextField?>
 
 <BorderPane prefHeight="620.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.patternControlPanel.trialConfig.TrialConfigController">
    <center>
@@ -46,17 +46,17 @@
                   </Label>
                   <Label text="Speed (RPM)" GridPane.rowIndex="1">
                      <GridPane.margin>
-                        <Insets top="10.0" />
+                        <Insets top="20.0" />
                      </GridPane.margin>
                   </Label>
                   <Label text="Light Band Color" GridPane.rowIndex="2">
                      <GridPane.margin>
-                        <Insets top="10.0" />
+                        <Insets top="15.0" />
                      </GridPane.margin>
                   </Label>
                   <Label text="Band Width (cm)" GridPane.rowIndex="4">
                      <GridPane.margin>
-                        <Insets top="10.0" />
+                        <Insets top="20.0" />
                      </GridPane.margin>
                   </Label>
                   <HBox alignment="BOTTOM_LEFT" prefHeight="26.0" prefWidth="300.0" spacing="10.0" GridPane.columnIndex="1">
@@ -71,11 +71,6 @@
                         <Insets top="-4.0" />
                      </padding>
                   </FilteredTextField>
-                  <Slider fx:id="brightnessLightSlider" max="255.0" onDragDropped="#handleBrightnessLightDrag" style="-fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #000000, #ffffff);;" value="255.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
-                     <GridPane.margin>
-                        <Insets top="10.0" />
-                     </GridPane.margin>
-                  </Slider>
                   <FilteredTextField fx:id="bandWidthTextField" GridPane.columnIndex="1" GridPane.rowIndex="4">
                      <padding>
                         <Insets top="-4.0" />
@@ -83,14 +78,30 @@
                   </FilteredTextField>
                   <Label text="Dark Band Color" GridPane.rowIndex="3">
                      <GridPane.margin>
-                        <Insets top="10.0" />
+                        <Insets top="15.0" />
                      </GridPane.margin>
                   </Label>
-                  <Slider fx:id="brightnessDarkSlider" max="255.0" onDragDropped="#handleBrightnessDarkDrag" prefHeight="14.0" prefWidth="163.0" style="-fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #000000, #ffffff);;" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                  <HBox prefHeight="100.0" prefWidth="200.0" spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                     <children>
+                        <Slider fx:id="brightnessLightSlider" max="255.0" onDragDropped="#handleBrightnessLightDrag" prefHeight="14.0" prefWidth="143.0" style="-fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #000000, #ffffff);;" value="255.0" />
+                        <Label fx:id="brightnessLightLabel" text="255" />
+                     </children>
+                     <padding>
+                        <Insets top="15.0" />
+                     </padding>
+                  </HBox>
+                  <HBox prefHeight="100.0" prefWidth="200.0" spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                     <children>
+                        <Slider fx:id="brightnessDarkSlider" max="255.0" onDragDropped="#handleBrightnessDarkDrag" prefHeight="14.0" prefWidth="143.0" style="-fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #000000, #ffffff);;" />
+                        <Label fx:id="brightnessDarkLabel" text="0" />
+                     </children>
                      <GridPane.margin>
-                        <Insets top="10.0" />
+                        <Insets />
                      </GridPane.margin>
-                  </Slider>
+                     <padding>
+                        <Insets top="15.0" />
+                     </padding>
+                  </HBox>
                </children>
                <VBox.margin>
                   <Insets top="2.0" />
@@ -120,21 +131,21 @@
                   <FilteredTextField fx:id="maxTestsTextField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                   <Label text="Dim Percent">
                      <GridPane.margin>
-                        <Insets top="10.0" />
+                        <Insets top="20.0" />
                      </GridPane.margin></Label>
                   <Label text="Max Tests" GridPane.rowIndex="1">
                      <GridPane.margin>
-                        <Insets top="10.0" />
+                        <Insets top="20.0" />
                      </GridPane.margin>
                   </Label>
                   <Label text="Test Time" GridPane.rowIndex="2">
                      <GridPane.margin>
-                        <Insets top="10.0" />
+                        <Insets top="20.0" />
                      </GridPane.margin>
                   </Label>
                   <Label text="Rest Time" GridPane.rowIndex="3">
                      <GridPane.margin>
-                        <Insets top="10.0" />
+                        <Insets top="20.0" />
                      </GridPane.margin>
                   </Label>
                   <FilteredTextField fx:id="testTimeTextField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
@@ -174,17 +185,25 @@
                   <Insets top="-10.0" />
                </VBox.margin>
             </HBox>
-            <Label fx:id="trialNameLabel" prefHeight="17.0" prefWidth="126.0" text="Current Trial: [name]">
+            <HBox prefHeight="25.0" prefWidth="228.0">
+               <children>
+                  <Label prefHeight="17.0" prefWidth="126.0" text="Trial Name">
+                     <HBox.margin>
+                        <Insets top="20.0" />
+                     </HBox.margin>
+                  </Label>
+                  <FilteredTextField fx:id="trialNameTextField" prefHeight="42.0" prefWidth="207.0" />
+               </children>
                <VBox.margin>
-                  <Insets top="5.0" />
+                  <Insets top="-10.0" />
                </VBox.margin>
-            </Label>
+            </HBox>
             <HBox prefHeight="29.0" prefWidth="200.0" spacing="10.0">
                <children>
                   <Button mnemonicParsing="false" onAction="#handleBackToStartClick" prefHeight="25.0" prefWidth="44.0" text="Back" />
-                  <Button mnemonicParsing="false" onAction="#handleViewTrialsClick" text="View Trials" />
-                  <Button mnemonicParsing="false" onAction="#handleSaveTrialClick" text="Save" />
-                  <Button mnemonicParsing="false" onAction="#handleEditTrialClick" text="Edit" />
+                  <Button mnemonicParsing="false" onAction="#handleEditClick" text="Edit" />
+                  <Button fx:id="saveAsButton" mnemonicParsing="false" onAction="#handleSaveClick" text="Save As" />
+                  <Button fx:id="saveButton" mnemonicParsing="false" onAction="#handleSaveClick" text="Save" />
                </children>
                <VBox.margin>
                   <Insets top="5.0" />
