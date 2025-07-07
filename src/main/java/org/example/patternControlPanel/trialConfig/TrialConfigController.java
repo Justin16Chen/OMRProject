@@ -5,12 +5,11 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
+import javafx.stage.Stage;
 import org.example.patternControlPanel.sceneManager.CustomController;
 import org.example.patternControlPanel.pattern.*;
 import org.example.patternControlPanel.pattern.PatternDrawer.SimulatedSurface;
 import org.example.patternControlPanel.utils.FilteredTextField;
-
-import java.util.Arrays;
 
 public class TrialConfigController extends CustomController {
 	@FXML
@@ -95,7 +94,7 @@ public class TrialConfigController extends CustomController {
 		}
 		speedTextField.getTextField().setText("" + currentTrial.getInitialPattern().getSpeed());
 		brightnessLightSlider.setValue(currentTrial.getInitialPattern().getLightBrightness());
-		brightnessDarkSlider.setValue(0);
+		brightnessDarkSlider.setValue(currentTrial.getInitialPattern().getDarkBrightness());
 		bandWidthTextField.getTextField().setText("" + currentTrial.getInitialPattern().getBandWidth());
 		patternPreviewDrawer.setPatternData(currentTrial.getInitialPattern());
 
@@ -129,37 +128,17 @@ public class TrialConfigController extends CustomController {
 			currentTrial.setName(trialNameTextField.getText());
 	}
 
-	// window that allows user to name and save new patternControlPanel.pattern
-//	@FXML
-//	private void openPatternSaveWindow() {
-//		FXMLLoader loader = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/SavePattern.fxml"));
-//
-//	    Parent secondaryRoot;
-//		try {
-//			secondaryRoot = loader.load();
-//
-//			SaveTrialController controller = loader.getController();
-//			controller.setPattern(currentPattern);
-//
-//		    Stage secondaryStage = new Stage();
-//		    secondaryStage.setTitle("Save New Pattern");
-//		    secondaryStage.setScene(new Scene(secondaryRoot, 300, 200));
-//		    secondaryStage.show();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-//	}
 //
 //	// window that opens the saved patterns
 //	@FXML
 //	public void openSavedPatternsWindow() {
-//		FXMLLoader loader = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/PatternVariables.fxml"));
+//		FXMLLoader loader = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/SavedTrials.fxml"));
 //
 //	    Parent secondaryRoot;
 //		try {
 //			secondaryRoot = loader.load();
 //
-//			TrialVariablesController controller = loader.getController();
+//			SavedTrialsController controller = loader.getController();
 //			controller.setControlPanelController(this);
 //
 //		    Stage secondaryStage = new Stage();
@@ -176,7 +155,7 @@ public class TrialConfigController extends CustomController {
 		patternPreviewDrawer.togglePlaying();
 	}
 
-	private void updateSaveButtonsEnabled() {
+	public void updateSaveButtonsEnabled() {
 		if (!trialNameTextField.hasValidInput()) {
 			saveAsButton.setDisable(true);
 			saveButton.setDisable(true);
@@ -196,7 +175,7 @@ public class TrialConfigController extends CustomController {
 	}
 	@FXML
 	private void handleEditClick() {
-		System.out.println(Arrays.toString(TrialSaver.getAllTrialNames()));
+		new SavedTrialsApplication(getSceneManager()).start(new Stage());
 	}
 	@FXML
 	private Button saveAsButton;

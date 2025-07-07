@@ -1,33 +1,33 @@
-package org.example.patternControlPanel.startMenu;
+package org.example.patternControlPanel.trialConfig;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import org.example.patternControlPanel.sceneManager.CustomApplication;
 import org.example.patternControlPanel.sceneManager.SceneManager;
+import org.example.patternControlPanel.startMenu.QueueTrialController;
 
-public class QueueTrialApplication extends CustomApplication {
-
-    public QueueTrialApplication(SceneManager sceneManager) {
+public class SavedTrialsApplication extends CustomApplication {
+    public SavedTrialsApplication(SceneManager sceneManager) {
         super(sceneManager);
     }
 
     @Override
     public void start(Stage stage) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/QueueTrial.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/SavedTrials.fxml"));
 
-            stage.setTitle("Start Menu");
+            stage.setTitle("Saved Trials");
             stage.setScene(new Scene(loader.load()));
             stage.show();
 
-            QueueTrialController controller = loader.getController();
+            SavedTrialsController controller = loader.getController();
             controller.setSceneManager(getSceneManager());
             controller.setStage(stage);
-            controller.updateSavedTrialsComboBox();
 
         } catch(Exception e) {
-            System.out.println("QUEUE TRIAL APP FAILED TO LAUNCH");
+            System.out.println("SAVED TRIALS APP FAILED TO LAUNCH");
         }
     }
+
 }

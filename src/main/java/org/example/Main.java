@@ -2,8 +2,7 @@ package org.example;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
-import org.example.patternControlPanel.pattern.TrialSaver;
-import org.example.patternControlPanel.sceneManager.CustomApplication;
+import org.example.patternControlPanel.trialConfig.TrialSaver;
 import org.example.patternControlPanel.sceneManager.SceneManager;
 
 import java.io.BufferedReader;

@@ -4,7 +4,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
-import org.example.patternControlPanel.pattern.TrialSaver;
+import org.example.patternControlPanel.trialConfig.TrialSaver;
 import org.example.patternControlPanel.sceneManager.CustomController;
 import org.example.patternControlPanel.pattern.MonitorFormat;
 import org.example.patternControlPanel.pattern.Pattern;

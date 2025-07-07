@@ -1,6 +1,7 @@
-package org.example.patternControlPanel.pattern;
+package org.example.patternControlPanel.trialConfig;
 
-import org.example.patternControlPanel.trialConfig.TrialConfig;
+import org.example.patternControlPanel.pattern.Pattern;
+import org.example.patternControlPanel.pattern.PatternDirection;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -8,7 +9,6 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.AccessFlag;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -27,6 +27,8 @@ public class TrialSaver {
 
 			trials.add(trial);
 		}
+		if (trials.isEmpty())
+			trials.add(DEFAULT_TRIAL);
 	}
 
 	// gets json trials array from file
@@ -130,6 +132,11 @@ public class TrialSaver {
 		for (int i=0; i<trials.size(); i++)
 			names[i] = trials.get(i).getName();
 		return names;
+	}
+
+	public static void clearAllTrials() {
+		trials.clear();
+		writeToJSONFile();
 	}
 }
 

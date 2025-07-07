@@ -1,11 +1,9 @@
 package org.example.patternControlPanel.startMenu;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
-import org.example.patternControlPanel.pattern.TrialSaver;
+import org.example.patternControlPanel.trialConfig.TrialSaver;
 import org.example.patternControlPanel.sceneManager.CustomController;
-import org.example.patternControlPanel.trialConfig.TrialConfig;
 
 public class QueueTrialController extends CustomController {
 

@@ -20,6 +20,6 @@ public abstract class CustomController {
         return stage;
     }
 
-    // can be used to setup anything dependent on sceneManager
+    // can be used to set up anything dependent on sceneManager
     public void setup() {}
 }
