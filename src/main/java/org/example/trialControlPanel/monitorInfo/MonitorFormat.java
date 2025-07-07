@@ -1,4 +1,4 @@
-package org.example.trialControlPanel.pattern;
+package org.example.trialControlPanel.monitorInfo;
 
 import javafx.geometry.Rectangle2D;
 import javafx.stage.Screen;

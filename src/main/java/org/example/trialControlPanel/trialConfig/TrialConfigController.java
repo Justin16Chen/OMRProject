@@ -47,6 +47,12 @@ public class TrialConfigController extends CustomController {
 			if (brightnessLightTextField.hasValidInput())
 				brightnessLightSlider.setValue(Double.parseDouble(newText));
 		});
+		testTimeTextField.setErrorMessage("Enter an integer > 0");
+		testTimeTextField.setValidationFunction(str -> FilteredTextField.VALID_INTEGER.test(str)
+			&& Integer.parseInt(str) > 0);
+		restTimeTextField.setErrorMessage("Enter an integer > 0");
+		restTimeTextField.setValidationFunction(str -> FilteredTextField.VALID_INTEGER.test(str)
+				&& Integer.parseInt(str) > 0);
 	}
 
 	// initial pattern params
@@ -140,8 +146,8 @@ public class TrialConfigController extends CustomController {
 		if (dimPercentTextField.hasValidInput())
 			currentTrial.setDimPercent(dimPercentTextField.getDoubleInput());
 		currentTrial.setMaxTests(maxTestsTextField.getIntegerInput());
-		currentTrial.setTestTime(testTimeTextField.getDoubleInput());
-		currentTrial.setRestTime(restTimeTextField.getDoubleInput());
+		currentTrial.setTestTime(testTimeTextField.getIntegerInput());
+		currentTrial.setRestTime(restTimeTextField.getIntegerInput());
 		if (trialNameTextField.hasValidInput())
 			currentTrial.setName(trialNameTextField.getText());
 	}

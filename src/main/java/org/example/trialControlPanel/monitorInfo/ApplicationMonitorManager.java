@@ -1,8 +1,7 @@
-package org.example.trialControlPanel.sceneManager;
+package org.example.trialControlPanel.monitorInfo;
 
 import javafx.geometry.Rectangle2D;
 import javafx.stage.Stage;
-import org.example.trialControlPanel.pattern.MonitorFormat;
 
 import java.util.function.Consumer;
 

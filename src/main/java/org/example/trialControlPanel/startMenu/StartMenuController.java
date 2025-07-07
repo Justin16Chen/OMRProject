@@ -5,10 +5,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
+import org.example.trialControlPanel.omrChamberDisplay.RunningTrialInfoApplication;
 import org.example.trialControlPanel.sceneManager.CustomController;
-import org.example.trialControlPanel.pattern.MonitorFormat;
-import org.example.trialControlPanel.pattern.Pattern;
-import org.example.trialControlPanel.pattern.PatternDirection;
+import org.example.trialControlPanel.monitorInfo.MonitorFormat;
 import org.example.trialControlPanel.trialConfig.TrialConfig;
 import org.example.trialControlPanel.trialConfig.TrialSaver;
 
@@ -81,11 +80,13 @@ public class StartMenuController extends CustomController {
         if (num > MonitorFormat.getNumScreens())
             num = 1;
         MonitorFormat chamberMonitorFormat = new MonitorFormat(num);
-        getSceneManager().setupOMRChamberStage(chamberMonitorFormat, queuedTrials.getFirst());
 
         chamberMonitorNumberLabel.setText("" + chamberMonitorFormat.getMonitorNumber());
         chamberMonitorResolutionLabel.setText(chamberMonitorFormat.getResolutionSpecs());
         chamberMonitorSizeLabel.setText(chamberMonitorFormat.getSizeSpecs());
+
+        getSceneManager().setupOMRChamberStage(chamberMonitorFormat, queuedTrials.getFirst());
+        new RunningTrialInfoApplication(getSceneManager()).start(new Stage());
     }
 
     @FXML

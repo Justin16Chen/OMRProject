@@ -6,12 +6,12 @@ import org.example.trialControlPanel.pattern.Pattern;
 public class TrialConfig {
     private String name;
     private final Pattern initialPattern;
-    private double testTime;
-    private double restTime;
+    private int testTime;
+    private int restTime;
     private double dimPercent;
     private int maxTests;
 
-    public TrialConfig(String name, Pattern initialPattern, double testTime, double restTime, double dimPercent, int maxTests) {
+    public TrialConfig(String name, Pattern initialPattern, int testTime, int restTime, double dimPercent, int maxTests) {
         this.name = name;
         this.initialPattern = initialPattern;
         this.testTime = testTime;
@@ -31,17 +31,17 @@ public class TrialConfig {
         return initialPattern;
     }
 
-    public double getTestTime() {
+    public int getTestTime() {
         return testTime;
     }
-    public void setTestTime(double time) {
+    public void setTestTime(int time) {
         this.testTime = time;
     }
 
-    public double getRestTime() {
+    public int getRestTime() {
         return restTime;
     }
-    public void setRestTime(double time) {
+    public void setRestTime(int time) {
         this.restTime = time;
     }
 
@@ -57,6 +57,10 @@ public class TrialConfig {
     }
     public void setMaxTests(int maxTrials) {
         this.maxTests = maxTrials;
+    }
+
+    public int getTotalTime() {
+        return maxTests * testTime + (maxTests - 1) * restTime;
     }
 
     @Override

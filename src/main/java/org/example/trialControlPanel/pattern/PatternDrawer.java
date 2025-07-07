@@ -4,6 +4,7 @@ import javafx.animation.AnimationTimer;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import org.example.trialControlPanel.monitorInfo.MonitorFormat;
 import org.example.trialControlPanel.utils.ElapsedTime;
 
 public class PatternDrawer extends AnimationTimer {

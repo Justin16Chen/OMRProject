@@ -5,8 +5,9 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.example.trialControlPanel.monitorInfo.ApplicationMonitorManager;
 import org.example.trialControlPanel.omrChamberDisplay.OMRChamberController;
-import org.example.trialControlPanel.pattern.MonitorFormat;
+import org.example.trialControlPanel.monitorInfo.MonitorFormat;
 import org.example.trialControlPanel.startMenu.StartMenuController;
 import org.example.trialControlPanel.trialConfig.TrialConfig;
 import org.example.trialControlPanel.trialConfig.TrialConfigController;
@@ -73,11 +74,7 @@ public class SceneManager {
     }
 
     public void setupOMRChamberStage(MonitorFormat monitorFormat, TrialConfig trialConfig) {
-        System.out.println("running OMR chamber with");
-        System.out.println(trialConfig.getInitialPattern());
-        OMRChamberController.setMonitorFormat(monitorFormat);
-        OMRChamberController.setTrialConfig(trialConfig);
-        OMRChamberController.initPatternDrawer();
+        OMRChamberController.initPatternDrawer(monitorFormat, trialConfig);
         OMRChamberController.startTrials();
         Rectangle2D bounds = monitorFormat.getBounds();
         OMRChamberStage.setScene(OMRChamberScene);

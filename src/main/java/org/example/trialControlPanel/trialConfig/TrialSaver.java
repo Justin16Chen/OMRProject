@@ -42,7 +42,8 @@ public class TrialSaver {
 		} catch(JSONException | IOException e) {
 			e.printStackTrace();
 		}
-		return jsonData.getJSONArray("trials");
+        assert jsonData != null;
+        return jsonData.getJSONArray("trials");
 	}
 
 	// converts a JSON object to a patternControlPanel.pattern data object
@@ -67,8 +68,8 @@ public class TrialSaver {
 						jsonPattern.getInt("darkBrightness"),
 						jsonPattern.getDouble("bandWidth")
 				),
-				jsonTrial.getDouble("testTime"),
-				jsonTrial.getDouble("restTime"),
+				jsonTrial.getInt("testTime"),
+				jsonTrial.getInt("restTime"),
 				jsonTrial.getDouble("dimPercent"),
 				jsonTrial.getInt("maxTests")
 		);
