@@ -9,10 +9,9 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.text.Font?>
 
-
-<AnchorPane prefHeight="319.0" prefWidth="509.0" xmlns="http://javafx.com/javafx/21.0.7" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.omrChamberDisplay.RunningTrialInfoController">
+<AnchorPane prefHeight="339.0" prefWidth="509.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.omrChamberDisplay.RunTrialController">
    <children>
-      <GridPane layoutX="42.0" layoutY="98.0" prefHeight="104.0" prefWidth="167.0">
+      <GridPane layoutX="42.0" layoutY="98.0" prefHeight="150.0" prefWidth="167.0">
         <columnConstraints>
           <ColumnConstraints hgrow="SOMETIMES" maxWidth="118.5" minWidth="10.0" prefWidth="65.5" />
           <ColumnConstraints hgrow="SOMETIMES" maxWidth="122.0" minWidth="10.0" prefWidth="101.5" />
@@ -22,16 +21,22 @@
           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
         </rowConstraints>
          <children>
             <Label text="Name" />
-            <Label text="Test Time" GridPane.rowIndex="1" />
-            <Label text="Rest Time" GridPane.rowIndex="2" />
+            <Label text="Test Time" GridPane.rowIndex="3" />
+            <Label text="Rest Time" GridPane.rowIndex="4" />
             <Label fx:id="nameLabel" text="Label" GridPane.columnIndex="1" />
-            <Label fx:id="testTimeLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <Label fx:id="restTimeLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-            <Label text="Total Time" GridPane.rowIndex="3" />
-            <Label fx:id="totalTimeLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+            <Label fx:id="testTimeLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+            <Label fx:id="restTimeLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+            <Label text="Total Time" GridPane.rowIndex="5" />
+            <Label fx:id="totalTimeLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+            <Label text="Cycle" GridPane.rowIndex="1" />
+            <Label fx:id="cycleLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <Label text="State" GridPane.rowIndex="2" />
+            <Label fx:id="stateLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="2" />
          </children>
       </GridPane>
       <Label layoutX="42.0" layoutY="67.0" text="Trial Info">
@@ -45,7 +50,7 @@
             <Font size="16.0" />
          </font>
       </Label>
-      <Button layoutX="42.0" layoutY="232.0" mnemonicParsing="false" onAction="#handleStopEarlyClick" text="Stop Early">
+      <Button layoutX="42.0" layoutY="259.0" mnemonicParsing="false" onAction="#handleStopEarlyClick" text="Stop Early">
          <font>
             <Font size="15.0" />
          </font>

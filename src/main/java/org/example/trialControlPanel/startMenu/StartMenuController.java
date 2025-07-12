@@ -5,10 +5,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
-import org.example.trialControlPanel.omrChamberDisplay.RunningTrialInfoApplication;
 import org.example.trialControlPanel.sceneManager.CustomController;
 import org.example.trialControlPanel.monitorInfo.MonitorFormat;
-import org.example.trialControlPanel.trialConfig.TrialConfig;
 import org.example.trialControlPanel.trialConfig.TrialSaver;
 
 import java.util.ArrayList;
@@ -16,10 +14,10 @@ import java.util.List;
 
 public class StartMenuController extends CustomController {
 
-    private ArrayList<TrialConfig> queuedTrials;
+    private ArrayList<String> queuedTrialNames;
 
-    public ArrayList<TrialConfig> getQueuedTrials() {
-        return queuedTrials;
+    public ArrayList<String> getQueuedTrialNames() {
+        return queuedTrialNames;
     }
 
     private MonitorFormat startMenuMonitorFormat, OMRChamberMonitorFormat;
@@ -36,7 +34,7 @@ public class StartMenuController extends CustomController {
     @FXML
     private void initialize() {
         queuedTrialsTextArea.setEditable(false);
-        queuedTrials = new ArrayList<>(List.of(TrialSaver.getTrial(TrialSaver.getAllTrialNames()[0])));
+        queuedTrialNames = new ArrayList<>(List.of(TrialSaver.getAllTrialNames()[0]));
         updateQueuedTrialsTextArea();
         chamberMonitorNumberLabel.setText("");
         chamberMonitorResolutionLabel.setText("");
@@ -52,9 +50,9 @@ public class StartMenuController extends CustomController {
     private TextArea queuedTrialsTextArea;
     public void updateQueuedTrialsTextArea() {
         queuedTrialsTextArea.setText("");
-        for (int i = 0; i< queuedTrials.size(); i++) {
-            String newLine = i < queuedTrials.size() - 1 ? "\n" : "";
-            queuedTrialsTextArea.setText(queuedTrialsTextArea.getText() + queuedTrials.get(i).getName() + newLine);
+        for (int i = 0; i< queuedTrialNames.size(); i++) {
+            String newLine = i < queuedTrialNames.size() - 1 ? "\n" : "";
+            queuedTrialsTextArea.setText(queuedTrialsTextArea.getText() + queuedTrialNames.get(i) + newLine);
         }
     }
 
@@ -68,7 +66,7 @@ public class StartMenuController extends CustomController {
     private Button clearQueuedTrialsButton;
     @FXML
     private void handleClearQueuedTrialsButtonClick() {
-        queuedTrials.clear();
+        queuedTrialNames.clear();
         updateQueuedTrialsTextArea();
         updateButtonsEnabled();
     }
@@ -85,8 +83,8 @@ public class StartMenuController extends CustomController {
         chamberMonitorResolutionLabel.setText(chamberMonitorFormat.getResolutionSpecs());
         chamberMonitorSizeLabel.setText(chamberMonitorFormat.getSizeSpecs());
 
-        getSceneManager().setupOMRChamberStage(chamberMonitorFormat, queuedTrials.getFirst());
-        new RunningTrialInfoApplication(getSceneManager()).start(new Stage());
+        getSceneManager().runOMRTrials(chamberMonitorFormat, TrialSaver.getTrial(queuedTrialNames.getFirst()));
+
     }
 
     @FXML
@@ -95,7 +93,7 @@ public class StartMenuController extends CustomController {
     private Label chamberMonitorNumberLabel, chamberMonitorResolutionLabel, chamberMonitorSizeLabel;
 
     public void updateButtonsEnabled() {
-        if (queuedTrials.isEmpty()) {
+        if (queuedTrialNames.isEmpty()) {
             clearQueuedTrialsButton.setDisable(true);
             runQueueButton.setDisable(true);
         }

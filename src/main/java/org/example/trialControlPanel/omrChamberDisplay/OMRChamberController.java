@@ -1,5 +1,7 @@
 package org.example.trialControlPanel.omrChamberDisplay;
 
+import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.input.KeyCode;
@@ -13,7 +15,7 @@ import java.util.Objects;
 
 public class OMRChamberController extends CustomController {
 
-	enum State {
+	public enum State {
 		TESTING, RESTING
 	}
 	private MonitorFormat monitorFormat;
@@ -22,6 +24,7 @@ public class OMRChamberController extends CustomController {
 	private boolean trialRunning;
 	private double totalSecondsRunning, currentCycleSecondsRunning; // 1 cycle = 1 test and 1 rest
 	private State state;
+	private int cycle;
 
 	@Override
 	public void setup() {
@@ -47,36 +50,49 @@ public class OMRChamberController extends CustomController {
 		trialRunning = true;
 		state = State.TESTING;
 		patternDrawer.start();
+		cycle = 1;
 
-		// manage trials on separate thread
-		new Thread(() -> {
-			double startTimeMs = System.currentTimeMillis();
-			double lastCycleFinishTime = startTimeMs;
 
-			while (trialRunning) {
-				totalSecondsRunning = (System.currentTimeMillis() - startTimeMs) / 1000.;
-				currentCycleSecondsRunning = (System.currentTimeMillis() - lastCycleFinishTime) / 1000.;
-
-				// webcam streaming here prob
-
-				/*
-				
-				*/
+		AnimationTimer timer = new AnimationTimer() {
+			private long startTime = -1;
+			private double lastCycleFinishTimeSeconds;
+			@Override
+			public void handle(long now) {
+				if (startTime == -1) {
+					startTime = now;
+					lastCycleFinishTimeSeconds = now / 1_000_000_000.;
+				}
+				long elapsedNanos = now - startTime;
+				totalSecondsRunning = elapsedNanos / 1_000_000_000.;
+				currentCycleSecondsRunning = totalSecondsRunning - lastCycleFinishTimeSeconds;
 
 				if (state == State.TESTING) {
+					updateTesting();
 
+					if (currentCycleSecondsRunning > trial.getTestTime())
+						state = State.RESTING;
 				}
 				else {
+					updateResting();
 
+					if (currentCycleSecondsRunning - trial.getTestTime() > trial.getRestTime()) {
+						lastCycleFinishTimeSeconds = now / 1_000_000_000.;
+						state = State.TESTING;
+						cycle++;
+					}
 				}
 
-				if (currentCycleSecondsRunning > trial.getTotalTime()) {
+				getSceneManager().getRunTrialController().updateUI();
+
+				if (cycle > trial.getMaxTests()) {
 					trialRunning = false;
 					patternDrawer.stop();
 					patternDrawer.showBlank();
+					stop();
 				}
 			}
-		}).start();
+		};
+		timer.start();
 	}
 	
 	public void resizeCanvas(int width, int height) {
@@ -85,9 +101,29 @@ public class OMRChamberController extends CustomController {
 	}
 
 	public int getTestRunTime() {
-		return (int) currentCycleSecondsRunning;
+		return state == State.TESTING ? (int) currentCycleSecondsRunning : 0;
 	}
 	public int getRestRunTime() {
-		return 0;
+		return state == State.RESTING ? (int) (currentCycleSecondsRunning - trial.getTestTime()) : 0;
+	}
+	public int getTotalRunTime() {
+		return (int) totalSecondsRunning;
+	}
+	public int getCycle() {
+		return cycle;
+	}
+	public State getState() {
+		return state;
+	}
+
+	private void updateTesting() {
+		if (!patternDrawer.isPlaying())
+			patternDrawer.start();
+	}
+	private void updateResting() {
+		if (patternDrawer.isPlaying()) {
+			patternDrawer.stop();
+			patternDrawer.showBlank();
+		}
 	}
 }
