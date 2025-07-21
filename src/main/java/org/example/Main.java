@@ -3,8 +3,8 @@ package org.example;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import org.example.cameraCode.CameraManager;
+import org.example.trialControlPanel.sceneManager.Core;
 import org.example.trialControlPanel.trialConfig.TrialSaver;
-import org.example.trialControlPanel.sceneManager.SceneManager;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,37 +14,24 @@ public class Main extends Application {
     private static final int cameraFPS = 30;
 
     public static void main(String[] args) {
-        //startCameraTracking();
         launch(args);
-        // runSSDEvaluations();
+    }
+
+    private final Core core;
+
+    public Main() {
+        CameraManager cameraManager = new CameraManager(1);
+        core = new Core(cameraManager);
+        cameraManager.clearFolder();
     }
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void start(Stage primaryStage) {
         TrialSaver.initializeTrialSaver();
-        SceneManager sceneManager = new SceneManager();
-        sceneManager.init(primaryStage);
+        core.init(primaryStage);
     }
 
-    private static void startCameraTracking() {
-        Thread cameraThread = new Thread(() -> {
-            double time = System.currentTimeMillis();
-            double lastUpdateTime = time;
-            double millisPerFrame = 1000.0 / cameraFPS;
-            CameraManager cm = new CameraManager();
-
-            while (true) {
-                time = System.currentTimeMillis();
-                if(time - lastUpdateTime > millisPerFrame) {
-                    cm.update();
-                    lastUpdateTime = time;
-                }
-            }
-        });
-        cameraThread.start();
-    }
-
-    private static void runSSDEvaluations() {
+    private void runSSDEvaluations() {
         String pythonPath = "C:\\Users\\justi\\anaconda3\\envs\\omrEnv\\python.exe";
         String scriptPath = "python\\omrPythonSide.py";
         ProcessBuilder pb = new ProcessBuilder(pythonPath, scriptPath);

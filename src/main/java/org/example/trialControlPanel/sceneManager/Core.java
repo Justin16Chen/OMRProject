@@ -5,6 +5,7 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.example.cameraCode.CameraManager;
 import org.example.trialControlPanel.monitorInfo.ApplicationMonitorManager;
 import org.example.trialControlPanel.omrChamberDisplay.OMRChamberController;
 import org.example.trialControlPanel.monitorInfo.MonitorFormat;
@@ -13,10 +14,12 @@ import org.example.trialControlPanel.startMenu.StartMenuController;
 import org.example.trialControlPanel.trialConfig.TrialConfig;
 import org.example.trialControlPanel.trialConfig.TrialConfigController;
 
-public class SceneManager {
+import java.io.IOException;
+
+public class Core {
 
     public static FXMLLoader getLoaderFromResources(String filePath) {
-        return new FXMLLoader(SceneManager.class.getResource(filePath));
+        return new FXMLLoader(Core.class.getResource(filePath));
     }
 
     private Stage primaryStage;
@@ -32,6 +35,16 @@ public class SceneManager {
     private Scene runTrialScene;
     private RunTrialController runTrialController;
 
+    private final CameraManager cameraManager;
+
+    public Core(CameraManager cameraManager) {
+        this.cameraManager = cameraManager;
+    }
+
+    public CameraManager getCameraManager() {
+        return cameraManager;
+    }
+
     public void init(Stage primaryStage) {
         try {
             // setup stages first so controllers don't get null pointers when calling getters
@@ -46,29 +59,10 @@ public class SceneManager {
             runTrialStage.setTitle("Current Trial Info");
 
             // load FXML and controllers
-            FXMLLoader loader = getLoaderFromResources("/patternControlPanelFXML/StartMenu.fxml");
-            startMenuScene = new Scene(loader.load());
-            startMenuController = loader.getController();
-            startMenuController.setSceneManager(this);
-            startMenuController.setStage(primaryStage);
-
-            FXMLLoader loader2 = getLoaderFromResources("/patternControlPanelFXML/TrialConfig.fxml");
-            trialConfigScene = new Scene(loader2.load());
-            trialConfigController = loader2.getController();
-            trialConfigController.setSceneManager(this);
-            trialConfigController.setStage(primaryStage);
-
-            FXMLLoader loader3 = getLoaderFromResources("/patternControlPanelFXML/OMRChamber.fxml");
-            OMRChamberScene = new Scene(loader3.load());
-            OMRChamberController = loader3.getController();
-            OMRChamberController.setSceneManager(this);
-            OMRChamberController.setStage(OMRChamberStage);
-
-            FXMLLoader loader4 = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/RunningTrialInfo.fxml"));
-            runTrialScene = new Scene(loader4.load());
-            runTrialController = loader4.getController();
-            runTrialController.setSceneManager(this);
-            runTrialController.setStage(runTrialStage);
+            loadStartMenu();
+            loadTrialConfig();
+            loadOMRChamber();
+            loadRunTrial();
 
             // setup stages
             primaryStage.setScene(startMenuScene);
@@ -103,10 +97,42 @@ public class SceneManager {
         OMRChamberStage.show();
 
         runTrialController.setTrial(trialConfig);
-        runTrialController.updateUI();
+        runTrialController.updateUILabels();
         getRunTrialStage().show();
 
         OMRChamberController.startTrials();
+    }
+
+    public void loadStartMenu() throws IOException {
+        FXMLLoader loader = getLoaderFromResources("/patternControlPanelFXML/StartMenu.fxml");
+        startMenuScene = new Scene(loader.load());
+        startMenuController = loader.getController();
+        startMenuController.setCore(this);
+        startMenuController.setStage(primaryStage);
+    }
+
+    public void loadTrialConfig() throws IOException {
+        FXMLLoader loader = getLoaderFromResources("/patternControlPanelFXML/TrialConfig.fxml");
+        trialConfigScene = new Scene(loader.load());
+        trialConfigController = loader.getController();
+        trialConfigController.setCore(this);
+        trialConfigController.setStage(primaryStage);
+    }
+
+    public void loadOMRChamber() throws IOException {
+        FXMLLoader loader = getLoaderFromResources("/patternControlPanelFXML/OMRChamber.fxml");
+        OMRChamberScene = new Scene(loader.load());
+        OMRChamberController = loader.getController();
+        OMRChamberController.setCore(this);
+        OMRChamberController.setStage(OMRChamberStage);
+    }
+
+    public void loadRunTrial() throws IOException {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/RunningTrialInfo.fxml"));
+        runTrialScene = new Scene(loader.load());
+        runTrialController = loader.getController();
+        runTrialController.setCore(this);
+        runTrialController.setStage(runTrialStage);
     }
 
     public Stage getPrimaryStage() {

@@ -44,6 +44,9 @@ public class TrialConfig {
     public void setRestTime(int time) {
         this.restTime = time;
     }
+    public int getCycleTime() {
+        return restTime + testTime;
+    }
 
     public int getDimAmount() {
         return dimAmount;

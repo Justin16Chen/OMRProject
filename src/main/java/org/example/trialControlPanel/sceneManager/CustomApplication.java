@@ -3,13 +3,13 @@ package org.example.trialControlPanel.sceneManager;
 import javafx.application.Application;
 
 public abstract class CustomApplication extends Application {
-    private final SceneManager sceneManager;
+    private final Core core;
 
-    public CustomApplication(SceneManager sceneManager) {
-        this.sceneManager = sceneManager;
+    public CustomApplication(Core core) {
+        this.core = core;
     }
 
-    public SceneManager getSceneManager() {
-        return sceneManager;
+    public Core getCore() {
+        return core;
     }
 }

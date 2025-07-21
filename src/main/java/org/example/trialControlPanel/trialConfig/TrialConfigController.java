@@ -10,6 +10,8 @@ import org.example.trialControlPanel.pattern.*;
 import org.example.trialControlPanel.pattern.PatternDrawer.SimulatedSurface;
 import org.example.trialControlPanel.utils.FilteredTextField;
 
+import java.io.IOException;
+
 public class TrialConfigController extends CustomController {
 	@FXML
 	public void initialize() {
@@ -79,7 +81,7 @@ public class TrialConfigController extends CustomController {
 	@Override
 	public void setup() {
 		TrialConfig initialTrial = TrialSaver.NEW_DEFAULT_TRIAL;
-		patternPreviewDrawer = new PatternDrawer(getSceneManager().getStartMenuController().getStartMenuMonitorFormat(), initialTrial.getInitialPattern(), patternPreviewCanvas, SimulatedSurface.FLAT);
+		patternPreviewDrawer = new PatternDrawer(getCore().getStartMenuController().getStartMenuMonitorFormat(), initialTrial.getInitialPattern(), patternPreviewCanvas, SimulatedSurface.FLAT);
 		useTrial(TrialSaver.NEW_DEFAULT_TRIAL);
 	}
 	@FXML
@@ -194,12 +196,16 @@ public class TrialConfigController extends CustomController {
 	}
 	@FXML
 	private void handleBackToStartClick() {
-		getSceneManager().getPrimaryStage().setScene(getSceneManager().getStartMenuScene());
-		getSceneManager().getStartMenuController().updateDefaultQueuedTrials();
-	}
+		try {
+			getCore().loadStartMenu();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		getCore().getPrimaryStage().setScene(getCore().getStartMenuScene());
+    }
 	@FXML
 	public void handleEditClick() {
-		new SavedTrialsApplication(getSceneManager()).start(new Stage());
+		new SavedTrialsApplication(getCore()).start(new Stage());
 	}
 	@FXML
 	private Button saveAsButton;

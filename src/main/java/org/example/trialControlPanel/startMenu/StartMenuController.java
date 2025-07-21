@@ -5,14 +5,13 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
-import org.example.trialControlPanel.omrChamberDisplay.RunningTrialInfoApplication;
+import org.example.cameraCode.CameraManager;
 import org.example.trialControlPanel.sceneManager.CustomController;
 import org.example.trialControlPanel.monitorInfo.MonitorFormat;
-import org.example.trialControlPanel.trialConfig.TrialConfig;
 import org.example.trialControlPanel.trialConfig.TrialSaver;
+import org.example.trialControlPanel.utils.FilteredTextField;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class StartMenuController extends CustomController {
 
@@ -38,12 +37,26 @@ public class StartMenuController extends CustomController {
         queuedTrialsTextArea.setEditable(false);
         queuedTrialNames = new ArrayList<>();
         updateDefaultQueuedTrials();
+
+        cameraPortTextField.setErrorMessage("Camera not found");
+        cameraPortTextField.getTextField().setText("0");
+        cameraPortTextField.setCheckInputType(FilteredTextField.CheckInputType.ON_COMMAND);
+        cameraPortTextField.getTextField().textProperty().addListener((obs, o, n) -> {
+            if (!o.equals(n))
+                previewCameraButton.setDisable(false);
+        });
+
         chamberMonitorNumberLabel.setText("");
         chamberMonitorResolutionLabel.setText("");
         chamberMonitorSizeLabel.setText("");
     }
 
-    public void updateDefaultQueuedTrials() {
+    @Override
+    public void setup() {
+        cameraPortTextField.setValidationFunction(str -> FilteredTextField.VALID_INTEGER.test(str) && getCore().getCameraManager().isConnected());
+    }
+
+    private void updateDefaultQueuedTrials() {
         queuedTrialNames.clear();
         if (TrialSaver.getAllTrialNames().length > 0)
             queuedTrialNames.add(TrialSaver.getAllTrialNames()[0]);
@@ -52,13 +65,13 @@ public class StartMenuController extends CustomController {
 
     @FXML
     private void handleCreateTrialButtonClick() {
-        getSceneManager().getPrimaryStage().setScene(getSceneManager().getTrialConfigScene());
-        getSceneManager().getTrialConfigController().initialize();
+        getCore().getPrimaryStage().setScene(getCore().getTrialConfigScene());
+        getCore().getTrialConfigController().initialize();
     }
     @FXML
     private void handleEditTrialButtonClick() {
-        getSceneManager().getPrimaryStage().setScene(getSceneManager().getTrialConfigScene());
-        getSceneManager().getTrialConfigController().handleEditClick();
+        getCore().getPrimaryStage().setScene(getCore().getTrialConfigScene());
+        getCore().getTrialConfigController().handleEditClick();
     }
 
     @FXML
@@ -73,7 +86,7 @@ public class StartMenuController extends CustomController {
 
     @FXML
     private void handleQueueTrialButtonClick() {
-        QueueTrialApplication queueTrialApplication = new QueueTrialApplication(getSceneManager());
+        QueueTrialApplication queueTrialApplication = new QueueTrialApplication(getCore());
         queueTrialApplication.start(new Stage());
     }
 
@@ -98,8 +111,29 @@ public class StartMenuController extends CustomController {
         chamberMonitorResolutionLabel.setText(chamberMonitorFormat.getResolutionSpecs());
         chamberMonitorSizeLabel.setText(chamberMonitorFormat.getSizeSpecs());
 
-        getSceneManager().setupOMRChamberStage(chamberMonitorFormat, TrialSaver.getTrial(queuedTrialNames.getFirst()));
-        new RunningTrialInfoApplication(getSceneManager()).start(new Stage());
+        getCore().runOMRTrials(chamberMonitorFormat, TrialSaver.getTrial(queuedTrialNames.getFirst()));
+    }
+
+    @FXML
+    private FilteredTextField cameraPortTextField;
+    @FXML
+    private Button previewCameraButton;
+    @FXML
+    private void handlePreviewCameraButtonClick() {
+        CameraManager cm = getCore().getCameraManager();
+        try {
+            int portIndex = cameraPortTextField.getIntegerInput();
+            if (portIndex != cm.getDevicePort()) {
+                cm.trySetDevicePort(portIndex);
+                previewCameraButton.setDisable(!cm.isConnected());
+            }
+        } catch (NumberFormatException e) {
+            previewCameraButton.setDisable(true);
+        }
+        cameraPortTextField.hasValidInput(); // update error on text field
+
+        if (cm.isConnected())
+            new CameraPreviewApplication(getCore()).start(new Stage());
     }
 
     @FXML

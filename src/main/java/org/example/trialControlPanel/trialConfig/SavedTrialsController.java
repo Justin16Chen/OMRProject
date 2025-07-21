@@ -14,9 +14,9 @@ public class SavedTrialsController extends CustomController {
 	private void handleSelectClick() {
 		String selectedName = trialSelectDropdown.getValue();
 		if (selectedName != null) {
-			getSceneManager().getTrialConfigController().useTrial(TrialSaver.getTrial(selectedName));
+			getCore().getTrialConfigController().useTrial(TrialSaver.getTrial(selectedName));
 			getStage().close();
-			getSceneManager().getTrialConfigController().updateSaveButtonsEnabled();
+			getCore().getTrialConfigController().updateSaveButtonsEnabled();
 		}
 		else
 			throw new IllegalStateException("selected trial name cannot be null"); // should never run
@@ -33,14 +33,14 @@ public class SavedTrialsController extends CustomController {
 		if (trialSelectDropdown.getItems().isEmpty())
 			clearAllButton.setDisable(true);
 
-		getSceneManager().getTrialConfigController().updateSaveButtonsEnabled();
+		getCore().getTrialConfigController().updateSaveButtonsEnabled();
 	}
 	@FXML
 	private void handleClearAllClick() {
 		TrialSaver.clearAllTrials();
 		updateDropdown();
 		clearAllButton.setDisable(true);
-		getSceneManager().getTrialConfigController().updateSaveButtonsEnabled();
+		getCore().getTrialConfigController().updateSaveButtonsEnabled();
 	}
 	
 	@FXML

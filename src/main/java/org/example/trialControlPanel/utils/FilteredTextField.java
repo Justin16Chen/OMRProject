@@ -152,7 +152,7 @@ public class FilteredTextField extends VBox {
     }
     
     /**
-     * checks the text field and returns whether or not the current text is valid
+     * checks the text field and returns whether the current text is valid
 	 * also updates the error message
      */
     public boolean hasValidInput() {
@@ -168,22 +168,16 @@ public class FilteredTextField extends VBox {
 
 	/**
 	 * casts the text to an integer
-	 * throws an error if the text cannot be casted
+	 * throws an error if the text cannot be cast
 	 */
     public int getIntegerInput() {
-    	return Integer.valueOf(textField.getText());
+    	return Integer.parseInt(textField.getText());
     }
 	/**
 	 * casts the text to a double
-	 * throws an error if the text cannot be casted
+	 * throws an error if the text cannot be cast
 	 */
     public double getDoubleInput() {
-    	return Double.valueOf(textField.getText());
-    }
-	/**
-	 * returns whatever is in the text field
-	 */
-    public String getTextInput() {
-    	return textField.getText();
+    	return Double.parseDouble(textField.getText());
     }
 }

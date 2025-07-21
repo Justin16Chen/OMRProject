@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+
+<AnchorPane prefHeight="359.0" prefWidth="426.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.startMenu.CameraPreviewController">
+   <children>
+      <ImageView fx:id="cameraImageView" fitHeight="234.0" fitWidth="288.0" layoutX="69.0" layoutY="83.0" pickOnBounds="true" preserveRatio="true" />
+      <Label layoutX="152.0" layoutY="48.0" text="Camera Stream">
+         <font>
+            <Font size="18.0" />
+         </font>
+      </Label>
+   </children>
+</AnchorPane>

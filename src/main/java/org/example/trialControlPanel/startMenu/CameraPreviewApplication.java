@@ -1,4 +1,4 @@
-package org.example.trialControlPanel.trialConfig;
+package org.example.trialControlPanel.startMenu;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -6,27 +6,27 @@ import javafx.stage.Stage;
 import org.example.trialControlPanel.sceneManager.Core;
 import org.example.trialControlPanel.sceneManager.CustomApplication;
 
-public class SavedTrialsApplication extends CustomApplication {
-    public SavedTrialsApplication(Core core) {
+public class CameraPreviewApplication extends CustomApplication {
+    public CameraPreviewApplication(Core core) {
         super(core);
     }
 
     @Override
     public void start(Stage stage) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/SavedTrials.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/CameraPreview.fxml"));
 
-            stage.setTitle("Saved Trials");
+            stage.setTitle("Camera Preview");
             stage.setScene(new Scene(loader.load()));
             stage.show();
 
-            SavedTrialsController controller = loader.getController();
+            CameraPreviewController controller = loader.getController();
             controller.setCore(getCore());
             controller.setStage(stage);
+            controller.setup();
 
         } catch(Exception e) {
-            System.out.println("SAVED TRIALS APP FAILED TO LAUNCH");
+            System.out.println("CAMERA PREVIEW APP FAILED TO LAUNCH");
         }
     }
-
 }

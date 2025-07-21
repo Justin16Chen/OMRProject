@@ -4,13 +4,13 @@ import javafx.stage.Stage;
 
 public abstract class CustomController {
     private Stage stage;
-    private SceneManager sceneManager;
+    private Core core;
 
-    public void setSceneManager(SceneManager sceneManager) {
-        this.sceneManager = sceneManager;
+    public void setCore(Core core) {
+        this.core = core;
     }
-    public SceneManager getSceneManager() {
-        return sceneManager;
+    public Core getCore() {
+        return core;
     }
 
     public void setStage(Stage stage) {
@@ -20,6 +20,6 @@ public abstract class CustomController {
         return stage;
     }
 
-    // can be used to set up anything dependent on sceneManager
+    // can be used to set up anything dependent on core
     public void setup() {}
 }

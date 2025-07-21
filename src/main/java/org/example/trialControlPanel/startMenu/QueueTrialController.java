@@ -17,9 +17,9 @@ public class QueueTrialController extends CustomController {
 
     @FXML
     private void handleAddTrialToQueueClick() {
-        getSceneManager().getStartMenuController().getQueuedTrialNames().add(savedTrialsComboBox.getValue());
-        getSceneManager().getStartMenuController().updateQueuedTrialsTextArea();
-        getSceneManager().getStartMenuController().updateButtonsEnabled();
+        getCore().getStartMenuController().getQueuedTrialNames().add(savedTrialsComboBox.getValue());
+        getCore().getStartMenuController().updateQueuedTrialsTextArea();
+        getCore().getStartMenuController().updateButtonsEnabled();
         getStage().close();
     }
 }

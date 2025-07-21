@@ -13,8 +13,8 @@ public class TestMain {
             double lastUpdateTime = time;
             double millisPerFrame = 1000.0 / cameraFPS;
 
-            CameraManager cm = new CameraManager();
-            cm.setRecording(true);
+            CameraManager cm = new CameraManager(1);
+            cm.startRecording();
 
             while (true) {
                 time = System.currentTimeMillis();

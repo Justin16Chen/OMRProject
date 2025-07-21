@@ -1,11 +1,17 @@
 package org.example.cameraCode;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+import javafx.scene.image.Image;
+import javafx.scene.image.PixelFormat;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritableImage;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
+import org.opencv.imgproc.Imgproc;
 import org.opencv.videoio.VideoCapture;
 
 public class CameraManager {
@@ -24,42 +30,119 @@ public class CameraManager {
         System.out.println("successfully loaded opencv dll");
     }
 
-    public static final String rawImagesPath = "cameraImages";
+    public static final String RAW_IMAGES_PATH = "cameraImages";
 
-    private final VideoCapture cap;
+    private VideoCapture cap;
     private final Mat image;
     private int i;
-    private boolean recording;
+    private boolean connected, recording, savePermanentImages;
+    private int devicePort;
 
-    public CameraManager() {
+    public CameraManager(int devicePort) {
         image = new Mat();
-        cap = new VideoCapture(0);
+        this.devicePort = devicePort;
+        cap = new VideoCapture(devicePort);
         if(!cap.isOpened()) {
             System.out.println("cannot open camera, exiting");
             return;
         }
+        connected = true;
         i = 0;
         recording = false;
+        savePermanentImages = true;
+    }
+    public boolean trySetDevicePort(int index) {
+        cap = new VideoCapture(index);
+        devicePort = index;
+        connected = cap.isOpened();
+        return connected;
     }
     public void update() {
-        if(!recording)
+        if (!recording)
             return;
-
-        if(trySaveImage())
-            i++;
+        if(savePermanentImages) {
+            if (trySaveImage())
+                i++;
+        }
+        else
+            cap.read(image);
     }
 
-    public void setRecording(boolean isRecording) {
-        recording = isRecording;
+    public int getDevicePort() {
+        return devicePort;
+    }
+    public boolean isConnected() {
+        return connected;
+    }
+    public void startRecording() {
+        recording = true;
+    }
+    public void stopRecording() {
+        recording = false;
+    }
+    public void setSavePermanentImages(boolean savePermanent) {
+        this.savePermanentImages = savePermanent;
     }
 
     private boolean trySaveImage() {
         if(cap.read(image)) {
             if(image.empty())
                 return false;
-            Imgcodecs.imwrite(rawImagesPath + "\\" + i + ".png", image);
+            Imgcodecs.imwrite(RAW_IMAGES_PATH + "\\" + i + ".png", image);
             return true;
         }
         return false;
+    }
+
+    public void clearFolder() {
+        File folder = new File(RAW_IMAGES_PATH);
+        File[] files = folder.listFiles();
+        if (files != null)
+            for (File file : files)
+                file.delete();
+    }
+
+    public Image getLatestImage() {
+        return matToImage(image);
+    }
+
+    private Image matToImage(Mat mat) {
+        try {
+            // Convert to BGR if needed
+            if (mat.channels() == 1) {
+                Imgproc.cvtColor(mat, mat, Imgproc.COLOR_GRAY2BGR);
+            } else if (mat.channels() == 4) {
+                Imgproc.cvtColor(mat, mat, Imgproc.COLOR_BGRA2BGR);
+            }
+
+            int width = mat.width();
+            int height = mat.height();
+            byte[] data = new byte[width * height * (int)mat.elemSize()];
+            mat.get(0, 0, data);
+
+            WritableImage image = new WritableImage(width, height);
+            PixelWriter pw = image.getPixelWriter();
+
+            pw.setPixels(0, 0, width, height,
+                    PixelFormat.getByteBgraInstance(),
+                    convertBGRtoBGRA(data, width, height),
+                    0, width * 4);
+
+            return image;
+        } catch (Exception e) {
+            System.err.println("Failed to convert Mat to Image: " + e);
+            return null;
+        }
+    }
+
+    private byte[] convertBGRtoBGRA(byte[] bgr, int width, int height) {
+        byte[] bgra = new byte[width * height * 4];
+        for (int i = 0, j = 0; i < bgr.length; i += 3, j += 4) {
+            bgra[j] = bgr[i];       // B
+            bgra[j + 1] = bgr[i + 1]; // G
+            bgra[j + 2] = bgr[i + 2]; // R
+            bgra[j + 3] = (byte)255;  // A (opaque)
+        }
+        return bgra;
     }
 }

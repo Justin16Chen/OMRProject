@@ -4,12 +4,12 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import org.example.trialControlPanel.sceneManager.CustomApplication;
-import org.example.trialControlPanel.sceneManager.SceneManager;
+import org.example.trialControlPanel.sceneManager.Core;
 
 public class QueueTrialApplication extends CustomApplication {
 
-    public QueueTrialApplication(SceneManager sceneManager) {
-        super(sceneManager);
+    public QueueTrialApplication(Core core) {
+        super(core);
     }
 
     @Override
@@ -17,12 +17,12 @@ public class QueueTrialApplication extends CustomApplication {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/QueueTrial.fxml"));
 
-            stage.setTitle("Start Menu");
+            stage.setTitle("Trial Queue");
             stage.setScene(new Scene(loader.load()));
             stage.show();
 
             QueueTrialController controller = loader.getController();
-            controller.setSceneManager(getSceneManager());
+            controller.setCore(getCore());
             controller.setStage(stage);
             controller.updateSavedTrialsComboBox();
 

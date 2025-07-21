@@ -2,19 +2,21 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="339.0" prefWidth="509.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.omrChamberDisplay.RunTrialController">
+<AnchorPane prefHeight="361.0" prefWidth="509.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.omrChamberDisplay.RunTrialController">
    <children>
-      <GridPane layoutX="42.0" layoutY="98.0" prefHeight="150.0" prefWidth="167.0">
+      <GridPane layoutX="42.0" layoutY="98.0" prefHeight="178.0" prefWidth="167.0">
         <columnConstraints>
-          <ColumnConstraints hgrow="SOMETIMES" maxWidth="118.5" minWidth="10.0" prefWidth="65.5" />
-          <ColumnConstraints hgrow="SOMETIMES" maxWidth="122.0" minWidth="10.0" prefWidth="101.5" />
+          <ColumnConstraints hgrow="SOMETIMES" maxWidth="118.5" minWidth="10.0" prefWidth="75.5" />
+          <ColumnConstraints hgrow="SOMETIMES" maxWidth="122.0" minWidth="10.0" prefWidth="91.5" />
         </columnConstraints>
         <rowConstraints>
           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
@@ -28,15 +30,35 @@
             <Label text="Name" />
             <Label text="Test Time" GridPane.rowIndex="3" />
             <Label text="Rest Time" GridPane.rowIndex="4" />
-            <Label fx:id="nameLabel" text="Label" GridPane.columnIndex="1" />
-            <Label fx:id="testTimeLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-            <Label fx:id="restTimeLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="4" />
             <Label text="Total Time" GridPane.rowIndex="5" />
-            <Label fx:id="totalTimeLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-            <Label text="Cycle" GridPane.rowIndex="1" />
-            <Label fx:id="cycleLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <Label text="State" GridPane.rowIndex="2" />
-            <Label fx:id="stateLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <Label text="Cycle" GridPane.rowIndex="2" />
+            <Label text="State" GridPane.rowIndex="1" />
+            <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
+               <children>
+                  <Label fx:id="testTimeLabel" text="Label" />
+                  <ProgressBar fx:id="testTimeProgress" prefWidth="200.0" progress="0.0" />
+               </children>
+            </VBox>
+            <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="4">
+               <children>
+                  <Label fx:id="restTimeLabel" text="Label" />
+                  <ProgressBar fx:id="restTimeProgress" prefWidth="200.0" progress="0.0" />
+               </children>
+            </VBox>
+            <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="5">
+               <children>
+                  <Label fx:id="totalTimeLabel" text="Label" />
+                  <ProgressBar fx:id="totalTimeProgress" prefWidth="200.0" progress="0.0" />
+               </children>
+            </VBox>
+            <Label fx:id="stateLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <Label fx:id="nameLabel" text="Label" GridPane.columnIndex="1" />
+            <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
+               <children>
+                  <Label fx:id="cycleLabel" text="Label" />
+                  <ProgressBar fx:id="cycleProgress" prefWidth="200.0" progress="0.0" />
+               </children>
+            </VBox>
          </children>
       </GridPane>
       <Label layoutX="42.0" layoutY="67.0" text="Trial Info">
@@ -50,7 +72,7 @@
             <Font size="16.0" />
          </font>
       </Label>
-      <Button layoutX="42.0" layoutY="259.0" mnemonicParsing="false" onAction="#handleStopEarlyClick" text="Stop Early">
+      <Button layoutX="50.0" layoutY="296.0" mnemonicParsing="false" onAction="#handleStopEarlyClick" text="Stop Early">
          <font>
             <Font size="15.0" />
          </font>
