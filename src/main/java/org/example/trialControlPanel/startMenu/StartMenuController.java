@@ -5,8 +5,10 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
+import org.example.trialControlPanel.omrChamberDisplay.RunningTrialInfoApplication;
 import org.example.trialControlPanel.sceneManager.CustomController;
 import org.example.trialControlPanel.monitorInfo.MonitorFormat;
+import org.example.trialControlPanel.trialConfig.TrialConfig;
 import org.example.trialControlPanel.trialConfig.TrialSaver;
 
 import java.util.ArrayList;
@@ -34,16 +36,29 @@ public class StartMenuController extends CustomController {
     @FXML
     private void initialize() {
         queuedTrialsTextArea.setEditable(false);
-        queuedTrialNames = new ArrayList<>(List.of(TrialSaver.getAllTrialNames()[0]));
-        updateQueuedTrialsTextArea();
+        queuedTrialNames = new ArrayList<>();
+        updateDefaultQueuedTrials();
         chamberMonitorNumberLabel.setText("");
         chamberMonitorResolutionLabel.setText("");
         chamberMonitorSizeLabel.setText("");
     }
 
+    public void updateDefaultQueuedTrials() {
+        queuedTrialNames.clear();
+        if (TrialSaver.getAllTrialNames().length > 0)
+            queuedTrialNames.add(TrialSaver.getAllTrialNames()[0]);
+        updateQueuedTrialsTextArea();
+    }
+
     @FXML
     private void handleCreateTrialButtonClick() {
         getSceneManager().getPrimaryStage().setScene(getSceneManager().getTrialConfigScene());
+        getSceneManager().getTrialConfigController().initialize();
+    }
+    @FXML
+    private void handleEditTrialButtonClick() {
+        getSceneManager().getPrimaryStage().setScene(getSceneManager().getTrialConfigScene());
+        getSceneManager().getTrialConfigController().handleEditClick();
     }
 
     @FXML
@@ -83,8 +98,8 @@ public class StartMenuController extends CustomController {
         chamberMonitorResolutionLabel.setText(chamberMonitorFormat.getResolutionSpecs());
         chamberMonitorSizeLabel.setText(chamberMonitorFormat.getSizeSpecs());
 
-        getSceneManager().runOMRTrials(chamberMonitorFormat, TrialSaver.getTrial(queuedTrialNames.getFirst()));
-
+        getSceneManager().setupOMRChamberStage(chamberMonitorFormat, TrialSaver.getTrial(queuedTrialNames.getFirst()));
+        new RunningTrialInfoApplication(getSceneManager()).start(new Stage());
     }
 
     @FXML

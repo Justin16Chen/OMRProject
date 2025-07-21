@@ -15,7 +15,7 @@ import java.util.ArrayList;
 
 public class TrialSaver {
 	public static final String FILE_PATH = "SavedTrials.json";
-	public static final TrialConfig DEFAULT_TRIAL = new TrialConfig("defaultTrial", new Pattern(PatternDirection.CLOCKWISE, 1, 1, 0, 1), 1, 1, 1, 1);
+	public static final TrialConfig NEW_DEFAULT_TRIAL = new TrialConfig("newTrial", new Pattern(PatternDirection.CLOCKWISE, 1, 255, 0, 1), 60, 60, 30, 5);
 	private static ArrayList<TrialConfig> trials;
 
 	public static void initializeTrialSaver() {
@@ -28,7 +28,7 @@ public class TrialSaver {
 			trials.add(trial);
 		}
 		if (trials.isEmpty())
-			trials.add(DEFAULT_TRIAL);
+			trials.add(NEW_DEFAULT_TRIAL);
 	}
 
 	// gets json trials array from file
@@ -70,7 +70,7 @@ public class TrialSaver {
 				),
 				jsonTrial.getInt("testTime"),
 				jsonTrial.getInt("restTime"),
-				jsonTrial.getDouble("dimPercent"),
+				jsonTrial.getInt("dimAmount"),
 				jsonTrial.getInt("maxTests")
 		);
 	}

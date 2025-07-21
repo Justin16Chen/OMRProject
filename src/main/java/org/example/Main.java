@@ -2,6 +2,7 @@ package org.example;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
+import org.example.cameraCode.CameraManager;
 import org.example.trialControlPanel.trialConfig.TrialSaver;
 import org.example.trialControlPanel.sceneManager.SceneManager;
 
@@ -10,8 +11,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class Main extends Application {
+    private static final int cameraFPS = 30;
 
     public static void main(String[] args) {
+        //startCameraTracking();
         launch(args);
         // runSSDEvaluations();
     }
@@ -23,7 +26,25 @@ public class Main extends Application {
         sceneManager.init(primaryStage);
     }
 
-    private void runSSDEvaluations() {
+    private static void startCameraTracking() {
+        Thread cameraThread = new Thread(() -> {
+            double time = System.currentTimeMillis();
+            double lastUpdateTime = time;
+            double millisPerFrame = 1000.0 / cameraFPS;
+            CameraManager cm = new CameraManager();
+
+            while (true) {
+                time = System.currentTimeMillis();
+                if(time - lastUpdateTime > millisPerFrame) {
+                    cm.update();
+                    lastUpdateTime = time;
+                }
+            }
+        });
+        cameraThread.start();
+    }
+
+    private static void runSSDEvaluations() {
         String pythonPath = "C:\\Users\\justi\\anaconda3\\envs\\omrEnv\\python.exe";
         String scriptPath = "python\\omrPythonSide.py";
         ProcessBuilder pb = new ProcessBuilder(pythonPath, scriptPath);

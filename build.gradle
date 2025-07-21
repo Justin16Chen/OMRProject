@@ -12,8 +12,17 @@ javafx {
     modules = [ 'javafx.controls', 'javafx.fxml' ]
 }
 
+def localProps = new Properties()
+file("local.properties").withInputStream { localProps.load(it) }
+
+def opencvJarPath = localProps['opencv.jar.path']
+if(opencvJarPath == null) {
+    throw new GradleException("Missing opencv.jar.path in local.properties")
+}
+
 dependencies {
     implementation 'org.json:json:20240303'
+    implementation files(opencvJarPath)
 }
 
 application {
