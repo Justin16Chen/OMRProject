@@ -9,7 +9,7 @@ import org.example.trialControlPanel.utils.ElapsedTime;
 
 public class PatternDrawer extends AnimationTimer {
 
-	public static enum SimulatedSurface {
+	public enum SimulatedSurface {
 		FLAT, CIRCULAR
 	}
 	private record BandInfo(double x, double width) {}
@@ -37,6 +37,9 @@ public class PatternDrawer extends AnimationTimer {
         elapsedTime = new ElapsedTime();
     }
 
+    public Pattern getPatternData() {
+        return patternData;
+    }
     public void setPatternData(Pattern newPatternData) {
         this.patternData = newPatternData;
     }
@@ -75,10 +78,26 @@ public class PatternDrawer extends AnimationTimer {
 
     @Override
     public void handle(long now) {
-        if (patternData == null) {
-            return; // Safeguard against null pattern data
+        if (patternData == null || !isPlaying()) {
+            return;
         }
 
+        GraphicsContext g = getGraphicsContext();
+
+        // Set line width and stroke color based on brightness
+        double bandWidth = patternData.getBandWidth() * monitorFormat.getVirtualPixelsPerCenti();
+        
+        // Calculate the offset and total amount of lines to draw
+        double rotationsPerSec = patternData.getSpeed() / 60;
+        double percentScreenPerSec = rotationsPerSec / 4; // percent of screen to cover in 1 second - there are 4 screens
+
+        switch (surfaceType) {
+            case FLAT -> drawFlatPattern(g, bandWidth, percentScreenPerSec);
+            case CIRCULAR -> drawCircularPattern(g, bandWidth, percentScreenPerSec);
+        }
+    }
+
+    private GraphicsContext getGraphicsContext() {
         GraphicsContext g = canvas.getGraphicsContext2D();
 
         // Clear the canvas before redrawing
@@ -92,21 +111,9 @@ public class PatternDrawer extends AnimationTimer {
         // set stripe stroke color
         Color lightColor = Color.rgb(patternData.getLightBrightness(), patternData.getLightBrightness(), patternData.getLightBrightness());
         g.setStroke(lightColor);
-
-        // Set line width and stroke color based on brightness
-        double bandWidth = patternData.getBandWidth() * monitorFormat.getVirtualPixelsPerCenti();
-        
-        // Calculate the offset and total amount of lines to draw
-        double rotationsPerSec = patternData.getSpeed() / 60;
-        double percentScreenPerSec = rotationsPerSec / 4; // percent of screen to cover in 1 second - there are 4 screens
-        
-        
-        switch (surfaceType) {
-            case FLAT -> drawFlatPattern(g, bandWidth, percentScreenPerSec);
-            case CIRCULAR -> drawCircularPattern(g, bandWidth, percentScreenPerSec);
-        }
+        return g;
     }
-    
+
     private void drawFlatPattern(GraphicsContext g, double bandWidth, double percentScreenPerSec) {
     	double pixelsPerSecondSpeed = percentScreenPerSec * monitorFormat.getWidthPixels();
         double offset = (elapsedTime.getElapsedTimeSeconds() * pixelsPerSecondSpeed) % (bandWidth * 2);

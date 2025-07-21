@@ -11,13 +11,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class Main extends Application {
-    static {
-        // loading openCV
-        System.load("C:\\Users\\czhao\\Downloads\\opencv\\build\\java\\x64\\opencv_java4110.dll");
-    }
+    private static final int cameraFPS = 30;
 
     public static void main(String[] args) {
-        startCameraTracking();
+        //startCameraTracking();
         launch(args);
         // runSSDEvaluations();
     }
@@ -30,8 +27,21 @@ public class Main extends Application {
     }
 
     private static void startCameraTracking() {
-        CameraManager cameraManager = new CameraManager();
-        cameraManager.start();
+        Thread cameraThread = new Thread(() -> {
+            double time = System.currentTimeMillis();
+            double lastUpdateTime = time;
+            double millisPerFrame = 1000.0 / cameraFPS;
+            CameraManager cm = new CameraManager();
+
+            while (true) {
+                time = System.currentTimeMillis();
+                if(time - lastUpdateTime > millisPerFrame) {
+                    cm.update();
+                    lastUpdateTime = time;
+                }
+            }
+        });
+        cameraThread.start();
     }
 
     private static void runSSDEvaluations() {

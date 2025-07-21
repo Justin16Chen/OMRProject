@@ -16,11 +16,11 @@ public class OMRChamberController extends CustomController {
 	enum State {
 		TESTING, RESTING
 	}
-	private MonitorFormat monitorFormat;
 	private TrialConfig trial;
 	private PatternDrawer patternDrawer;
 	private boolean trialRunning;
 	private double totalSecondsRunning, currentCycleSecondsRunning; // 1 cycle = 1 test and 1 rest
+	private int currentCycle;
 	private State state;
 
 	@Override
@@ -29,6 +29,7 @@ public class OMRChamberController extends CustomController {
             if (Objects.requireNonNull(e.getCode()) == KeyCode.ESCAPE) {
 				getStage().close();
 				patternDrawer.stop();
+				trialRunning = false;
 			}
 		});
 	}
@@ -37,9 +38,7 @@ public class OMRChamberController extends CustomController {
 	private Canvas canvas;
 
 	public void initPatternDrawer(MonitorFormat monitorFormat, TrialConfig trial) {
-		this.monitorFormat = monitorFormat;
 		this.trial = trial;
-
 		patternDrawer = new PatternDrawer(monitorFormat, trial.getInitialPattern(), canvas, SimulatedSurface.CIRCULAR);
 	}
 
@@ -47,33 +46,45 @@ public class OMRChamberController extends CustomController {
 		trialRunning = true;
 		state = State.TESTING;
 		patternDrawer.start();
+		currentCycle = 0;
 
 		// manage trials on separate thread
 		new Thread(() -> {
 			double startTimeMs = System.currentTimeMillis();
-			double lastCycleFinishTime = startTimeMs;
+			double lastCycleFinishTimeMs = startTimeMs;
 
 			while (trialRunning) {
 				totalSecondsRunning = (System.currentTimeMillis() - startTimeMs) / 1000.;
-				currentCycleSecondsRunning = (System.currentTimeMillis() - lastCycleFinishTime) / 1000.;
+				currentCycleSecondsRunning = (System.currentTimeMillis() - lastCycleFinishTimeMs) / 1000.;
 
 				// webcam streaming here prob
-
 				/*
 				
 				*/
 
 				if (state == State.TESTING) {
-
+					if (currentCycleSecondsRunning > trial.getTestTime()) {
+						state = State.RESTING;
+						patternDrawer.stop();
+						patternDrawer.showBlank();
+					}
 				}
 				else {
-
+					if (currentCycleSecondsRunning > trial.getTestTime() + trial.getRestTime()) {
+						state = State.TESTING;
+						lastCycleFinishTimeMs = System.currentTimeMillis();
+						patternDrawer.start();
+						patternDrawer.getPatternData().setLightBrightness(patternDrawer.getPatternData().getLightBrightness() - trial.getDimAmount());
+						System.out.println("finished cycle " + currentCycle);
+						currentCycle++;
+					}
 				}
 
-				if (currentCycleSecondsRunning > trial.getTotalTime()) {
+				if (currentCycle >= trial.getMaxTests()) {
 					trialRunning = false;
 					patternDrawer.stop();
 					patternDrawer.showBlank();
+					System.out.println("trial finished, total time = " + trial.getTotalTime());
 				}
 			}
 		}).start();

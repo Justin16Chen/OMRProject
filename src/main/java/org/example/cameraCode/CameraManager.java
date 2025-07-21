@@ -1,83 +1,65 @@
 package org.example.cameraCode;
 
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Properties;
 
-import javafx.scene.Camera;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.videoio.VideoCapture;
-import org.opencv.videoio.Videoio;
 
 public class CameraManager {
     static {
         // loading openCV
-        System.load("C:\\Users\\czhao\\Documents\\opencv\\build\\java\\x64\\opencv_java4110.dll");
+        Properties props = new Properties();
+        try {
+            props.load(new FileInputStream("local.properties"));
+            String dllPath = props.getProperty("opencv.dll.path");
+            if(dllPath == null)
+                throw new RuntimeException("Missing opencv.dll.path in local.properties");
+            System.load(dllPath);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load local.properties", e);
+        }
+        System.out.println("successfully loaded opencv dll");
     }
-    public static final int cameraFPS = 30;
-    public static final String rawImagesPath = "C:\\Users\\czhao\\Documents\\omrProject\\src\\main\\resources\\rawCameraImages";
+
+    public static final String rawImagesPath = "cameraImages";
+
     private final VideoCapture cap;
     private final Mat image;
     private int i;
+    private boolean recording;
 
     public CameraManager() {
-        System.out.println("top of construct");
-
-        cap = new VideoCapture(0);
         image = new Mat();
-        i = 0;
-        System.out.println(trySaveImage());
-        System.out.println("bottom of construct");
-    }
-    private void clearPrevImages() {
-        Path dir = Paths.get(rawImagesPath);
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
-            for (Path entry : stream) {
-                if (Files.isRegularFile(entry)) {
-                    Files.delete(entry);
-                }
-            }
-            System.out.println("Previous camera image files deleted");
-        } catch (IOException e) {
-            e.printStackTrace();
+        cap = new VideoCapture(0);
+        if(!cap.isOpened()) {
+            System.out.println("cannot open camera, exiting");
+            return;
         }
         i = 0;
+        recording = false;
     }
+    public void update() {
+        if(!recording)
+            return;
 
-    public void start() {
-        // overriding run method
-        Thread cameraThread = new Thread(() -> {
-            double time = System.currentTimeMillis();
-            double lastUpdateTime = time;
-            double millisPerFrame = 1000.0 / cameraFPS;
-            while (true) {
-                time = System.currentTimeMillis();
-                if(time - lastUpdateTime > millisPerFrame) {
-                    this.update();
-                    lastUpdateTime = time;
-                }
-            }
-        });
-        cameraThread.start();
-    }
-    private void update() {
         if(trySaveImage())
             i++;
     }
 
+    public void setRecording(boolean isRecording) {
+        recording = isRecording;
+    }
+
     private boolean trySaveImage() {
         if(cap.read(image)) {
+            if(image.empty())
+                return false;
             Imgcodecs.imwrite(rawImagesPath + "\\" + i + ".png", image);
             return true;
         }
         return false;
-    }
-
-    public static void main(String[] args) {
-        CameraManager cm = new CameraManager();
-//        cm.start();
     }
 }

@@ -21,9 +21,9 @@ public class TrialConfigController extends CustomController {
 		bandWidthTextField.setValidationFunction(input -> FilteredTextField.isDouble(input)
 				&& Double.parseDouble(input) > 0);
 
-		dimPercentTextField.setErrorMessage("Enter a number from 0-100 (inclusive)");
-		dimPercentTextField.setValidationFunction(input -> FilteredTextField.VALID_DOUBLE.test(input)
-				&& Double.parseDouble(input) >= 0 && Double.parseDouble(input) <= 100);
+		dimAmountTextField.setErrorMessage("Enter an integer from 0-255 (inclusive)");
+		dimAmountTextField.setValidationFunction(input -> FilteredTextField.VALID_INTEGER.test(input)
+				&& Integer.parseInt(input) >= 0 && Integer.parseInt(input) <= 100);
 
 		trialNameTextField.setErrorMessage("Cannot be empty");
 		trialNameTextField.setValidationFunction(FilteredTextField.NON_EMPTY);
@@ -65,7 +65,7 @@ public class TrialConfigController extends CustomController {
 
 	// trial params
 	@FXML
-	private FilteredTextField trialNameTextField, dimPercentTextField, maxTestsTextField, testTimeTextField, restTimeTextField;
+	private FilteredTextField trialNameTextField, dimAmountTextField, maxTestsTextField, testTimeTextField, restTimeTextField;
 
 
 	@FXML
@@ -78,10 +78,9 @@ public class TrialConfigController extends CustomController {
 
 	@Override
 	public void setup() {
-		String initialTrialName = TrialSaver.getAllTrialNames()[0];
-		TrialConfig initialTrial = TrialSaver.getTrial(initialTrialName);
+		TrialConfig initialTrial = TrialSaver.NEW_DEFAULT_TRIAL;
 		patternPreviewDrawer = new PatternDrawer(getSceneManager().getStartMenuController().getStartMenuMonitorFormat(), initialTrial.getInitialPattern(), patternPreviewCanvas, SimulatedSurface.FLAT);
-		useTrial(initialTrialName);
+		useTrial(TrialSaver.NEW_DEFAULT_TRIAL);
 	}
 	@FXML
 	private void handleDirectionCCClick() {
@@ -101,8 +100,8 @@ public class TrialConfigController extends CustomController {
 		brightnessDarkTextField.getTextField().setText("" + Math.round(brightnessDarkSlider.getValue()));
 	}
 
-	public void useTrial(String name) {
-		currentTrial = TrialSaver.getTrial(name);
+	public void useTrial(TrialConfig trial) {
+		currentTrial = trial;
 
 		trialNameTextField.getTextField().setText(currentTrial.getName());
 
@@ -118,7 +117,7 @@ public class TrialConfigController extends CustomController {
 		brightnessDarkTextField.getTextField().setText("" + currentTrial.getInitialPattern().getDarkBrightness());
 		bandWidthTextField.getTextField().setText("" + currentTrial.getInitialPattern().getBandWidth());
 
-		dimPercentTextField.getTextField().setText("" + currentTrial.getDimPercent());
+		dimAmountTextField.getTextField().setText("" + currentTrial.getDimAmount());
 		maxTestsTextField.getTextField().setText("" + currentTrial.getMaxTests());
 		testTimeTextField.getTextField().setText("" + currentTrial.getTestTime());
 		restTimeTextField.getTextField().setText("" + currentTrial.getRestTime());
@@ -131,7 +130,7 @@ public class TrialConfigController extends CustomController {
 				&& bandWidthTextField.hasValidInput()
 				&& brightnessLightTextField.hasValidInput()
 				&& brightnessDarkTextField.hasValidInput()
-				&& dimPercentTextField.hasValidInput();
+				&& dimAmountTextField.hasValidInput();
 	}
 
 	private void updateCurrentTrialToTextFields() {
@@ -143,8 +142,8 @@ public class TrialConfigController extends CustomController {
 			currentTrial.getInitialPattern().setBandWidth(bandWidthTextField.getDoubleInput());
 
 		currentTrial.setName("");
-		if (dimPercentTextField.hasValidInput())
-			currentTrial.setDimPercent(dimPercentTextField.getDoubleInput());
+		if (dimAmountTextField.hasValidInput())
+			currentTrial.setDimAmount(dimAmountTextField.getIntegerInput());
 		currentTrial.setMaxTests(maxTestsTextField.getIntegerInput());
 		currentTrial.setTestTime(testTimeTextField.getIntegerInput());
 		currentTrial.setRestTime(restTimeTextField.getIntegerInput());
@@ -196,9 +195,10 @@ public class TrialConfigController extends CustomController {
 	@FXML
 	private void handleBackToStartClick() {
 		getSceneManager().getPrimaryStage().setScene(getSceneManager().getStartMenuScene());
+		getSceneManager().getStartMenuController().updateDefaultQueuedTrials();
 	}
 	@FXML
-	private void handleEditClick() {
+	public void handleEditClick() {
 		new SavedTrialsApplication(getSceneManager()).start(new Stage());
 	}
 	@FXML

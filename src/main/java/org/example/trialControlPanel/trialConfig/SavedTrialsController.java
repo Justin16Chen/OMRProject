@@ -14,7 +14,7 @@ public class SavedTrialsController extends CustomController {
 	private void handleSelectClick() {
 		String selectedName = trialSelectDropdown.getValue();
 		if (selectedName != null) {
-			getSceneManager().getTrialConfigController().useTrial(selectedName);
+			getSceneManager().getTrialConfigController().useTrial(TrialSaver.getTrial(selectedName));
 			getStage().close();
 			getSceneManager().getTrialConfigController().updateSaveButtonsEnabled();
 		}

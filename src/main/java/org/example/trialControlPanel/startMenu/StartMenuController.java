@@ -16,10 +16,10 @@ import java.util.List;
 
 public class StartMenuController extends CustomController {
 
-    private ArrayList<TrialConfig> queuedTrials;
+    private ArrayList<String> queuedTrialNames;
 
-    public ArrayList<TrialConfig> getQueuedTrials() {
-        return queuedTrials;
+    public ArrayList<String> getQueuedTrialNames() {
+        return queuedTrialNames;
     }
 
     private MonitorFormat startMenuMonitorFormat, OMRChamberMonitorFormat;
@@ -36,25 +36,38 @@ public class StartMenuController extends CustomController {
     @FXML
     private void initialize() {
         queuedTrialsTextArea.setEditable(false);
-        queuedTrials = new ArrayList<>(List.of(TrialSaver.getTrial(TrialSaver.getAllTrialNames()[0])));
-        updateQueuedTrialsTextArea();
+        queuedTrialNames = new ArrayList<>();
+        updateDefaultQueuedTrials();
         chamberMonitorNumberLabel.setText("");
         chamberMonitorResolutionLabel.setText("");
         chamberMonitorSizeLabel.setText("");
     }
 
+    public void updateDefaultQueuedTrials() {
+        queuedTrialNames.clear();
+        if (TrialSaver.getAllTrialNames().length > 0)
+            queuedTrialNames.add(TrialSaver.getAllTrialNames()[0]);
+        updateQueuedTrialsTextArea();
+    }
+
     @FXML
     private void handleCreateTrialButtonClick() {
         getSceneManager().getPrimaryStage().setScene(getSceneManager().getTrialConfigScene());
+        getSceneManager().getTrialConfigController().initialize();
+    }
+    @FXML
+    private void handleEditTrialButtonClick() {
+        getSceneManager().getPrimaryStage().setScene(getSceneManager().getTrialConfigScene());
+        getSceneManager().getTrialConfigController().handleEditClick();
     }
 
     @FXML
     private TextArea queuedTrialsTextArea;
     public void updateQueuedTrialsTextArea() {
         queuedTrialsTextArea.setText("");
-        for (int i = 0; i< queuedTrials.size(); i++) {
-            String newLine = i < queuedTrials.size() - 1 ? "\n" : "";
-            queuedTrialsTextArea.setText(queuedTrialsTextArea.getText() + queuedTrials.get(i).getName() + newLine);
+        for (int i = 0; i< queuedTrialNames.size(); i++) {
+            String newLine = i < queuedTrialNames.size() - 1 ? "\n" : "";
+            queuedTrialsTextArea.setText(queuedTrialsTextArea.getText() + queuedTrialNames.get(i) + newLine);
         }
     }
 
@@ -68,7 +81,7 @@ public class StartMenuController extends CustomController {
     private Button clearQueuedTrialsButton;
     @FXML
     private void handleClearQueuedTrialsButtonClick() {
-        queuedTrials.clear();
+        queuedTrialNames.clear();
         updateQueuedTrialsTextArea();
         updateButtonsEnabled();
     }
@@ -85,7 +98,7 @@ public class StartMenuController extends CustomController {
         chamberMonitorResolutionLabel.setText(chamberMonitorFormat.getResolutionSpecs());
         chamberMonitorSizeLabel.setText(chamberMonitorFormat.getSizeSpecs());
 
-        getSceneManager().setupOMRChamberStage(chamberMonitorFormat, queuedTrials.getFirst());
+        getSceneManager().setupOMRChamberStage(chamberMonitorFormat, TrialSaver.getTrial(queuedTrialNames.getFirst()));
         new RunningTrialInfoApplication(getSceneManager()).start(new Stage());
     }
 
@@ -95,7 +108,7 @@ public class StartMenuController extends CustomController {
     private Label chamberMonitorNumberLabel, chamberMonitorResolutionLabel, chamberMonitorSizeLabel;
 
     public void updateButtonsEnabled() {
-        if (queuedTrials.isEmpty()) {
+        if (queuedTrialNames.isEmpty()) {
             clearQueuedTrialsButton.setDisable(true);
             runQueueButton.setDisable(true);
         }

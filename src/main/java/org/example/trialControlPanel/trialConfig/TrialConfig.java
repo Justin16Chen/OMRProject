@@ -8,15 +8,15 @@ public class TrialConfig {
     private final Pattern initialPattern;
     private int testTime;
     private int restTime;
-    private double dimPercent;
+    private int dimAmount;
     private int maxTests;
 
-    public TrialConfig(String name, Pattern initialPattern, int testTime, int restTime, double dimPercent, int maxTests) {
+    public TrialConfig(String name, Pattern initialPattern, int testTime, int restTime, int dimAmount, int maxTests) {
         this.name = name;
         this.initialPattern = initialPattern;
         this.testTime = testTime;
         this.restTime = restTime;
-        this.dimPercent = dimPercent;
+        this.dimAmount = dimAmount;
         this.maxTests = maxTests;
     }
 
@@ -45,11 +45,11 @@ public class TrialConfig {
         this.restTime = time;
     }
 
-    public double getDimPercent() {
-        return dimPercent;
+    public int getDimAmount() {
+        return dimAmount;
     }
-    public void setDimPercent(double percent) {
-        this.dimPercent = percent;
+    public void setDimAmount(int amount) {
+        this.dimAmount = amount;
     }
 
     public int getMaxTests() {
@@ -74,7 +74,7 @@ public class TrialConfig {
                 initialPattern,
                 testTime,
                 restTime,
-                dimPercent,
+                dimAmount,
                 maxTests
         );
     }
