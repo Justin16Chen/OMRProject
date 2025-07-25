@@ -46,6 +46,7 @@ public class FilteredTextField extends VBox {
             return false;
         }
 	};
+    public static Predicate<String> VALID_MM_SS_TIME = str -> str.matches("([0-5]\\d):([0-5]\\d)");
 
 	/**
 	 * returns true if str is not null and has a length greater than 0

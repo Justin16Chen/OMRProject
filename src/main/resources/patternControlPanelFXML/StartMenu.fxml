@@ -13,6 +13,7 @@
 <?import javafx.scene.text.Font?>
 <?import org.example.trialControlPanel.utils.FilteredTextField?>
 
+<?import org.example.trialControlPanel.utils.TimeTextField?>
 <AnchorPane prefHeight="498.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.startMenu.StartMenuController">
    <HBox layoutX="45.0" layoutY="16.0" prefHeight="465.0" prefWidth="504.0">
       <VBox prefHeight="373.0" prefWidth="264.0">
@@ -23,7 +24,7 @@
          </Label>
          <HBox prefHeight="19.0" prefWidth="272.0" spacing="10.0">
             <children>
-               <Button fx:id="createTrialButton" mnemonicParsing="false" onAction="#handleCreateTrialButtonClick" text="Create" />
+               <Button mnemonicParsing="false" onAction="#handleCreateTrialButtonClick" text="Create" />
                <Button mnemonicParsing="false" onAction="#handleEditTrialButtonClick" text="Edit" />
             </children>
             <VBox.margin>
@@ -71,11 +72,27 @@
             <VBox.margin>
                <Insets top="5.0" />
             </VBox.margin></TextArea>
+         <HBox prefHeight="6.0" prefWidth="264.0" spacing="10.0">
+            <children>
+               <Label prefHeight="20.0" prefWidth="151.0" text="Rest time between trials">
+                  <font>
+                     <Font size="14.0" />
+                  </font>
+                  <HBox.margin>
+                     <Insets top="19.0" />
+                  </HBox.margin>
+               </Label>
+               <TimeTextField fx:id="restTimeTextField"/>
+            </children>
+            <VBox.margin>
+               <Insets top="-5.0" />
+            </VBox.margin>
+         </HBox>
          <HBox prefHeight="1.0" prefWidth="264.0" spacing="10.0" VBox.vgrow="NEVER">
             <VBox.margin>
                <Insets top="10.0" />
             </VBox.margin>
-            <Button fx:id="queueTrialButton" mnemonicParsing="false" onAction="#handleQueueTrialButtonClick" text="Queue Trial" />
+            <Button mnemonicParsing="false" onAction="#handleQueueTrialButtonClick" text="Queue Trial" />
             <Button fx:id="clearQueuedTrialsButton" mnemonicParsing="false" onAction="#handleClearQueuedTrialsButtonClick" text="Clear Queue" />
             <Button fx:id="runQueueButton" mnemonicParsing="false" onAction="#handleRunQueueButtonClick" text="Run Queue" />
          </HBox>

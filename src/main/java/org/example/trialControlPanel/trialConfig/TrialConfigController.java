@@ -9,6 +9,7 @@ import org.example.trialControlPanel.sceneManager.CustomController;
 import org.example.trialControlPanel.pattern.*;
 import org.example.trialControlPanel.pattern.PatternDrawer.SimulatedSurface;
 import org.example.trialControlPanel.utils.FilteredTextField;
+import org.example.trialControlPanel.utils.TimeTextField;
 
 import java.io.IOException;
 
@@ -49,12 +50,6 @@ public class TrialConfigController extends CustomController {
 			if (brightnessLightTextField.hasValidInput())
 				brightnessLightSlider.setValue(Double.parseDouble(newText));
 		});
-		testTimeTextField.setErrorMessage("Enter an integer > 0");
-		testTimeTextField.setValidationFunction(str -> FilteredTextField.VALID_INTEGER.test(str)
-			&& Integer.parseInt(str) > 0);
-		restTimeTextField.setErrorMessage("Enter an integer > 0");
-		restTimeTextField.setValidationFunction(str -> FilteredTextField.VALID_INTEGER.test(str)
-				&& Integer.parseInt(str) > 0);
 	}
 
 	// initial pattern params
@@ -67,7 +62,9 @@ public class TrialConfigController extends CustomController {
 
 	// trial params
 	@FXML
-	private FilteredTextField trialNameTextField, dimAmountTextField, maxTestsTextField, testTimeTextField, restTimeTextField;
+	private FilteredTextField trialNameTextField, dimAmountTextField, maxTestsTextField;
+	@FXML
+	private TimeTextField testTimeTextField, restTimeTextField;
 
 
 	@FXML
@@ -121,8 +118,8 @@ public class TrialConfigController extends CustomController {
 
 		dimAmountTextField.getTextField().setText("" + currentTrial.getDimAmount());
 		maxTestsTextField.getTextField().setText("" + currentTrial.getMaxTests());
-		testTimeTextField.getTextField().setText("" + currentTrial.getTestTime());
-		restTimeTextField.getTextField().setText("" + currentTrial.getRestTime());
+		testTimeTextField.getTextField().setText(TimeTextField.secondsToMMSS(currentTrial.getTestTime()));
+		restTimeTextField.getTextField().setText(TimeTextField.secondsToMMSS(currentTrial.getRestTime()));
 
 		patternPreviewDrawer.setPatternData(currentTrial.getInitialPattern());
 	}
@@ -147,8 +144,8 @@ public class TrialConfigController extends CustomController {
 		if (dimAmountTextField.hasValidInput())
 			currentTrial.setDimAmount(dimAmountTextField.getIntegerInput());
 		currentTrial.setMaxTests(maxTestsTextField.getIntegerInput());
-		currentTrial.setTestTime(testTimeTextField.getIntegerInput());
-		currentTrial.setRestTime(restTimeTextField.getIntegerInput());
+		currentTrial.setTestTime(testTimeTextField.getSeconds());
+		currentTrial.setRestTime(restTimeTextField.getSeconds());
 		if (trialNameTextField.hasValidInput())
 			currentTrial.setName(trialNameTextField.getText());
 	}

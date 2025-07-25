@@ -10,18 +10,20 @@ import org.example.trialControlPanel.sceneManager.CustomController;
 import org.example.trialControlPanel.monitorInfo.MonitorFormat;
 import org.example.trialControlPanel.trialConfig.TrialSaver;
 import org.example.trialControlPanel.utils.FilteredTextField;
+import org.example.trialControlPanel.utils.TimeTextField;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 public class StartMenuController extends CustomController {
 
     private ArrayList<String> queuedTrialNames;
-
     public ArrayList<String> getQueuedTrialNames() {
         return queuedTrialNames;
     }
 
-    private MonitorFormat startMenuMonitorFormat, OMRChamberMonitorFormat;
+    private MonitorFormat startMenuMonitorFormat;
     public MonitorFormat getStartMenuMonitorFormat() {
         return startMenuMonitorFormat;
     }
@@ -30,6 +32,7 @@ public class StartMenuController extends CustomController {
         monitorNumberLabel.setText("" + mf.getMonitorNumber());
         monitorResolutionLabel.setText(mf.getResolutionSpecs());
         monitorSizeLabel.setText(mf.getSizeSpecs());
+        System.out.println("setting start menu mf to " + mf);
     }
 
     @FXML
@@ -45,6 +48,9 @@ public class StartMenuController extends CustomController {
             if (!o.equals(n))
                 previewCameraButton.setDisable(false);
         });
+        restTimeTextField.getTextField().textProperty().addListener((obs, oldVal, newVal) ->
+            runQueueButton.setDisable(!restTimeTextField.hasValidInput())
+        );
 
         chamberMonitorNumberLabel.setText("");
         chamberMonitorResolutionLabel.setText("");
@@ -84,6 +90,8 @@ public class StartMenuController extends CustomController {
             queuedTrialsTextArea.setText(queuedTrialsTextArea.getText() + queuedTrialNames.get(i) + newLine);
         }
     }
+    @FXML
+    private TimeTextField restTimeTextField;
 
     @FXML
     private void handleQueueTrialButtonClick() {
@@ -112,7 +120,7 @@ public class StartMenuController extends CustomController {
         chamberMonitorResolutionLabel.setText(chamberMonitorFormat.getResolutionSpecs());
         chamberMonitorSizeLabel.setText(chamberMonitorFormat.getSizeSpecs());
 
-        getCore().runOMRTrials(chamberMonitorFormat, TrialSaver.getTrial(queuedTrialNames.getFirst()));
+        getCore().runOMRTrials(chamberMonitorFormat, TrialSaver.getTrial(queuedTrialNames.getFirst()), restTimeTextField.getSeconds());
     }
 
     @FXML

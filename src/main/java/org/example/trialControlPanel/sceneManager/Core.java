@@ -83,11 +83,12 @@ public class Core {
 
         } catch(Exception e) {
             System.out.println("FAILED TO LOAD STAGES/SCENES/CONTROLLERS IN CORE");
+            e.printStackTrace();
         }
     }
 
-    public void runOMRTrials(MonitorFormat chamberMonitorFormat, TrialConfig trialConfig) {
-        OMRChamberController.initPatternDrawer(chamberMonitorFormat, trialConfig);
+    public void runOMRTrials(MonitorFormat chamberMonitorFormat, TrialConfig trialConfig, int restTime) {
+        OMRChamberController.initPatternDrawer(chamberMonitorFormat, trialConfig, restTime);
         Rectangle2D bounds = chamberMonitorFormat.getBounds();
         OMRChamberStage.setX(bounds.getMinX());
         OMRChamberStage.setY(bounds.getMinY());

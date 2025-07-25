@@ -102,6 +102,8 @@ public class CameraManager {
     }
 
     public Image getLatestImage() {
+        if (image.empty())
+            return null;
         return matToImage(image);
     }
 

@@ -23,6 +23,7 @@ if(opencvJarPath == null) {
 dependencies {
     implementation 'org.json:json:20240303'
     implementation files(opencvJarPath)
+    implementation "org.controlsfx:controlsfx:11.2.0"
 }
 
 application {

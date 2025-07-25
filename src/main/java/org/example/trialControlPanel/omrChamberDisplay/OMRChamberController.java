@@ -55,7 +55,7 @@ public class OMRChamberController extends CustomController {
 	@FXML
 	private Canvas canvas;
 
-	public void initPatternDrawer(MonitorFormat monitorFormat, TrialConfig trial) {
+	public void initPatternDrawer(MonitorFormat monitorFormat, TrialConfig trial, int restTime) {
 		this.trial = trial;
 		patternDrawer = new PatternDrawer(monitorFormat, trial.getInitialPattern(), canvas, SimulatedSurface.CIRCULAR);
 	}
@@ -100,8 +100,7 @@ public class OMRChamberController extends CustomController {
 				cm.update(); // update camera manager
 
 				Platform.runLater(getCore().getRunTrialController()::updateUILabels);
-				if (cm.getLatestImage() != null)
-					Platform.runLater(() -> getCore().getRunTrialController().updateCameraImageView(cm.getLatestImage()));
+				Platform.runLater(() -> getCore().getRunTrialController().updateCameraImageView(cm.getLatestImage()));
 
 				if (currentCycle >= trial.getMaxTests()) {
 					stopTrial();

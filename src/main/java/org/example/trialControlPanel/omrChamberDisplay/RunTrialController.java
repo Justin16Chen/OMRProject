@@ -19,6 +19,8 @@ public class RunTrialController extends CustomController {
     private ProgressBar cycleProgress, testTimeProgress, restTimeProgress, totalTimeProgress;
 
     @FXML
+    private Label cameraDataLabel;
+    @FXML
     private ImageView cameraDataImageView;
 
     @FXML
@@ -46,6 +48,7 @@ public class RunTrialController extends CustomController {
     }
 
     public void updateCameraImageView(Image image) {
+        cameraDataLabel.setText(image == null ? "Camera Data (None available)" : "Camera Data");
         cameraDataImageView.setImage(image);
 
     }

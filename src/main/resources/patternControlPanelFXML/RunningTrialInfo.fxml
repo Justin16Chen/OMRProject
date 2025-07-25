@@ -67,7 +67,7 @@
          </font>
       </Label>
       <ImageView fx:id="cameraDataImageView" fitHeight="150.0" fitWidth="200.0" layoutX="238.0" layoutY="98.0" pickOnBounds="true" preserveRatio="true" />
-      <Label layoutX="238.0" layoutY="67.0" text="Camera Data">
+      <Label fx:id="cameraDataLabel" layoutX="238.0" layoutY="67.0" text="Camera Data">
          <font>
             <Font size="16.0" />
          </font>
