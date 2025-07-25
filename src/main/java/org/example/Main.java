@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class Main extends Application {
-    private static final int cameraFPS = 30;
 
     public static void main(String[] args) {
         launch(args);
@@ -20,9 +19,7 @@ public class Main extends Application {
     private final Core core;
 
     public Main() {
-        CameraManager cameraManager = new CameraManager(1);
-        core = new Core(cameraManager);
-        cameraManager.clearFolder();
+        core = new Core();
     }
 
     @Override

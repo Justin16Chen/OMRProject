@@ -39,26 +39,23 @@ public class CameraManager {
     private int devicePort;
 
     public CameraManager(int devicePort) {
-        image = new Mat();
         this.devicePort = devicePort;
-        cap = new VideoCapture(devicePort);
-        if(!cap.isOpened()) {
-            System.out.println("cannot open camera, exiting");
-            return;
-        }
-        connected = true;
+
+        image = new Mat();
+        savePermanentImages = true;
         i = 0;
         recording = false;
-        savePermanentImages = true;
+
+        cap = new VideoCapture(devicePort);
+        connected = cap.isOpened();
     }
-    public boolean trySetDevicePort(int index) {
+    public void trySetDevicePort(int index) {
         cap = new VideoCapture(index);
         devicePort = index;
         connected = cap.isOpened();
-        return connected;
     }
     public void update() {
-        if (!recording)
+        if (!recording || !connected)
             return;
         if(savePermanentImages) {
             if (trySaveImage())
@@ -85,6 +82,8 @@ public class CameraManager {
     }
 
     private boolean trySaveImage() {
+        if (!connected)
+            return false;
         if(cap.read(image)) {
             if(image.empty())
                 return false;

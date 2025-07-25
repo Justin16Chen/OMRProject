@@ -37,8 +37,9 @@ public class Core {
 
     private final CameraManager cameraManager;
 
-    public Core(CameraManager cameraManager) {
-        this.cameraManager = cameraManager;
+    public Core() {
+        cameraManager = new CameraManager(0);
+        cameraManager.clearFolder();
     }
 
     public CameraManager getCameraManager() {
@@ -81,8 +82,7 @@ public class Core {
             runTrialController.setup();
 
         } catch(Exception e) {
-            System.out.println("FAILED TO LOAD STAGE IN SCENE MANAGER");
-            e.printStackTrace();
+            System.out.println("FAILED TO LOAD STAGES/SCENES/CONTROLLERS IN CORE");
         }
     }
 

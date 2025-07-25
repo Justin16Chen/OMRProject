@@ -54,6 +54,7 @@ public class StartMenuController extends CustomController {
     @Override
     public void setup() {
         cameraPortTextField.setValidationFunction(str -> FilteredTextField.VALID_INTEGER.test(str) && getCore().getCameraManager().isConnected());
+        previewCameraButton.setDisable(!cameraPortTextField.hasValidInput());
     }
 
     private void updateDefaultQueuedTrials() {
