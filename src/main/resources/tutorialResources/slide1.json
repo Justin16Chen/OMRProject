@@ -1,0 +1,12 @@
+{
+  "panels": [
+    {
+      "imageName": "mouseInChamber.png",
+      "text": "A moving pattern is displayed around the mouse, stimulating the Optomotor Reflex (OMR)."
+    },
+    {
+      "imageName": "cameraImage.png",
+      "text": "An overhead camera records the mouse. The data is used to determine when OMR occurs."
+    }
+  ]
+}

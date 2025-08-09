@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+
+<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.tutorial.TutorialController">
+   <children>
+      <Label layoutX="36.0" layoutY="25.0" text="Walkthrough">
+         <font>
+            <Font size="25.0" />
+         </font>
+      </Label>
+      <ProgressBar fx:id="tutorialProgressBar" layoutX="201.0" layoutY="47.0" prefHeight="11.0" prefWidth="375.0" progress="0.0" />
+      <Label fx:id="tutorialProgressLabel" layoutX="201.0" layoutY="29.0" text="Overview" />
+   </children>
+</AnchorPane>

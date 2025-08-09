@@ -1,0 +1,12 @@
+{
+  "panels": [
+    {
+      "imageName": "trialSequence.png",
+      "text": "The chamber shows alternating periods of testing (showing a pattern) and resting (a blank screen). After each test, the brightness of the pattern will be darkened based on how often the mouse exhibited OMR."
+    },
+    {
+      "imageName": "trialTestHierarchy.png",
+      "text": "This is called a \"trial\". Each trial consists of a sequence of multiple test and rest periods, and the difficulty scaling can be customized for each trial. The trial ends once the mouse shows 0 signs of OMR."
+    }
+  ]
+}
