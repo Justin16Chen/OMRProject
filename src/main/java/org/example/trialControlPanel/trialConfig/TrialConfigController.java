@@ -199,6 +199,7 @@ public class TrialConfigController extends CustomController {
 			throw new RuntimeException(e);
 		}
 		getCore().getPrimaryStage().setScene(getCore().getStartMenuScene());
+		getCore().getStartMenuController().setup();
     }
 	@FXML
 	public void handleEditClick() {

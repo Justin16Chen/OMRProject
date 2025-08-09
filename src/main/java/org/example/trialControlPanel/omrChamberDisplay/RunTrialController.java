@@ -8,8 +8,8 @@ import javafx.scene.image.ImageView;
 import org.example.trialControlPanel.sceneManager.CustomController;
 import org.example.trialControlPanel.trialConfig.TrialConfig;
 
-import java.io.File;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 
 public class RunTrialController extends CustomController {
     private static final DecimalFormat timeDf = new DecimalFormat("00");
@@ -31,6 +31,7 @@ public class RunTrialController extends CustomController {
 
     public void updateUILabels() {
         OMRChamberController chamberController = getCore().getOMRChamberController();
+        TrialConfig trial = trials.get(chamberController.getCurrentTrialIndex());
         nameLabel.setText(trial.getName());
         stateLabel.setText("" + chamberController.getState());
 
@@ -57,8 +58,8 @@ public class RunTrialController extends CustomController {
         return timeDf.format(seconds / 60) + ":" + timeDf.format(seconds % 60);
     }
 
-    private TrialConfig trial;
-    public void setTrial(TrialConfig trial) {
-        this.trial = trial;
+    private ArrayList<TrialConfig> trials;
+    public void setTrials(ArrayList<TrialConfig> trials) {
+        this.trials = trials;
     }
 }

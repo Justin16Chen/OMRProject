@@ -32,6 +32,10 @@ public class ApplicationMonitorManager {
         return null; // should never run
     }
 
+    public void updateMonitorFormat(Stage stage) {
+        monitorFormatConsumer.accept(findCurrentMonitorFormat(stage.getX(), stage.getY()));
+    }
+
     private void handleStartMenuMoved(double x, double y) {
         // still on same monitor
         if (monitorFormat != null && inBounds(x, y, monitorFormat.getBounds()))

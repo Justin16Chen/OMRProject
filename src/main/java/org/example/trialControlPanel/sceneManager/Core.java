@@ -15,6 +15,7 @@ import org.example.trialControlPanel.trialConfig.TrialConfig;
 import org.example.trialControlPanel.trialConfig.TrialConfigController;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class Core {
 
@@ -28,6 +29,7 @@ public class Core {
 
     private Scene startMenuScene;
     private StartMenuController startMenuController;
+    private ApplicationMonitorManager startMenuMonitorManager;
     private Scene trialConfigScene;
     private TrialConfigController trialConfigController;
     private Scene OMRChamberScene;
@@ -73,7 +75,7 @@ public class Core {
             primaryStage.show();
 
             // setup primary stage monitor format
-            new ApplicationMonitorManager(primaryStage, mf -> startMenuController.setStartMenuMonitorFormat(mf));
+            startMenuMonitorManager = new ApplicationMonitorManager(primaryStage, mf -> startMenuController.setStartMenuMonitorFormat(mf));
 
             // setup controllers last (to avoid null pointer exceptions)
             startMenuController.setup();
@@ -87,8 +89,8 @@ public class Core {
         }
     }
 
-    public void runOMRTrials(MonitorFormat chamberMonitorFormat, TrialConfig trialConfig, int restTime) {
-        OMRChamberController.initPatternDrawer(chamberMonitorFormat, trialConfig, restTime);
+    public void runOMRTrials(MonitorFormat chamberMonitorFormat, ArrayList<TrialConfig> trials, int restTime) {
+        OMRChamberController.initPatternDrawer(chamberMonitorFormat, trials, restTime);
         Rectangle2D bounds = chamberMonitorFormat.getBounds();
         OMRChamberStage.setX(bounds.getMinX());
         OMRChamberStage.setY(bounds.getMinY());
@@ -97,7 +99,7 @@ public class Core {
         OMRChamberController.resizeCanvas((int) bounds.getWidth(), (int) bounds.getHeight());
         OMRChamberStage.show();
 
-        runTrialController.setTrial(trialConfig);
+        runTrialController.setTrials(trials);
         runTrialController.updateUILabels();
         getRunTrialStage().show();
 
@@ -152,6 +154,7 @@ public class Core {
     public StartMenuController getStartMenuController() {
         return startMenuController;
     }
+    public ApplicationMonitorManager getStartMenuMonitorManager() { return startMenuMonitorManager; }
     public Scene getTrialConfigScene() {
         return trialConfigScene;
     }

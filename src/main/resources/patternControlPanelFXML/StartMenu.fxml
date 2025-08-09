@@ -117,9 +117,9 @@
                      <Label text="Monitor Num" />
                      <Label prefHeight="17.0" prefWidth="275.0" text="Resolution" GridPane.rowIndex="1" />
                      <Label prefHeight="17.0" prefWidth="275.0" text="Size" GridPane.rowIndex="2" />
-                     <Label fx:id="monitorNumberLabel" text="Monitor Num" GridPane.columnIndex="1" />
-                     <Label fx:id="monitorResolutionLabel" text="Monitor Num" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                     <Label fx:id="monitorSizeLabel" text="Monitor Num" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                     <Label fx:id="startMenuMonitorNumberLabel" text="Monitor Num" GridPane.columnIndex="1" />
+                     <Label fx:id="startMenuMonitorResolutionLabel" text="Monitor Num" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                     <Label fx:id="startMenuMonitorSizeLabel" text="Monitor Num" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                   </children>
                   <VBox.margin>
                      <Insets top="10.0" />

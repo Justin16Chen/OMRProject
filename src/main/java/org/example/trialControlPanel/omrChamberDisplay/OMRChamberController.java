@@ -12,17 +12,23 @@ import org.example.trialControlPanel.pattern.PatternDrawer.SimulatedSurface;
 import org.example.trialControlPanel.trialConfig.TrialConfig;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Objects;
 
 public class OMRChamberController extends CustomController {
 
 	public enum State {
-		TESTING, RESTING
+		TESTING, RESTING, IN_BETWEEN_TRIALS
 	}
-	private TrialConfig trial;
+	private ArrayList<TrialConfig> trials;
+	private int currentTrialIndex;
+	private int inBetweenTrialsRestTime;
+	public int getCurrentTrialIndex() {
+		return currentTrialIndex;
+	}
 	private PatternDrawer patternDrawer;
 	private boolean trialRunning;
-	private double totalSecondsRunning, currentCycleSecondsRunning; // 1 cycle = 1 test and 1 rest
+	private double totalSecondsRunning, currentTrialSecondsRunning, currentCycleSecondsRunning; // 1 cycle = 1 test and 1 rest
 	public double getTotalSecondsRunning() {
 		return totalSecondsRunning;
 	}
@@ -55,15 +61,17 @@ public class OMRChamberController extends CustomController {
 	@FXML
 	private Canvas canvas;
 
-	public void initPatternDrawer(MonitorFormat monitorFormat, TrialConfig trial, int restTime) {
-		this.trial = trial;
-		patternDrawer = new PatternDrawer(monitorFormat, trial.getInitialPattern(), canvas, SimulatedSurface.CIRCULAR);
+	public void initPatternDrawer(MonitorFormat monitorFormat, ArrayList<TrialConfig> trials, int restTime) {
+		this.trials = trials;
+		patternDrawer = new PatternDrawer(monitorFormat, trials.getFirst().getInitialPattern(), canvas, SimulatedSurface.CIRCULAR);
+		inBetweenTrialsRestTime = restTime;
 	}
 
 	public void startTrials() {
 		trialRunning = true;
 		state = State.TESTING;
 		patternDrawer.start();
+		currentTrialIndex = 0;
 		currentCycle = 0;
 		CameraManager cm = getCore().getCameraManager();
 		cm.startRecording();
@@ -72,28 +80,49 @@ public class OMRChamberController extends CustomController {
 		// manage trials on separate thread
 		new Thread(() -> {
 			double startTimeMs = System.currentTimeMillis();
+			double lastTrialFinishTimeMs = startTimeMs;
 			double lastCycleFinishTimeMs = startTimeMs;
 
 			while (trialRunning) {
 				totalSecondsRunning = (System.currentTimeMillis() - startTimeMs) / 1000.;
+				currentTrialSecondsRunning = (System.currentTimeMillis() - lastTrialFinishTimeMs) / 1000.;
 				currentCycleSecondsRunning = (System.currentTimeMillis() - lastCycleFinishTimeMs) / 1000.;
 
 				if (state == State.TESTING) {
-					if (currentCycleSecondsRunning > trial.getTestTime()) {
+					if (currentTrialSecondsRunning >= trials.get(currentTrialIndex).getTotalTime()) {
+						System.out.println("trial " + currentTrialIndex + "/" + trials.size() + " finished");
+						if (currentTrialIndex + 1 >= trials.size())
+							Platform.runLater(this::stopTrial);
+						else {
+							state = State.IN_BETWEEN_TRIALS;
+							patternDrawer.stop();
+							Platform.runLater(patternDrawer::showBlank);
+							cm.setSavePermanentImages(false);
+						}
+					}
+					else if (currentCycleSecondsRunning > trials.get(currentTrialIndex).getTestTime()) {
 						state = State.RESTING;
 						patternDrawer.stop();
 						Platform.runLater(patternDrawer::showBlank);
 						cm.setSavePermanentImages(false);
 					}
 				}
-				else {
-					if (currentCycleSecondsRunning > trial.getCycleTime()) {
+				else if (state == State.RESTING) {
+					if (currentCycleSecondsRunning > trials.get(currentTrialIndex).getCycleTime()) {
 						state = State.TESTING;
 						lastCycleFinishTimeMs = System.currentTimeMillis();
 						patternDrawer.start();
-						patternDrawer.getPatternData().setLightBrightness(patternDrawer.getPatternData().getLightBrightness() - trial.getDimAmount());
+						patternDrawer.getPatternData().setLightBrightness(patternDrawer.getPatternData().getLightBrightness() - trials.get(currentTrialIndex).getDimAmount());
 						currentCycle++;
 						cm.setSavePermanentImages(true);
+					}
+				} else if (state == State.IN_BETWEEN_TRIALS) {
+					if (currentTrialSecondsRunning >= trials.get(currentTrialIndex).getTotalTime() + inBetweenTrialsRestTime) {
+						state = State.TESTING;
+						currentTrialIndex++;
+						lastTrialFinishTimeMs = System.currentTimeMillis();
+						currentCycle = 0;
+						patternDrawer.setPatternData(trials.get(currentTrialIndex).getInitialPattern());
 					}
 				}
 
@@ -101,10 +130,6 @@ public class OMRChamberController extends CustomController {
 
 				Platform.runLater(getCore().getRunTrialController()::updateUILabels);
 				Platform.runLater(() -> getCore().getRunTrialController().updateCameraImageView(cm.getLatestImage()));
-
-				if (currentCycle >= trial.getMaxTests()) {
-					stopTrial();
-				}
 
 				try {
 					Thread.sleep(33); // ~30 updates per second
@@ -125,7 +150,7 @@ public class OMRChamberController extends CustomController {
 		return state == State.TESTING ? currentCycleSecondsRunning : 0;
 	}
 	public double getRestRunTime() {
-		return state == State.RESTING ? currentCycleSecondsRunning - trial.getTestTime() : 0;
+		return state == State.RESTING ? currentCycleSecondsRunning - trials.get(currentTrialIndex).getTestTime() : 0;
 	}
 
 	private File getImageFile() {

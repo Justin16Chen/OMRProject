@@ -12,8 +12,6 @@ import org.example.trialControlPanel.trialConfig.TrialSaver;
 import org.example.trialControlPanel.utils.FilteredTextField;
 import org.example.trialControlPanel.utils.TimeTextField;
 
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 public class StartMenuController extends CustomController {
@@ -29,9 +27,9 @@ public class StartMenuController extends CustomController {
     }
     public void setStartMenuMonitorFormat(MonitorFormat mf) {
         startMenuMonitorFormat = mf;
-        monitorNumberLabel.setText("" + mf.getMonitorNumber());
-        monitorResolutionLabel.setText(mf.getResolutionSpecs());
-        monitorSizeLabel.setText(mf.getSizeSpecs());
+        startMenuMonitorNumberLabel.setText("" + mf.getMonitorNumber());
+        startMenuMonitorResolutionLabel.setText(mf.getResolutionSpecs());
+        startMenuMonitorSizeLabel.setText(mf.getSizeSpecs());
         System.out.println("setting start menu mf to " + mf);
     }
 
@@ -51,16 +49,20 @@ public class StartMenuController extends CustomController {
         restTimeTextField.getTextField().textProperty().addListener((obs, oldVal, newVal) ->
             runQueueButton.setDisable(!restTimeTextField.hasValidInput())
         );
-
+        startMenuMonitorNumberLabel.setText("Not set");
+        startMenuMonitorResolutionLabel.setText("Not set");
+        startMenuMonitorSizeLabel.setText("Not set");
         chamberMonitorNumberLabel.setText("");
         chamberMonitorResolutionLabel.setText("");
         chamberMonitorSizeLabel.setText("");
+
     }
 
     @Override
     public void setup() {
         cameraPortTextField.setValidationFunction(str -> FilteredTextField.VALID_INTEGER.test(str) && getCore().getCameraManager().isConnected());
         previewCameraButton.setDisable(!cameraPortTextField.hasValidInput());
+        getCore().getStartMenuMonitorManager().updateMonitorFormat(getCore().getPrimaryStage());
     }
 
     private void updateDefaultQueuedTrials() {
@@ -120,7 +122,7 @@ public class StartMenuController extends CustomController {
         chamberMonitorResolutionLabel.setText(chamberMonitorFormat.getResolutionSpecs());
         chamberMonitorSizeLabel.setText(chamberMonitorFormat.getSizeSpecs());
 
-        getCore().runOMRTrials(chamberMonitorFormat, TrialSaver.getTrial(queuedTrialNames.getFirst()), restTimeTextField.getSeconds());
+        getCore().runOMRTrials(chamberMonitorFormat, TrialSaver.getTrials(queuedTrialNames), restTimeTextField.getSeconds());
     }
 
     @FXML
@@ -146,7 +148,7 @@ public class StartMenuController extends CustomController {
     }
 
     @FXML
-    private Label monitorNumberLabel, monitorResolutionLabel, monitorSizeLabel;
+    private Label startMenuMonitorNumberLabel, startMenuMonitorResolutionLabel, startMenuMonitorSizeLabel;
     @FXML
     private Label chamberMonitorNumberLabel, chamberMonitorResolutionLabel, chamberMonitorSizeLabel;
 

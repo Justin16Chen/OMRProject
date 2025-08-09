@@ -88,6 +88,13 @@ public class TrialSaver {
 		}
 	}
 
+	public static ArrayList<TrialConfig> getTrials(ArrayList<String> names) {
+		ArrayList<TrialConfig> trials = new ArrayList<>();
+		for (String name : names)
+			if (hasTrial(name))
+				trials.add(TrialSaver.getTrial(name));
+		return trials;
+	}
 	public static TrialConfig getTrial(String name) {
 		for (TrialConfig trial : trials)
 			if (trial.getName().equals(name))
