@@ -17,6 +17,8 @@ import java.util.Objects;
 
 public class OMRChamberController extends CustomController {
 
+	private static final int CAMERA_RECORD_FPS = 24;
+
 	public enum State {
 		TESTING, RESTING, IN_BETWEEN_TRIALS
 	}
@@ -68,6 +70,8 @@ public class OMRChamberController extends CustomController {
 	}
 
 	public void startTrials() {
+		int sleepInterval = 1000 / CAMERA_RECORD_FPS;
+
 		trialRunning = true;
 		state = State.TESTING;
 		patternDrawer.start();
@@ -132,7 +136,7 @@ public class OMRChamberController extends CustomController {
 				Platform.runLater(() -> getCore().getRunTrialController().updateCameraImageView(cm.getLatestImage()));
 
 				try {
-					Thread.sleep(33); // ~30 updates per second
+					Thread.sleep(sleepInterval);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 					break;
