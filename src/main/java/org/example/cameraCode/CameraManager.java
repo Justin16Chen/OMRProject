@@ -30,7 +30,7 @@ public class CameraManager {
         System.out.println("successfully loaded opencv dll");
     }
 
-    public static final String RAW_IMAGES_PATH = "images/cameraImages";
+    public static final String RAW_IMAGES_PATH = "liveData/cameraImages";
 
     private VideoCapture cap;
     private final Mat image;
@@ -92,11 +92,11 @@ public class CameraManager {
     }
 
     public void clearImageFolder() {
-        File folder = new File(RAW_IMAGES_PATH);
-        File[] files = folder.listFiles();
-        if (files != null)
-            for (File file : files)
-                file.delete();
+//        File folder = new File(RAW_IMAGES_PATH);
+//        File[] files = folder.listFiles();
+//        if (files != null)
+//            for (File file : files)
+//                file.delete();
     }
 
     public Image getLatestImage() {
