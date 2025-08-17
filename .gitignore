@@ -42,7 +42,7 @@ bin/
 .
 
 ### Camera Images ###
-/cameraImages
+/images
 
 ### open CS file location ###
 local.properties

@@ -79,7 +79,7 @@ public class OMRChamberController extends CustomController {
 		currentCycle = 0;
 		CameraManager cm = getCore().getCameraManager();
 		cm.startRecording();
-		cm.setSavePermanentImages(true);
+		cm.setSaveImage(true);
 
 		// manage trials on separate thread
 		new Thread(() -> {
@@ -101,14 +101,14 @@ public class OMRChamberController extends CustomController {
 							state = State.IN_BETWEEN_TRIALS;
 							patternDrawer.stop();
 							Platform.runLater(patternDrawer::showBlank);
-							cm.setSavePermanentImages(false);
+							cm.setSaveImage(false);
 						}
 					}
 					else if (currentCycleSecondsRunning > trials.get(currentTrialIndex).getTestTime()) {
 						state = State.RESTING;
 						patternDrawer.stop();
 						Platform.runLater(patternDrawer::showBlank);
-						cm.setSavePermanentImages(false);
+						cm.setSaveImage(false);
 					}
 				}
 				else if (state == State.RESTING) {
@@ -118,7 +118,7 @@ public class OMRChamberController extends CustomController {
 						patternDrawer.start();
 						patternDrawer.getPatternData().setLightBrightness(patternDrawer.getPatternData().getLightBrightness() - trials.get(currentTrialIndex).getDimAmount());
 						currentCycle++;
-						cm.setSavePermanentImages(true);
+						cm.setSaveImage(true);
 					}
 				} else if (state == State.IN_BETWEEN_TRIALS) {
 					if (currentTrialSecondsRunning >= trials.get(currentTrialIndex).getTotalTime() + inBetweenTrialsRestTime) {

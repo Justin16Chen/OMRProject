@@ -23,6 +23,10 @@ public class RunTrialController extends CustomController {
     @FXML
     private ImageView cameraDataImageView;
 
+    @Override
+    public void setup() {
+        getStage().setOnCloseRequest(e -> getCore().getOMRChamberController().stopTrial());
+    }
     @FXML
     private void handleStopEarlyClick() {
         getCore().getOMRChamberController().stopTrial();

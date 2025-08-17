@@ -30,19 +30,19 @@ public class CameraManager {
         System.out.println("successfully loaded opencv dll");
     }
 
-    public static final String RAW_IMAGES_PATH = "cameraImages";
+    public static final String RAW_IMAGES_PATH = "images/cameraImages";
 
     private VideoCapture cap;
     private final Mat image;
     private int i;
-    private boolean connected, recording, savePermanentImages;
+    private boolean connected, recording, saveImage;
     private int devicePort;
 
     public CameraManager(int devicePort) {
         this.devicePort = devicePort;
 
         image = new Mat();
-        savePermanentImages = true;
+        saveImage = true;
         i = 0;
         recording = false;
 
@@ -57,7 +57,7 @@ public class CameraManager {
     public void update() {
         if (!recording || !connected)
             return;
-        if(savePermanentImages) {
+        if(saveImage) {
             if (trySaveImage())
                 i++;
         }
@@ -77,13 +77,11 @@ public class CameraManager {
     public void stopRecording() {
         recording = false;
     }
-    public void setSavePermanentImages(boolean savePermanent) {
-        this.savePermanentImages = savePermanent;
+    public void setSaveImage(boolean saveImage) {
+        this.saveImage = saveImage;
     }
 
     private boolean trySaveImage() {
-        if (!connected)
-            return false;
         if(cap.read(image)) {
             if(image.empty())
                 return false;
@@ -93,7 +91,7 @@ public class CameraManager {
         return false;
     }
 
-    public void clearFolder() {
+    public void clearImageFolder() {
         File folder = new File(RAW_IMAGES_PATH);
         File[] files = folder.listFiles();
         if (files != null)

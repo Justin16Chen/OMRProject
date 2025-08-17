@@ -15,7 +15,7 @@ public class CameraPreviewController extends CustomController {
     @Override
     public void setup() {
         getCore().getCameraManager().startRecording();
-        getCore().getCameraManager().setSavePermanentImages(false);
+        getCore().getCameraManager().setSaveImage(false);
 
         AnimationTimer updateCameraTimer = new AnimationTimer() {
             @Override

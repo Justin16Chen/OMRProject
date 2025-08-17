@@ -41,7 +41,7 @@ public class Core {
 
     public Core() {
         cameraManager = new CameraManager(0);
-        cameraManager.clearFolder();
+        cameraManager.clearImageFolder();
     }
 
     public CameraManager getCameraManager() {
@@ -72,6 +72,7 @@ public class Core {
             OMRChamberStage.setScene(OMRChamberScene);
             runTrialStage.setScene(runTrialScene);
 
+            primaryStage.setResizable(false);
             primaryStage.show();
 
             // setup primary stage monitor format
