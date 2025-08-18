@@ -5,7 +5,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import org.example.trialControlPanel.sceneManager.CustomController;
+import org.example.trialControlPanel.parentClasses.CustomController;
 import org.example.trialControlPanel.trialConfig.TrialConfig;
 
 import java.text.DecimalFormat;
@@ -14,9 +14,9 @@ import java.util.ArrayList;
 public class RunTrialController extends CustomController {
     private static final DecimalFormat timeDf = new DecimalFormat("00");
     @FXML
-    private Label nameLabel, cycleLabel, stateLabel, testTimeLabel, restTimeLabel, totalTimeLabel;
+    private Label nameLabel, stateLabel, trialLabel, cycleLabel, totalTimeLabel, testTimeLabel, restTimeLabel;
     @FXML
-    private ProgressBar cycleProgress, testTimeProgress, restTimeProgress, totalTimeProgress;
+    private ProgressBar trialProgress, cycleProgress, testTimeProgress, restTimeProgress, totalTimeProgress;
 
     @FXML
     private Label cameraDataLabel;
@@ -39,17 +39,20 @@ public class RunTrialController extends CustomController {
         nameLabel.setText(trial.getName());
         stateLabel.setText("" + chamberController.getState());
 
+        trialLabel.setText(chamberController.getCurrentTrialIndex() + 1 + "/" + trials.size());
+        trialProgress.setProgress((chamberController.getCurrentTrialIndex() + 1.) / trials.size());
+
         cycleLabel.setText(chamberController.getCurrentCycle() + 1 + "/" + trial.getMaxTests());
-        cycleProgress.setProgress((1.0 * chamberController.getCurrentCycle() + 1) / trial.getMaxTests());
+        cycleProgress.setProgress((chamberController.getCurrentCycle() + 1.) / trial.getMaxTests());
+
+        totalTimeLabel.setText(formatSeconds((int) chamberController.getTotalSecondsRunning()) + "/" + formatSeconds(totalTime));
+        totalTimeProgress.setProgress(Math.min(chamberController.getTotalSecondsRunning() / totalTime, 1) % 1);
 
         testTimeLabel.setText(formatSeconds((int) chamberController.getTestRunTime()) + "/" + formatSeconds(trial.getTestTime()));
-        testTimeProgress.setProgress(chamberController.getTestRunTime() / trial.getTestTime());
+        testTimeProgress.setProgress(Math.min(chamberController.getTestRunTime() / trial.getTestTime(), 1) % 1);
 
         restTimeLabel.setText(formatSeconds((int) chamberController.getRestRunTime()) + "/" + formatSeconds(trial.getRestTime()));
-        restTimeProgress.setProgress(chamberController.getRestRunTime() / trial.getRestTime());
-
-        totalTimeLabel.setText(formatSeconds((int) chamberController.getTotalSecondsRunning()) + "/" + formatSeconds(trial.getTotalTime()));
-        totalTimeProgress.setProgress(chamberController.getTotalSecondsRunning() / trial.getTotalTime());
+        restTimeProgress.setProgress(Math.min(chamberController.getRestRunTime() / trial.getRestTime(), 1) % 1);
     }
 
     public void updateCameraImageView(Image image) {
@@ -63,7 +66,11 @@ public class RunTrialController extends CustomController {
     }
 
     private ArrayList<TrialConfig> trials;
+    private int totalTime;
     public void setTrials(ArrayList<TrialConfig> trials) {
         this.trials = trials;
+        totalTime = trials.stream()
+                .mapToInt(TrialConfig::getTotalTime)
+                .sum();
     }
 }

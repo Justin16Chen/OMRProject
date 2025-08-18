@@ -5,7 +5,7 @@ import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.input.KeyCode;
 import org.example.cameraCode.CameraManager;
-import org.example.trialControlPanel.sceneManager.CustomController;
+import org.example.trialControlPanel.parentClasses.CustomController;
 import org.example.trialControlPanel.monitorInfo.MonitorFormat;
 import org.example.trialControlPanel.pattern.PatternDrawer;
 import org.example.trialControlPanel.pattern.PatternDrawer.SimulatedSurface;
@@ -16,8 +16,6 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 public class OMRChamberController extends CustomController {
-
-	private static final int CAMERA_RECORD_FPS = 24;
 
 	public enum State {
 		TESTING, RESTING, IN_BETWEEN_TRIALS
@@ -69,8 +67,11 @@ public class OMRChamberController extends CustomController {
 		inBetweenTrialsRestTime = restTime;
 	}
 
+
+
 	public void startTrials() {
-		int sleepInterval = 1000 / CAMERA_RECORD_FPS;
+		int sleepInterval = 1000 / getCore().getProgramInfoWriter().getFPS();
+		getCore().getProgramInfoWriter().activateTrial(trials.getFirst().getTestTime(), trials.getFirst().getRestTime());
 
 		trialRunning = true;
 		state = State.TESTING;
@@ -92,19 +93,12 @@ public class OMRChamberController extends CustomController {
 				currentTrialSecondsRunning = (System.currentTimeMillis() - lastTrialFinishTimeMs) / 1000.;
 				currentCycleSecondsRunning = (System.currentTimeMillis() - lastCycleFinishTimeMs) / 1000.;
 
+				TrialConfig currentTrial = trials.get(currentTrialIndex);
+
 				if (state == State.TESTING) {
-					if (currentTrialSecondsRunning >= trials.get(currentTrialIndex).getTotalTime()) {
-						System.out.println("trial " + currentTrialIndex + "/" + trials.size() + " finished");
-						if (currentTrialIndex + 1 >= trials.size())
+					if (currentTrialSecondsRunning >= currentTrial.getTotalTime() - currentTrial.getRestTime() && currentTrialIndex + 1 >= trials.size())
 							Platform.runLater(this::stopTrial);
-						else {
-							state = State.IN_BETWEEN_TRIALS;
-							patternDrawer.stop();
-							Platform.runLater(patternDrawer::showBlank);
-							cm.setSaveImage(false);
-						}
-					}
-					else if (currentCycleSecondsRunning > trials.get(currentTrialIndex).getTestTime()) {
+					else if (currentCycleSecondsRunning >= currentTrial.getTestTime()) {
 						state = State.RESTING;
 						patternDrawer.stop();
 						Platform.runLater(patternDrawer::showBlank);
@@ -112,21 +106,24 @@ public class OMRChamberController extends CustomController {
 					}
 				}
 				else if (state == State.RESTING) {
-					if (currentCycleSecondsRunning > trials.get(currentTrialIndex).getCycleTime()) {
+					if (currentTrialSecondsRunning >= currentTrial.getTotalTime())
+						state = State.IN_BETWEEN_TRIALS;
+					else if (currentCycleSecondsRunning >= currentTrial.getCycleTime()) {
 						state = State.TESTING;
 						lastCycleFinishTimeMs = System.currentTimeMillis();
 						patternDrawer.start();
-						patternDrawer.getPatternData().setLightBrightness(patternDrawer.getPatternData().getLightBrightness() - trials.get(currentTrialIndex).getDimAmount());
+						patternDrawer.getPatternData().setLightBrightness(patternDrawer.getPatternData().getLightBrightness() - currentTrial.getDimAmount());
 						currentCycle++;
 						cm.setSaveImage(true);
 					}
 				} else if (state == State.IN_BETWEEN_TRIALS) {
-					if (currentTrialSecondsRunning >= trials.get(currentTrialIndex).getTotalTime() + inBetweenTrialsRestTime) {
+					if (currentTrialSecondsRunning >= currentTrial.getTotalTime() + inBetweenTrialsRestTime) {
 						state = State.TESTING;
 						currentTrialIndex++;
 						lastTrialFinishTimeMs = System.currentTimeMillis();
+						lastCycleFinishTimeMs = System.currentTimeMillis();
 						currentCycle = 0;
-						patternDrawer.setPatternData(trials.get(currentTrialIndex).getInitialPattern());
+						patternDrawer.setPatternData(currentTrial.getInitialPattern());
 					}
 				}
 

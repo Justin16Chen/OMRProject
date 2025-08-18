@@ -3,7 +3,7 @@ package org.example.trialControlPanel.startMenu;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
 import org.example.trialControlPanel.trialConfig.TrialSaver;
-import org.example.trialControlPanel.sceneManager.CustomController;
+import org.example.trialControlPanel.parentClasses.CustomController;
 
 public class QueueTrialController extends CustomController {
 

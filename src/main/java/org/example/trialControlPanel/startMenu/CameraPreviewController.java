@@ -4,7 +4,7 @@ import javafx.animation.AnimationTimer;
 import javafx.fxml.FXML;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import org.example.trialControlPanel.sceneManager.CustomController;
+import org.example.trialControlPanel.parentClasses.CustomController;
 
 
 public class CameraPreviewController extends CustomController {

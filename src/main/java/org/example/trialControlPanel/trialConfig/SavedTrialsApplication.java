@@ -3,8 +3,8 @@ package org.example.trialControlPanel.trialConfig;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import org.example.trialControlPanel.sceneManager.Core;
-import org.example.trialControlPanel.sceneManager.CustomApplication;
+import org.example.trialControlPanel.parentClasses.Core;
+import org.example.trialControlPanel.parentClasses.CustomApplication;
 
 public class SavedTrialsApplication extends CustomApplication {
     public SavedTrialsApplication(Core core) {

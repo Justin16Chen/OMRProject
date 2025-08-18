@@ -3,7 +3,7 @@ package org.example.trialControlPanel.tutorial;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
-import org.example.trialControlPanel.sceneManager.CustomController;
+import org.example.trialControlPanel.parentClasses.CustomController;
 
 public class TutorialController extends CustomController {
 

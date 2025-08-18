@@ -5,7 +5,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Button;
 import javafx.scene.control.Slider;
 import javafx.stage.Stage;
-import org.example.trialControlPanel.sceneManager.CustomController;
+import org.example.trialControlPanel.parentClasses.CustomController;
 import org.example.trialControlPanel.pattern.*;
 import org.example.trialControlPanel.pattern.PatternDrawer.SimulatedSurface;
 import org.example.trialControlPanel.utils.FilteredTextField;

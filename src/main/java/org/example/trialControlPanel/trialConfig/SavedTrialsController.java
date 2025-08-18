@@ -4,7 +4,7 @@ package org.example.trialControlPanel.trialConfig;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
-import org.example.trialControlPanel.sceneManager.CustomController;
+import org.example.trialControlPanel.parentClasses.CustomController;
 
 public class SavedTrialsController extends CustomController {
 

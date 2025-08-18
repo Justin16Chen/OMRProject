@@ -1,4 +1,4 @@
-package org.example.trialControlPanel.sceneManager;
+package org.example.trialControlPanel.parentClasses;
 
 import javafx.stage.Stage;
 

@@ -1,11 +1,12 @@
-package org.example.trialControlPanel.sceneManager;
+package org.example.trialControlPanel.parentClasses;
 
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import org.example.PythonRunner;
+import org.example.integration.ProgramInfoManager;
+import org.example.integration.PythonRunner;
 import org.example.cameraCode.CameraManager;
 import org.example.trialControlPanel.monitorInfo.ApplicationMonitorManager;
 import org.example.trialControlPanel.omrChamberDisplay.OMRChamberController;
@@ -14,12 +15,8 @@ import org.example.trialControlPanel.omrChamberDisplay.RunTrialController;
 import org.example.trialControlPanel.startMenu.StartMenuController;
 import org.example.trialControlPanel.trialConfig.TrialConfig;
 import org.example.trialControlPanel.trialConfig.TrialConfigController;
-import org.json.JSONObject;
 
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 
 public class Core {
@@ -43,22 +40,15 @@ public class Core {
     private RunTrialController runTrialController;
 
     private final CameraManager cameraManager;
+    private final ProgramInfoManager programInfoManager;
     private final PythonRunner pythonRunner;
-
-    private final String programInfoFilePath;
-    private final String trialActiveKey, testTimeKey, restTimeKey, maxTrialsKey;
 
     public Core() {
         cameraManager = new CameraManager(0);
         cameraManager.clearImageFolder();
 
-        programInfoFilePath = "liveData/programInfo.json";
-        trialActiveKey = "trialActive";
-        testTimeKey = "testTime";
-        restTimeKey = "restTime";
-        maxTrialsKey = "maxTrials";
-
-        deactivateTrial();
+        programInfoManager = new ProgramInfoManager();
+        programInfoManager.deactivateTrial();
 
         pythonRunner = new PythonRunner();
 
@@ -72,41 +62,11 @@ public class Core {
         pythonThread.start();
     }
 
-    public void activateTrial(double testTime, double restTime, int maxTrials) {
-        try{
-            String content = new String(Files.readAllBytes(Paths.get(programInfoFilePath)));
-            JSONObject json = new JSONObject(content);
-            json.put(trialActiveKey, true);
-            json.put(testTimeKey, testTime);
-            json.put(restTimeKey, restTime);
-            json.put(maxTrialsKey, maxTrials);
-            try(FileWriter file = new FileWriter(programInfoFilePath)) {
-                file.write(json.toString(4));
-            }
-        }
-        catch(IOException e) {
-            System.out.println("SET TRIAL ACTIVE FAILED");
-            e.printStackTrace();
-        }
-    }
-    public void deactivateTrial() {
-        try{
-            String content = new String(Files.readAllBytes(Paths.get(programInfoFilePath)));
-            JSONObject json = new JSONObject(content);
-            json.put(trialActiveKey, false);
-            try(FileWriter file = new FileWriter(programInfoFilePath)) {
-                file.write(json.toString(4));
-            }
-        }
-        catch(IOException e) {
-            System.out.println("SET TRIAL ACTIVE FAILED");
-            e.printStackTrace();
-        }
-    }
-
-
     public CameraManager getCameraManager() {
         return cameraManager;
+    }
+    public ProgramInfoManager getProgramInfoWriter() {
+        return programInfoManager;
     }
 
     public void init(Stage primaryStage) {

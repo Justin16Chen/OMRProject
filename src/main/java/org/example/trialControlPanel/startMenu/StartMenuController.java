@@ -6,7 +6,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 import org.example.cameraCode.CameraManager;
-import org.example.trialControlPanel.sceneManager.CustomController;
+import org.example.trialControlPanel.parentClasses.CustomController;
 import org.example.trialControlPanel.monitorInfo.MonitorFormat;
 import org.example.trialControlPanel.trialConfig.TrialSaver;
 import org.example.trialControlPanel.utils.FilteredTextField;

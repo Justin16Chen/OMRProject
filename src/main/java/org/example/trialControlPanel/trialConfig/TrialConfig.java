@@ -63,7 +63,7 @@ public class TrialConfig {
     }
 
     public int getTotalTime() {
-        return maxTests * testTime + (maxTests - 1) * restTime;
+        return maxTests * (testTime + restTime);
     }
 
     @Override

@@ -3,9 +3,8 @@ package org.example.trialControlPanel.tutorial;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import org.example.trialControlPanel.sceneManager.Core;
-import org.example.trialControlPanel.sceneManager.CustomApplication;
-import org.example.trialControlPanel.startMenu.CameraPreviewController;
+import org.example.trialControlPanel.parentClasses.Core;
+import org.example.trialControlPanel.parentClasses.CustomApplication;
 
 public class TutorialApplication extends CustomApplication {
     public TutorialApplication(Core core) {

@@ -1,9 +1,9 @@
 {"trials": [{
-    "restTime": 2,
-    "cycleTime": 7,
-    "totalTime": 12,
+    "restTime": 5,
+    "cycleTime": 15,
+    "totalTime": 30,
     "name": "testTrial",
-    "testTime": 5,
+    "testTime": 10,
     "initialPattern": {
         "bandWidth": 1,
         "lightBrightness": 205,
