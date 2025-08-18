@@ -9,7 +9,9 @@ import java.nio.file.Paths;
 
 // handles reading and writing to programInfo.json file (this is how the java and python code communicates with each other)
 public class ProgramInfoManager {
-    private static final String PROGRAM_INFO_FILE_PATH = "liveData/programInfo.json", TRIAL_ACTIVE_KEY = "trialActive", TEST_TIME_KEY = "testTime", REST_TIME_KEY = "restTime";
+    private static final String PROGRAM_INFO_FILE_PATH = "liveData/programInfo.json",
+            PROGRAM_ACTIVE_KEY = "programActive", TRIAL_ACTIVE_KEY = "trialActive",
+            TEST_TIME_KEY = "testTime", REST_TIME_KEY = "restTime";
 
     private JSONObject readJSONFromFile() {
         try {
@@ -22,17 +24,26 @@ public class ProgramInfoManager {
     public int getFPS() {
         return readJSONFromFile().getInt("fps");
     }
+    public void startProgram() {
+        JSONObject json = readJSONFromFile();
+        json.put(PROGRAM_ACTIVE_KEY, true);
+
+        saveJSONToFile(json, "FAILED TO START PROGRAM");
+    }
+
+    public void stopProgram() {
+        JSONObject json = readJSONFromFile();
+        json.put(PROGRAM_ACTIVE_KEY, false);
+
+        saveJSONToFile(json, "FAILED TO STOP PROGRAM");
+    }
     public void activateTrial(double testTime, double restTime) {
         JSONObject json = readJSONFromFile();
         json.put(TRIAL_ACTIVE_KEY, true);
         json.put(TEST_TIME_KEY, testTime);
         json.put(REST_TIME_KEY, restTime);
 
-        try(FileWriter file = new FileWriter(PROGRAM_INFO_FILE_PATH)) {
-            file.write(json.toString(4));
-        } catch (IOException e) {
-            System.out.println("FAILED TO ACTIVATE TRIAL");
-        }
+        saveJSONToFile(json, "FAILED TO ACTIVATE TRIAL");
     }
     public void deactivateTrial() {
         JSONObject json = readJSONFromFile();
@@ -40,10 +51,20 @@ public class ProgramInfoManager {
         json.put(TEST_TIME_KEY, "-1");
         json.put(REST_TIME_KEY, "-1");
 
+        saveJSONToFile(json, "FAILED TO DE-ACTIVATE TRIAL");
         try(FileWriter file = new FileWriter(PROGRAM_INFO_FILE_PATH)) {
             file.write(json.toString(4));
+            System.out.println("successfully de-activated trial");
         }  catch(IOException e) {
             System.out.println("FAILED TO DE-ACTIVATE TRIAL");
+        }
+    }
+
+    private void saveJSONToFile(JSONObject json, String errorMessage) {
+        try(FileWriter file = new FileWriter(PROGRAM_INFO_FILE_PATH)) {
+            file.write(json.toString(4));
+        } catch (IOException e) {
+            System.out.println(errorMessage);
         }
     }
 }

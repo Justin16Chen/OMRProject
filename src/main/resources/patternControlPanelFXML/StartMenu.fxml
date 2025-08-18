@@ -1,21 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextArea?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.RowConstraints?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Font?>
-<?import org.example.trialControlPanel.utils.FilteredTextField?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<?import org.example.trialControlPanel.utils.*?>
 
-<?import org.example.trialControlPanel.utils.TimeTextField?>
-<AnchorPane prefHeight="498.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.startMenu.StartMenuController">
-   <HBox layoutX="45.0" layoutY="16.0" prefHeight="465.0" prefWidth="504.0">
+<AnchorPane prefHeight="498.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.startMenu.StartMenuController">
+   <HBox layoutX="45.0" layoutY="16.0" prefHeight="440.0" prefWidth="504.0">
       <VBox prefHeight="373.0" prefWidth="264.0">
          <Label prefHeight="30.0" prefWidth="154.0" text="Create new trial">
             <font>
@@ -68,7 +60,7 @@
                <Insets top="25.0" />
             </VBox.margin>
          </Label>
-         <TextArea fx:id="queuedTrialsTextArea" prefHeight="18.0" prefWidth="264.0" VBox.vgrow="NEVER">
+         <TextArea fx:id="queuedTrialsTextArea" prefHeight="46.0" prefWidth="264.0" VBox.vgrow="NEVER">
             <VBox.margin>
                <Insets top="5.0" />
             </VBox.margin></TextArea>
@@ -82,7 +74,7 @@
                      <Insets top="19.0" />
                   </HBox.margin>
                </Label>
-               <TimeTextField fx:id="restTimeTextField"/>
+               <TimeTextField fx:id="restTimeTextField" />
             </children>
             <VBox.margin>
                <Insets top="-5.0" />
@@ -96,7 +88,31 @@
             <Button fx:id="clearQueuedTrialsButton" mnemonicParsing="false" onAction="#handleClearQueuedTrialsButtonClick" text="Clear Queue" />
             <Button fx:id="runQueueButton" mnemonicParsing="false" onAction="#handleRunQueueButtonClick" text="Run Queue" />
          </HBox>
-         <VBox alignment="BOTTOM_LEFT" prefHeight="110.0" prefWidth="264.0">
+         <padding>
+            <Insets top="60.0" />
+         </padding>
+      </VBox>
+      <VBox prefHeight="441.0" prefWidth="240.0" HBox.hgrow="ALWAYS">
+         <padding>
+            <Insets left="40.0" />
+         </padding>
+         <Label text="AUTO">
+            <font>
+               <Font size="54.0" />
+            </font>
+            <VBox.margin>
+               <Insets top="20.0" />
+            </VBox.margin>
+         </Label>
+         <Label text="OMR">
+            <font>
+               <Font size="30.0" />
+            </font>
+            <VBox.margin>
+               <Insets top="-10.0" />
+            </VBox.margin>
+         </Label>
+         <VBox prefHeight="326.0" prefWidth="200.0">
             <children>
                <Label text="Current Monitor Specs">
                   <font>
@@ -106,7 +122,7 @@
                <GridPane prefHeight="55.0" prefWidth="272.0">
                  <columnConstraints>
                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="130.0" minWidth="10.0" prefWidth="88.5" />
-                   <ColumnConstraints hgrow="SOMETIMES" maxWidth="186.0" minWidth="10.0" prefWidth="183.5" />
+                   <ColumnConstraints hgrow="SOMETIMES" maxWidth="186.0" minWidth="10.0" prefWidth="111.5" />
                  </columnConstraints>
                  <rowConstraints>
                    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
@@ -122,34 +138,9 @@
                      <Label fx:id="startMenuMonitorSizeLabel" text="Monitor Num" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                   </children>
                   <VBox.margin>
-                     <Insets top="10.0" />
+                     <Insets bottom="30.0" top="10.0" />
                   </VBox.margin>
                </GridPane>
-            </children>
-         </VBox>
-         <padding>
-            <Insets top="60.0" />
-         </padding>
-      </VBox>
-      <VBox prefHeight="324.0" prefWidth="235.0" HBox.hgrow="ALWAYS">
-         <padding>
-            <Insets left="40.0" />
-         </padding>
-         <Label text="AUTO">
-            <font>
-               <Font size="54.0" />
-            </font>
-         </Label>
-         <Label text="OMR">
-            <font>
-               <Font size="30.0" />
-            </font>
-            <VBox.margin>
-               <Insets top="-10.0" />
-            </VBox.margin>
-         </Label>
-         <VBox alignment="BOTTOM_LEFT" prefHeight="326.0" prefWidth="200.0">
-            <children>
                <Label text="Chamber Monitor Specs">
                   <font>
                      <Font size="15.0" />
@@ -178,6 +169,9 @@
                   </VBox.margin>
                </GridPane>
             </children>
+            <padding>
+               <Insets top="40.0" />
+            </padding>
          </VBox>
       </VBox>
    </HBox>

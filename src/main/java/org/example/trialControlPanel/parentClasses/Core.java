@@ -45,9 +45,10 @@ public class Core {
 
     public Core() {
         cameraManager = new CameraManager(0);
-        cameraManager.clearImageFolder();
+        cameraManager.clearRawImagesFolder();
 
         programInfoManager = new ProgramInfoManager();
+        programInfoManager.startProgram();
         programInfoManager.deactivateTrial();
 
         pythonRunner = new PythonRunner();

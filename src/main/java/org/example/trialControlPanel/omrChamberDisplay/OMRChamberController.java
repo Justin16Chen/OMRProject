@@ -17,6 +17,7 @@ import java.util.Objects;
 
 public class OMRChamberController extends CustomController {
 
+	private static final int PATTERN_FPS = 60;
 	public enum State {
 		TESTING, RESTING, IN_BETWEEN_TRIALS
 	}
@@ -31,6 +32,11 @@ public class OMRChamberController extends CustomController {
 	private double totalSecondsRunning, currentTrialSecondsRunning, currentCycleSecondsRunning; // 1 cycle = 1 test and 1 rest
 	public double getTotalSecondsRunning() {
 		return totalSecondsRunning;
+	}
+	public double getTotalTime() {
+		return trials.stream()
+				.mapToInt(TrialConfig::getTotalTime)
+				.sum() + (trials.size() - 1) * inBetweenTrialsRestTime;
 	}
 	private int currentCycle;
 	public int getCurrentCycle() {
@@ -56,6 +62,7 @@ public class OMRChamberController extends CustomController {
 		Platform.runLater(() -> getStage().close());
 		getCore().getCameraManager().stopRecording();
 		getCore().getRunTrialController().getStage().close();
+		getCore().getProgramInfoWriter().deactivateTrial();
 	}
 
 	@FXML
@@ -70,7 +77,7 @@ public class OMRChamberController extends CustomController {
 
 
 	public void startTrials() {
-		int sleepInterval = 1000 / getCore().getProgramInfoWriter().getFPS();
+		int patternSleepInterval = 1000 / PATTERN_FPS;
 		getCore().getProgramInfoWriter().activateTrial(trials.getFirst().getTestTime(), trials.getFirst().getRestTime());
 
 		trialRunning = true;
@@ -79,10 +86,11 @@ public class OMRChamberController extends CustomController {
 		currentTrialIndex = 0;
 		currentCycle = 0;
 		CameraManager cm = getCore().getCameraManager();
+		cm.clearRawImagesFolder();
 		cm.startRecording();
 		cm.setSaveImage(true);
 
-		// manage trials on separate thread
+		// manage trial logic on separate thread
 		new Thread(() -> {
 			double startTimeMs = System.currentTimeMillis();
 			double lastTrialFinishTimeMs = startTimeMs;
@@ -130,18 +138,28 @@ public class OMRChamberController extends CustomController {
 					}
 				}
 
-				cm.update(); // update camera manager
-
 				Platform.runLater(getCore().getRunTrialController()::updateUILabels);
 				Platform.runLater(() -> getCore().getRunTrialController().updateCameraImageView(cm.getLatestImage()));
 
 				try {
-					Thread.sleep(sleepInterval);
+					Thread.sleep(patternSleepInterval);
 				} catch (InterruptedException e) {
-					e.printStackTrace();
-					break;
+					throw new RuntimeException(e);
 				}
 			}
+		}).start();
+
+		// manage camera on separate thread for custom FPS
+		int cameraSleepInterval = 1000 / getCore().getProgramInfoWriter().getFPS();
+		new Thread(() -> {
+			while (trialRunning) {
+                try {
+					cm.update();
+                    Thread.sleep(cameraSleepInterval);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
 		}).start();
 	}
 	

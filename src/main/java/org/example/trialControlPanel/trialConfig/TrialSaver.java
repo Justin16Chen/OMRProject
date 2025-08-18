@@ -55,7 +55,6 @@ public class TrialSaver {
 		switch (directionStr) {
 			case "clockwise" -> direction = PatternDirection.CLOCKWISE;
 			case "counter_clockwise" -> direction = PatternDirection.COUNTER_CLOCKWISE;
-			case "both" -> direction = PatternDirection.BOTH;
 			default -> throw new JSONException("pattern direction of " + directionStr + " is not valid");
 		}
 

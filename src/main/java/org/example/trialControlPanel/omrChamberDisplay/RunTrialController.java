@@ -45,6 +45,7 @@ public class RunTrialController extends CustomController {
         cycleLabel.setText(chamberController.getCurrentCycle() + 1 + "/" + trial.getMaxTests());
         cycleProgress.setProgress((chamberController.getCurrentCycle() + 1.) / trial.getMaxTests());
 
+        int totalTime = (int) chamberController.getTotalTime();
         totalTimeLabel.setText(formatSeconds((int) chamberController.getTotalSecondsRunning()) + "/" + formatSeconds(totalTime));
         totalTimeProgress.setProgress(Math.min(chamberController.getTotalSecondsRunning() / totalTime, 1) % 1);
 
@@ -66,11 +67,7 @@ public class RunTrialController extends CustomController {
     }
 
     private ArrayList<TrialConfig> trials;
-    private int totalTime;
     public void setTrials(ArrayList<TrialConfig> trials) {
         this.trials = trials;
-        totalTime = trials.stream()
-                .mapToInt(TrialConfig::getTotalTime)
-                .sum();
     }
 }

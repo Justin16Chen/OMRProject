@@ -54,7 +54,7 @@ public class TrialConfigController extends CustomController {
 
 	// initial pattern params
 	@FXML
-	private Button directionCCButton, directionCCWButton, directionBothButton;
+	private Button directionCCButton, directionCCWButton;
 	@FXML
 	private FilteredTextField speedTextField, bandWidthTextField, brightnessLightTextField, brightnessDarkTextField;
 	@FXML
@@ -87,8 +87,6 @@ public class TrialConfigController extends CustomController {
 	}
 	@FXML
 	private void handleDirectionCCWClick() { currentTrial.getInitialPattern().setDirection(PatternDirection.COUNTER_CLOCKWISE); }
-	@FXML
-	private void handleDirectionBothClick() { currentTrial.getInitialPattern().setDirection(PatternDirection.BOTH); }
 
 	private void handleBrightnessLightDrag() {
 		currentTrial.getInitialPattern().setLightBrightness((int) brightnessLightSlider.getValue());
@@ -107,7 +105,6 @@ public class TrialConfigController extends CustomController {
 		switch (currentTrial.getInitialPattern().getDirection()) {
 			case CLOCKWISE -> directionCCButton.fire();
 			case COUNTER_CLOCKWISE -> directionCCWButton.fire();
-			case BOTH -> directionBothButton.fire();
 		}
 		speedTextField.getTextField().setText("" + currentTrial.getInitialPattern().getSpeed());
 		brightnessLightSlider.setValue(currentTrial.getInitialPattern().getLightBrightness());

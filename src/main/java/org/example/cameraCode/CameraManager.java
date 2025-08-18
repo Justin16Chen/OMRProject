@@ -91,12 +91,13 @@ public class CameraManager {
         return false;
     }
 
-    public void clearImageFolder() {
-//        File folder = new File(RAW_IMAGES_PATH);
-//        File[] files = folder.listFiles();
-//        if (files != null)
-//            for (File file : files)
-//                file.delete();
+    public void clearRawImagesFolder() {
+        File folder = new File(RAW_IMAGES_PATH);
+        File[] files = folder.listFiles();
+        if (files != null)
+            for (File file : files)
+                file.delete();
+        i = 0;
     }
 
     public Image getLatestImage() {

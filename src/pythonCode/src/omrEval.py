@@ -342,7 +342,7 @@ if __name__ == "__main__":
 
         prev_time = datetime.now()
         while True:
-            print(f"nextI: {next_img}, maxI: {max_img}, active: {active}, testTime: {test_time}, restTime: {rest_time}")
+            #print(f"nextI: {next_img}, maxI: {max_img}, active: {active}, testTime: {test_time}, restTime: {rest_time}")
             # ensuring fps matches with program fps
             dif = datetime.now() - prev_time
             if dif.total_seconds() < spf:
