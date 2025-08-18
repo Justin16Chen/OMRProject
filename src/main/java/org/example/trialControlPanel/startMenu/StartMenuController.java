@@ -30,7 +30,6 @@ public class StartMenuController extends CustomController {
         startMenuMonitorNumberLabel.setText("" + mf.getMonitorNumber());
         startMenuMonitorResolutionLabel.setText(mf.getResolutionSpecs());
         startMenuMonitorSizeLabel.setText(mf.getSizeSpecs());
-        System.out.println("setting start menu mf to " + mf);
     }
 
     @FXML
@@ -115,14 +114,19 @@ public class StartMenuController extends CustomController {
     private void handleRunQueueButtonClick() {
         int num = startMenuMonitorFormat.getMonitorNumber() + 1;
         if (num > MonitorFormat.getNumScreens())
-            num = 1;
-        MonitorFormat chamberMonitorFormat = new MonitorFormat(num);
-
-        chamberMonitorNumberLabel.setText("" + chamberMonitorFormat.getMonitorNumber());
-        chamberMonitorResolutionLabel.setText(chamberMonitorFormat.getResolutionSpecs());
-        chamberMonitorSizeLabel.setText(chamberMonitorFormat.getSizeSpecs());
-
-        getCore().runOMRTrials(chamberMonitorFormat, TrialSaver.getTrials(queuedTrialNames), restTimeTextField.getSeconds());
+            num -= MonitorFormat.getNumScreens();
+        MonitorFormat[] chamberMonitors = new MonitorFormat[4];
+        for (int i=0; i<4; i++) {
+            int monitorNum = num + i;
+            if (monitorNum > MonitorFormat.getNumScreens())
+                monitorNum -= MonitorFormat.getNumScreens();
+            chamberMonitors[i] = new MonitorFormat(monitorNum);
+        }
+        chamberMonitorNumberLabel.setText("" + chamberMonitors[0].getMonitorNumber());
+        chamberMonitorResolutionLabel.setText(chamberMonitors[0].getResolutionSpecs());
+        chamberMonitorSizeLabel.setText(chamberMonitors[0].getSizeSpecs());
+        getCore().runOMRTrials(chamberMonitors, TrialSaver.getTrials(queuedTrialNames), restTimeTextField.getSeconds());
+        System.out.println(queuedTrialNames);
     }
 
     @FXML

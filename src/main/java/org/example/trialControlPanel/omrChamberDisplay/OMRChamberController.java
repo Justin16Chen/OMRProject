@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.input.KeyCode;
+import javafx.stage.Stage;
 import org.example.cameraCode.CameraManager;
 import org.example.trialControlPanel.parentClasses.CustomController;
 import org.example.trialControlPanel.monitorInfo.MonitorFormat;
@@ -50,16 +51,23 @@ public class OMRChamberController extends CustomController {
 	@Override
 	public void setup() {
 		getCore().getOMRChamberScene().setOnKeyPressed(e -> {
-            if (Objects.requireNonNull(e.getCode()) == KeyCode.ESCAPE) {
+			if (Objects.requireNonNull(e.getCode()) == KeyCode.ESCAPE) {
 				stopTrial();
 			}
 		});
 	}
 
 	public void stopTrial() {;
-		patternDrawer.stop();
 		trialRunning = false;
-		Platform.runLater(() -> getStage().close());
+		patternDrawer.stop();
+		Platform.runLater(getStage()::close);
+		for (ChildOMRController child : getCore().getChildOMRControllers()) {
+			Platform.runLater(() -> {
+				child.getStage().close();
+				child.getPatternDrawer().stop();
+			});
+		}
+
 		getCore().getCameraManager().stopRecording();
 		getCore().getRunTrialController().getStage().close();
 		getCore().getProgramInfoWriter().deactivateTrial();
@@ -74,8 +82,6 @@ public class OMRChamberController extends CustomController {
 		inBetweenTrialsRestTime = restTime;
 	}
 
-
-
 	public void startTrials() {
 		int patternSleepInterval = 1000 / PATTERN_FPS;
 		getCore().getProgramInfoWriter().activateTrial(trials.getFirst().getTestTime(), trials.getFirst().getRestTime());
@@ -83,6 +89,9 @@ public class OMRChamberController extends CustomController {
 		trialRunning = true;
 		state = State.TESTING;
 		patternDrawer.start();
+		for (ChildOMRController child : getCore().getChildOMRControllers())
+			child.getPatternDrawer().start();
+
 		currentTrialIndex = 0;
 		currentCycle = 0;
 		CameraManager cm = getCore().getCameraManager();
@@ -105,11 +114,13 @@ public class OMRChamberController extends CustomController {
 
 				if (state == State.TESTING) {
 					if (currentTrialSecondsRunning >= currentTrial.getTotalTime() - currentTrial.getRestTime() && currentTrialIndex + 1 >= trials.size())
-							Platform.runLater(this::stopTrial);
+						Platform.runLater(this::stopTrial);
 					else if (currentCycleSecondsRunning >= currentTrial.getTestTime()) {
 						state = State.RESTING;
-						patternDrawer.stop();
-						Platform.runLater(patternDrawer::showBlank);
+						patternDrawer.stopAndBlackOutScreen();
+						for (ChildOMRController child : getCore().getChildOMRControllers())
+							child.getPatternDrawer().stopAndBlackOutScreen();
+
 						cm.setSaveImage(false);
 					}
 				}
@@ -123,6 +134,11 @@ public class OMRChamberController extends CustomController {
 						lastCycleFinishTimeMs = System.currentTimeMillis();
 						patternDrawer.start();
 						patternDrawer.getPatternData().setLightBrightness(patternDrawer.getPatternData().getLightBrightness() - currentTrial.getDimAmount());
+
+						for (ChildOMRController child : getCore().getChildOMRControllers()) {
+							child.getPatternDrawer().start();
+							child.getPatternDrawer().getPatternData().setLightBrightness(patternDrawer.getPatternData().getLightBrightness() - currentTrial.getDimAmount());
+						}
 						currentCycle++;
 						cm.setSaveImage(true);
 					}
@@ -134,6 +150,9 @@ public class OMRChamberController extends CustomController {
 						lastCycleFinishTimeMs = System.currentTimeMillis();
 						currentCycle = 0;
 						patternDrawer.setPatternData(currentTrial.getInitialPattern());
+						for (ChildOMRController child : getCore().getChildOMRControllers())
+							child.getPatternDrawer().setPatternData(currentTrial.getInitialPattern());
+
 						getCore().getProgramInfoWriter().activateTrial(currentTrial.getTestTime(), currentTrial.getRestTime());
 					}
 				}
@@ -153,16 +172,16 @@ public class OMRChamberController extends CustomController {
 		int cameraSleepInterval = 1000 / getCore().getProgramInfoWriter().getFPS();
 		new Thread(() -> {
 			while (trialRunning) {
-                try {
+				try {
 					cm.update();
-                    Thread.sleep(cameraSleepInterval);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
+					Thread.sleep(cameraSleepInterval);
+				} catch (InterruptedException e) {
+					throw new RuntimeException(e);
+				}
+			}
 		}).start();
 	}
-	
+
 	public void resizeCanvas(int width, int height) {
 		canvas.setWidth(width);
 		canvas.setHeight(height);

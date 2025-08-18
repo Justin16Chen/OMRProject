@@ -12,6 +12,7 @@ import org.example.trialControlPanel.monitorInfo.ApplicationMonitorManager;
 import org.example.trialControlPanel.omrChamberDisplay.OMRChamberController;
 import org.example.trialControlPanel.monitorInfo.MonitorFormat;
 import org.example.trialControlPanel.omrChamberDisplay.RunTrialController;
+import org.example.trialControlPanel.omrChamberDisplay.ChildOMRController;
 import org.example.trialControlPanel.startMenu.StartMenuController;
 import org.example.trialControlPanel.trialConfig.TrialConfig;
 import org.example.trialControlPanel.trialConfig.TrialConfigController;
@@ -25,8 +26,11 @@ public class Core {
         return new FXMLLoader(Core.class.getResource(filePath));
     }
 
+    private static final int NUM_OMR_CHAMBER_CHILDREN = 3;
+
     private Stage primaryStage;
     private Stage OMRChamberStage;
+    private Stage[] childOMRChamberStages;
     private Stage runTrialStage;
 
     private Scene startMenuScene;
@@ -35,7 +39,9 @@ public class Core {
     private Scene trialConfigScene;
     private TrialConfigController trialConfigController;
     private Scene OMRChamberScene;
+    private Scene[] childOMRChamberScenes;
     private OMRChamberController OMRChamberController;
+    private ChildOMRController[] childOMRChamberControllers;
     private Scene runTrialScene;
     private RunTrialController runTrialController;
 
@@ -53,14 +59,14 @@ public class Core {
 
         pythonRunner = new PythonRunner();
 
-        Thread pythonThread = new Thread(() -> {
-            try {
-                pythonRunner.start();
-            } catch (IOException | InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        pythonThread.start();
+//        Thread pythonThread = new Thread(() -> {
+//            try {
+//                pythonRunner.start();
+//            } catch (IOException | InterruptedException e) {
+//                throw new RuntimeException(e);
+//            }
+//        });
+//        pythonThread.start();
     }
 
     public CameraManager getCameraManager() {
@@ -76,9 +82,18 @@ public class Core {
             this.primaryStage = primaryStage; // control panel stage
             primaryStage.setTitle("AutoOMR");
 
-            OMRChamberStage = new Stage(); // stage to be shown in OMR chamber
+            OMRChamberStage = new Stage();
             OMRChamberStage.setTitle("OMR Chamber");
             OMRChamberStage.initStyle(StageStyle.UNDECORATED);
+
+            childOMRChamberStages = new Stage[NUM_OMR_CHAMBER_CHILDREN];
+            for (int i=0; i<NUM_OMR_CHAMBER_CHILDREN; i++) {
+                childOMRChamberStages[i] = new Stage();
+                childOMRChamberStages[i].setTitle("OMR Chamber");
+                childOMRChamberStages[i].initStyle(StageStyle.UNDECORATED);
+            }
+            childOMRChamberScenes = new Scene[NUM_OMR_CHAMBER_CHILDREN];
+            childOMRChamberControllers = new ChildOMRController[NUM_OMR_CHAMBER_CHILDREN];
 
             runTrialStage = new Stage(); // stage to be shown when trials are running (shows info about current trial)
             runTrialStage.setTitle("Current Trial Info");
@@ -92,6 +107,8 @@ public class Core {
             // setup stages
             primaryStage.setScene(startMenuScene);
             OMRChamberStage.setScene(OMRChamberScene);
+            for (int i=0; i<NUM_OMR_CHAMBER_CHILDREN; i++)
+                childOMRChamberStages[i].setScene(childOMRChamberScenes[i]);
             runTrialStage.setScene(runTrialScene);
 
             primaryStage.setResizable(false);
@@ -112,19 +129,32 @@ public class Core {
         }
     }
 
-    public void runOMRTrials(MonitorFormat chamberMonitorFormat, ArrayList<TrialConfig> trials, int restTime) {
-        OMRChamberController.initPatternDrawer(chamberMonitorFormat, trials, restTime);
-        Rectangle2D bounds = chamberMonitorFormat.getBounds();
+    public void runOMRTrials(MonitorFormat[] chamberMonitorFormats, ArrayList<TrialConfig> trials, int restTime) {
+        OMRChamberController.initPatternDrawer(chamberMonitorFormats[0], trials, restTime);
+        Rectangle2D bounds = chamberMonitorFormats[0].getBounds();
         OMRChamberStage.setX(bounds.getMinX());
         OMRChamberStage.setY(bounds.getMinY());
         OMRChamberStage.setWidth(bounds.getWidth());
         OMRChamberStage.setHeight(bounds.getHeight());
-        OMRChamberController.resizeCanvas((int) bounds.getWidth(), (int) bounds.getHeight());
         OMRChamberStage.show();
+        OMRChamberController.resizeCanvas((int) bounds.getWidth(), (int) bounds.getHeight());
+
+        for (int i=0; i<NUM_OMR_CHAMBER_CHILDREN; i++) {
+            childOMRChamberControllers[i].initPatternDrawer(chamberMonitorFormats[i + 1], trials);
+            bounds = chamberMonitorFormats[i + 1].getBounds();
+            childOMRChamberStages[i].setX(bounds.getMinX());
+            childOMRChamberStages[i].setY(bounds.getMinY());
+            childOMRChamberStages[i].setWidth(bounds.getWidth());
+            childOMRChamberStages[i].setHeight(bounds.getHeight());
+            childOMRChamberStages[i].show();
+            childOMRChamberControllers[i].resizeCanvas((int) bounds.getWidth(), (int) bounds.getHeight());
+        }
 
         runTrialController.setTrials(trials);
         runTrialController.updateUILabels();
-        getRunTrialStage().show();
+        runTrialStage.setX(primaryStage.getX());
+        runTrialStage.setY(primaryStage.getY());
+        runTrialStage.show();
 
         OMRChamberController.startTrials();
     }
@@ -151,6 +181,14 @@ public class Core {
         OMRChamberController = loader.getController();
         OMRChamberController.setCore(this);
         OMRChamberController.setStage(OMRChamberStage);
+
+        for (int i=0; i<NUM_OMR_CHAMBER_CHILDREN; i++) {
+            FXMLLoader childLoader = getLoaderFromResources("/patternControlPanelFXML/ChildOMRChamber.fxml");
+            childOMRChamberScenes[i] = new Scene(childLoader.load());
+            childOMRChamberControllers[i] = childLoader.getController();
+            childOMRChamberControllers[i].setCore(this);
+            childOMRChamberControllers[i].setStage(childOMRChamberStages[i]);
+        }
     }
 
     public void loadRunTrial() throws IOException {
@@ -163,9 +201,6 @@ public class Core {
 
     public Stage getPrimaryStage() {
         return primaryStage;
-    }
-    public Stage getOMRChamberStage() {
-        return OMRChamberStage;
     }
     public Stage getRunTrialStage() {
         return runTrialStage;
@@ -189,6 +224,9 @@ public class Core {
     }
     public OMRChamberController getOMRChamberController() {
         return OMRChamberController;
+    }
+    public ChildOMRController[] getChildOMRControllers() {
+        return childOMRChamberControllers;
     }
     public Scene getRunTrialScene() {
         return runTrialScene;

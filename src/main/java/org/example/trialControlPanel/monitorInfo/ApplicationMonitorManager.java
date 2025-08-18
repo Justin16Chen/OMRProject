@@ -29,11 +29,14 @@ public class ApplicationMonitorManager {
             if (inBounds(x, y, monitorFormat.getBounds()))
                 return monitorFormat;
         }
+        System.out.println("stage at " + x + " " + y + " has no found monitor");
         return null; // should never run
     }
 
     public void updateMonitorFormat(Stage stage) {
-        monitorFormatConsumer.accept(findCurrentMonitorFormat(stage.getX(), stage.getY()));
+        MonitorFormat mf = findCurrentMonitorFormat(stage.getX(), stage.getY());
+        if (mf != null)
+            monitorFormatConsumer.accept(mf);
     }
 
     private void handleStartMenuMoved(double x, double y) {
@@ -43,7 +46,9 @@ public class ApplicationMonitorManager {
 
         // need to look for which monitor the screen moved to (this is def bad code but whatever, performance don't matter ;) )
         MonitorFormat newMonitorFormat = findCurrentMonitorFormat(x, y);
-        monitorFormatConsumer.accept(newMonitorFormat);
-        this.monitorFormat = newMonitorFormat;
+        if (newMonitorFormat != null) {
+            monitorFormatConsumer.accept(newMonitorFormat);
+            this.monitorFormat = newMonitorFormat;
+        }
     }
 }

@@ -1,6 +1,7 @@
 package org.example.trialControlPanel.pattern;
 
 import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
@@ -16,9 +17,13 @@ public class PatternDrawer extends AnimationTimer {
 	
 	private final MonitorFormat monitorFormat;
     private Pattern patternData;
-    private final ElapsedTime elapsedTime;
     private final Canvas canvas;
     private final SimulatedSurface surfaceType;
+    private int frameNum;
+    private double lastPrintTimeMs;
+    private double startTime;
+    private double lastUpdateTimeMs;
+    private boolean playing;
 
     public PatternDrawer(MonitorFormat monitorFormat, Pattern patternData, Canvas canvas, SimulatedSurface surfaceType) {
     	if (monitorFormat == null)
@@ -34,7 +39,6 @@ public class PatternDrawer extends AnimationTimer {
         this.patternData = patternData;
         this.canvas = canvas;
         this.surfaceType = surfaceType;
-        elapsedTime = new ElapsedTime();
     }
 
     public Pattern getPatternData() {
@@ -44,43 +48,51 @@ public class PatternDrawer extends AnimationTimer {
         this.patternData = newPatternData;
     }
 
-    public boolean isPlaying() {
-    	return elapsedTime.isStarted() && !elapsedTime.isPaused();
-    }
     public void togglePlaying() {
-        if (!isPlaying())
+        if (!playing)
             start();
         else
             stop();
     }
 
-    public void showBlank() {
-        GraphicsContext g = canvas.getGraphicsContext2D();
-        g.setFill(Color.rgb(0, 0, 0));
-        g.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
-    }
-
     @Override
     public void start() {
         super.start();
-
-        if (!elapsedTime.isStarted())
-            elapsedTime.start();
-        else
-            elapsedTime.unpause();
+        playing = true;
+        lastPrintTimeMs = System.currentTimeMillis();
+        frameNum = 0;
+        startTime = System.currentTimeMillis();
     }
 
     @Override
     public void stop() {
         super.stop();
-        elapsedTime.pause();
+        playing = false;
+    }
+    public void stopAndBlackOutScreen() {
+        stop();
+        Platform.runLater(() -> {
+            GraphicsContext g = canvas.getGraphicsContext2D();
+            g.setFill(Color.BLACK);
+            g.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
+        });
     }
 
     @Override
     public void handle(long now) {
-        if (patternData == null || !isPlaying()) {
+        if (patternData == null || !playing) {
             return;
         }
+        double dt = (System.currentTimeMillis() - lastUpdateTimeMs) / 1000.;
+        lastUpdateTimeMs = System.currentTimeMillis();
+        double timeRunning = (System.currentTimeMillis() - startTime) / 1000.;
+
+//        frameNum++;
+//        if (System.currentTimeMillis() - lastPrintTimeMs > 1000) {
+//            lastPrintTimeMs = System.currentTimeMillis();
+//            System.out.println("FPS: " + frameNum);
+//            frameNum = 0;
+//        }
 
         GraphicsContext g = getGraphicsContext();
 
@@ -89,19 +101,16 @@ public class PatternDrawer extends AnimationTimer {
         
         // Calculate the offset and total amount of lines to draw
         double rotationsPerSec = patternData.getSpeed() / 60;
-        double percentScreenPerSec = rotationsPerSec / 4; // percent of screen to cover in 1 second - there are 4 screens
+        double percentScreenPerSec = rotationsPerSec * 4; // percent of screen to cover in 1 second - there are 4 screens
 
         switch (surfaceType) {
-            case FLAT -> drawFlatPattern(g, bandWidth, percentScreenPerSec);
-            case CIRCULAR -> drawCircularPattern(g, bandWidth, percentScreenPerSec);
+            case FLAT -> drawFlatPattern(g, timeRunning, bandWidth, percentScreenPerSec);
+            case CIRCULAR -> drawCircularPattern(g, timeRunning, bandWidth, percentScreenPerSec);
         }
     }
 
     private GraphicsContext getGraphicsContext() {
         GraphicsContext g = canvas.getGraphicsContext2D();
-
-        // Clear the canvas before redrawing
-        g.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
 
         // fill background
         Color darkColor = Color.rgb(patternData.getDarkBrightness(), patternData.getDarkBrightness(), patternData.getDarkBrightness());
@@ -114,9 +123,9 @@ public class PatternDrawer extends AnimationTimer {
         return g;
     }
 
-    private void drawFlatPattern(GraphicsContext g, double bandWidth, double percentScreenPerSec) {
+    private void drawFlatPattern(GraphicsContext g, double timeRunning, double bandWidth, double percentScreenPerSec) {
     	double pixelsPerSecondSpeed = percentScreenPerSec * monitorFormat.getWidthPixels();
-        double offset = (elapsedTime.getElapsedTimeSeconds() * pixelsPerSecondSpeed) % (bandWidth * 2);
+        double offset = (timeRunning * pixelsPerSecondSpeed) % (bandWidth * 2);
         int amount = (int) (canvas.getWidth() / (bandWidth * 2)) + 2; // Buffer for edge cases
 
         // Draw vertical lines with spacing
@@ -129,11 +138,11 @@ public class PatternDrawer extends AnimationTimer {
             g.stroke();
         }
     }
-    private void drawCircularPattern(GraphicsContext g, double bandWidth, double percentScreenPerSec) {
+    private void drawCircularPattern(GraphicsContext g, double timeRunning, double bandWidth, double percentScreenPerSec) {
 		double radius = monitorFormat.getWidthPixels() / 2.;
     	double bandAngle = Math.atan(bandWidth / 2 / radius) * 2; // the angle (in rad) that each band takes up
     	double angularSpeed = Math.PI / 2 * percentScreenPerSec; // change in angle every second
-    	double angularOffset = (angularSpeed * elapsedTime.getElapsedTimeSeconds()) % (bandAngle * 2);
+    	double angularOffset = (angularSpeed * timeRunning) % (bandAngle * 2);
     	int amount = (int) (Math.ceil(Math.PI / 2 / bandAngle));
 
     	for (int i=-1; i<amount+2; i+=2) {
@@ -145,11 +154,6 @@ public class PatternDrawer extends AnimationTimer {
             g.moveTo(bandX + radius, 0);
             g.lineTo(bandX + radius, canvas.getHeight());
             g.stroke();
-
-//            g.setStroke(Color.RED);
-//            g.setLineWidth(1);
-//            g.strokeText("dist: " + Math.round(flatDist), bandX + radius, monitorFormat.getHeightPixels() / 2);
-//            g.strokeText("band w: " + Math.round(bandWidth), bandX + radius, monitorFormat.getHeightPixels() / 2 + 30);
     	}
     }
 
