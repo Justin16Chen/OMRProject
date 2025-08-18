@@ -24,7 +24,7 @@ public class MonitorFormat {
 	// width and height in cm does not have 3 sig figs, 3 decimal places were chosen for visuals
 	private final int monitorNumber; // 1 is first monitor - this is not an index - this is a number
 	private final int widthPixels, heightPixels; // width and height of monitor in pixels
-	private final double widthCM, heightCM; // width and height of monitor in centimeters
+	private double widthCM, heightCM; // width and height of monitor in centimeters
 	private final double scale; // scale of screen ex: 1, 1.25, 1.5, 1.75, 2
 	
 	// there MUST be a JavaFX application running for this to work
@@ -58,7 +58,6 @@ public class MonitorFormat {
         // Convert pixels to centimeters
         widthCM = (widthPixels / dpi) * 2.54;
         heightCM = (heightPixels / dpi) * 2.54;
-			
     }
 	
 	public int getMonitorNumber() {
@@ -92,6 +91,11 @@ public class MonitorFormat {
 	
 	public Rectangle2D getBounds() {
         return Screen.getScreens().get(monitorNumber - 1).getBounds();
+	}
+
+	public void setPhysicalSize(double wCm, double hCm) {
+		widthCM = wCm;
+		heightCM = hCm;
 	}
 	
 	@Override

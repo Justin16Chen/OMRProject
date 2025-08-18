@@ -87,12 +87,12 @@ public class PatternDrawer extends AnimationTimer {
         lastUpdateTimeMs = System.currentTimeMillis();
         double timeRunning = (System.currentTimeMillis() - startTime) / 1000.;
 
-//        frameNum++;
-//        if (System.currentTimeMillis() - lastPrintTimeMs > 1000) {
-//            lastPrintTimeMs = System.currentTimeMillis();
-//            System.out.println("FPS: " + frameNum);
-//            frameNum = 0;
-//        }
+        frameNum++;
+        if (System.currentTimeMillis() - lastPrintTimeMs > 1000) {
+            lastPrintTimeMs = System.currentTimeMillis();
+            System.out.println("FPS: " + frameNum);
+            frameNum = 0;
+        }
 
         GraphicsContext g = getGraphicsContext();
 

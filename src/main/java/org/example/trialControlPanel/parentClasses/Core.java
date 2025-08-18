@@ -26,7 +26,7 @@ public class Core {
         return new FXMLLoader(Core.class.getResource(filePath));
     }
 
-    private static final int NUM_OMR_CHAMBER_CHILDREN = 3;
+    public static final int NUM_OMR_CHAMBER_CHILDREN = 1;
 
     private Stage primaryStage;
     private Stage OMRChamberStage;

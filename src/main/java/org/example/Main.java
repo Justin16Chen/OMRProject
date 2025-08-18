@@ -2,7 +2,6 @@ package org.example;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
-import org.example.trialControlPanel.monitorInfo.MonitorFormat;
 import org.example.trialControlPanel.parentClasses.Core;
 import org.example.trialControlPanel.trialConfig.TrialSaver;
 

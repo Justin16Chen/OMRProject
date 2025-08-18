@@ -6,6 +6,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 import org.example.cameraCode.CameraManager;
+import org.example.localProperties.LocalPropsReader;
+import org.example.trialControlPanel.parentClasses.Core;
 import org.example.trialControlPanel.parentClasses.CustomController;
 import org.example.trialControlPanel.monitorInfo.MonitorFormat;
 import org.example.trialControlPanel.trialConfig.TrialSaver;
@@ -113,14 +115,12 @@ public class StartMenuController extends CustomController {
     @FXML
     private void handleRunQueueButtonClick() {
         int num = startMenuMonitorFormat.getMonitorNumber() + 1;
-        if (num > MonitorFormat.getNumScreens())
-            num -= MonitorFormat.getNumScreens();
-        MonitorFormat[] chamberMonitors = new MonitorFormat[4];
-        for (int i=0; i<4; i++) {
+        MonitorFormat[] chamberMonitors = new MonitorFormat[Core.NUM_OMR_CHAMBER_CHILDREN + 1];
+        for (int i=0; i<Core.NUM_OMR_CHAMBER_CHILDREN + 1; i++) {
             int monitorNum = num + i;
-            if (monitorNum > MonitorFormat.getNumScreens())
-                monitorNum -= MonitorFormat.getNumScreens();
             chamberMonitors[i] = new MonitorFormat(monitorNum);
+            if (LocalPropsReader.shouldUsePrespecifiedChamberMonitorSize())
+                chamberMonitors[i].setPhysicalSize(LocalPropsReader.getChamberMonitorWidthCm(), LocalPropsReader.getChamberMonitorHeightCm());
         }
         chamberMonitorNumberLabel.setText("" + chamberMonitors[0].getMonitorNumber());
         chamberMonitorResolutionLabel.setText(chamberMonitors[0].getResolutionSpecs());
