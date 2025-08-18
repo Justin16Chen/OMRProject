@@ -106,8 +106,10 @@ public class OMRChamberController extends CustomController {
 					}
 				}
 				else if (state == State.RESTING) {
-					if (currentTrialSecondsRunning >= currentTrial.getTotalTime())
+					if (currentTrialSecondsRunning >= currentTrial.getTotalTime()) {
+						getCore().getProgramInfoWriter().deactivateTrial();
 						state = State.IN_BETWEEN_TRIALS;
+					}
 					else if (currentCycleSecondsRunning >= currentTrial.getCycleTime()) {
 						state = State.TESTING;
 						lastCycleFinishTimeMs = System.currentTimeMillis();
@@ -124,6 +126,7 @@ public class OMRChamberController extends CustomController {
 						lastCycleFinishTimeMs = System.currentTimeMillis();
 						currentCycle = 0;
 						patternDrawer.setPatternData(currentTrial.getInitialPattern());
+						getCore().getProgramInfoWriter().activateTrial(currentTrial.getTestTime(), currentTrial.getRestTime());
 					}
 				}
 
