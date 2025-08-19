@@ -6,10 +6,10 @@ import torch
 import os
 import json
 from PIL import Image, ImageDraw, ImageFont
-from src.draw_box_utils import draw_objs
 import math
 import numpy as np
 from datetime import datetime, timedelta
+import math
 
 def find_box_center(box):
     return [0.5 *(box[0] + box[2]), 0.5 * (box[1] + box[3])]
@@ -141,31 +141,50 @@ def dot(v1, v2):
 
 
 
-def get_head_and_tail_data(numpy_predict_boxes, predict_classes, category_indices, img_size):
+def get_head_and_tail_data(numpy_predict_boxes, predict_classes, predict_scores, category_indices, img_size):
     # converting from numpy data type to regular python float
     predict_boxes = []
     for numpy_box in numpy_predict_boxes:
         predict_boxes.append([float(numpy_box[0]), float(numpy_box[1]), float(numpy_box[2]), float(numpy_box[3])])
-
-
     # finding ear and tail positions from model
     ear_poses = []
     tail_poses = []
-    # print(category_indices)
-    # print(predict_classes)
+    ear_confs = []
+    tail_confs = []
     for i in range(len(predict_boxes)):
         if category_indices[str(predict_classes[i])] == "e":
             ear_poses.append(find_box_center(predict_boxes[i]))
+            ear_confs.append(predict_scores[i])
         else:
             tail_poses.append(find_box_center(predict_boxes[i]))
+            tail_confs.append(predict_scores[i])
 
     dict = {
-        "ssd_successful": len(ear_poses) == 2 and len(tail_poses) == 1,
+        "ssd_successful": len(ear_poses) >= 2 and len(tail_poses) > 0,
         "head_angle": 0,
         "tail_angle": 0
     }
     if not dict["ssd_successful"]:
         return dict
+    print("success: " + str(dict["ssd_successful"]) + ", num ears: " + str(len(ear_poses)) + ", num tails: " + str(len(tail_poses)))
+    print()
+    if not dict["ssd_successful"]:
+        return dict
+
+    # selecting the top ear positions with highest confidence if more than two is recognized by ssd
+    if len(ear_poses) > 2:
+        conf1, i1 = select_highest(ear_confs)
+        ear_confs.pop(highest)
+        conf2, i2 = select_highest(ear_confs)
+        ear_confs = [conf1, conf2]
+        ear_poses = [ear_poses[i1], ear_poses[i2]]
+    # selecting top tail position
+    if len(tail_poses) > 1:
+        conf, i = select_highest(tail_confs)
+        tail_confs = [conf]
+        tail_poses = [tail_poses[i]]
+
+
     # calculating head direction based on ear and tail positions
     ear_vec = [ear_poses[1][0] - ear_poses[0][0], ear_poses[1][1] - ear_poses[0][1]]
     head_vec = [ear_vec[1], -ear_vec[0]]
@@ -180,8 +199,10 @@ def get_head_and_tail_data(numpy_predict_boxes, predict_classes, category_indice
         "head_angle": math.atan2(head_vec[1], head_vec[0]),
         "tail_angle": math.atan2(tail_vec[1], tail_vec[0]),
         "ear_poses": ear_poses,
+        "ear_confs": ear_confs,
         "ears_center": ear_mid,
-        "tail_pos": tail_poses[0]
+        "tail_pos": tail_poses[0],
+        "tail_conf": tail_confs[0]
     }
 
 
@@ -210,6 +231,14 @@ def sign(x):
     if x > 0: return 1
     if x < 0: return -1
     return 0
+def select_highest(list):
+    highest = 0
+    highest_i = 0
+    for i in range(len(list)):
+        if list[i] > highest:
+            highest = list[i]
+            highest_i = i
+    return highest, highest_i
 
 def run_ssd(model, data_transform, original_img):
     img, _ = data_transform(original_img)
@@ -227,6 +256,7 @@ def run_ssd(model, data_transform, original_img):
 
     return predict_boxes, predict_classes, predict_scores
 def analyze_camera_img(img_i, model, ssd_input_transform, category_index, lstm, lstm_input_transform, results, window_size, angle_offsets, image_folder_path, visualization_folder_path, fps, device):
+    print("img_i: " + str(img_i))
     img_path = os.path.join(image_folder_path, str(img_i) + '.png')
     if not os.path.exists(img_path):
         return False
@@ -237,22 +267,23 @@ def analyze_camera_img(img_i, model, ssd_input_transform, category_index, lstm, 
 
     # running model and analyzing model predictions
     pred_box, pred_class, pred_score = run_ssd(model, ssd_input_transform, original_img)
-    data = get_head_and_tail_data(pred_box, pred_class, category_index, original_img.size)
+    data = get_head_and_tail_data(pred_box, pred_class, pred_score, category_index, original_img.size)
 
     # drawing some data onto img
-    cx = w * 0.7
+    cx = w * 0.8
     cy = h * 0.8
-    rh = w * 0.15
-    rw = h * 0.4
+    rh = h * 0.2
+    rw = w * 0.37
     top = cy - rh/2
     text_left = cx - rw*0.45
-    text_inc = rh/6
+    text_inc = rh/5.8
     draw = ImageDraw.Draw(original_img)
     line_width=2
-    fnt = ImageFont.truetype("arial.ttf", 12)
+    font_size = 20
+    fnt = ImageFont.truetype("arialbd.ttf", font_size)
     draw.rectangle((cx - rw/2, cy-rh/2, cx+rw/2, cy+rh/2), fill=None, outline=(0, 10, 200), width=line_width)
-    draw.text(xy=(text_left, top+text_inc), text="Frame:" + str(img_i), font=fnt, fill="black")
-    draw.text(xy=(text_left, top+text_inc*2), text="Time:" + str(timedelta(seconds=img_i/fps)), font=fnt, fill="black")
+    draw.text(xy=(text_left, top+text_inc), text="Frame: " + str(img_i), font=fnt, fill="black")
+    draw.text(xy=(text_left, top+text_inc*2), text="Time: " + str(timedelta(seconds=img_i/fps)), font=fnt, fill="black")
 
     # print("ssd successful: " + str(data["ssd_successful"]))
     # copying last frames data if ssd fails; if it fails on first frame, then it takes the default values
@@ -266,12 +297,18 @@ def analyze_camera_img(img_i, model, ssd_input_transform, category_index, lstm, 
     else:
         # drawing ear and tail positions
         box_r = 15
-        ears = data["ear_poses"]
+        label_w = font_size * 3
+        label_h = font_size
+        green = (40, 255, 40)
+        for i, ear in enumerate(data["ear_poses"]):
+            draw.rectangle(xy=(ear[0]-box_r, ear[1] - box_r, ear[0] + box_r, ear[1] + box_r), fill=None, outline=green, width=line_width)
+            draw.rectangle(xy=(ear[0]-box_r, ear[1]-box_r-label_h, ear[0]-box_r+label_w, ear[1]-box_r), fill=green)
+            draw.text(xy=(ear[0]-box_r, ear[1]-box_r-label_h), text="e: " + str(math.floor(data["ear_confs"][i]*100)) + "%", font=fnt, fill="black")
         tail = data["tail_pos"]
-        green = (10, 250, 10)
-        draw.rectangle(xy=(ears[0][0]-box_r, ears[0][1] - box_r, ears[0][0] + box_r, ears[0][1] + box_r), fill=None, outline=green, width=line_width)
-        draw.rectangle(xy=(ears[1][0]-box_r, ears[1][1] - box_r, ears[1][0] + box_r, ears[1][1] + box_r), fill=None, outline=green, width=line_width)
-        draw.rectangle(xy=(tail[0]-box_r, tail[1] - box_r, tail[0] + box_r, tail[1] + box_r), fill=None, outline=green, width=line_width)
+        blue = (40, 230, 255)
+        draw.rectangle(xy=(tail[0]-box_r, tail[1] - box_r, tail[0] + box_r, tail[1] + box_r), fill=None, outline=blue, width=line_width)
+        draw.rectangle(xy=(tail[0]-box_r, tail[1]-box_r-label_h, tail[0]-box_r+label_w, tail[1]-box_r), fill=blue)
+        draw.text(xy=(tail[0]-box_r, tail[1]-box_r-label_h), text="t: " + str(math.floor(data["tail_conf"]*100)) + "%", font=fnt, fill="black")
 
         # converting to degrees
         data["head_angle"] *= 180 / math.pi
@@ -298,8 +335,8 @@ def analyze_camera_img(img_i, model, ssd_input_transform, category_index, lstm, 
         results[1, img_i] = data["tail_angle"]
 
     # drawing head and tail angle
-    draw.text(xy=(text_left, top+text_inc*3), text="Head Angle (deg): " + str(results[0, img_i].item()), font=fnt, fill="black")
-    draw.text(xy=(text_left, top+text_inc*4), text="Tail Angle (deg): " + str(results[1, img_i].item()), font=fnt, fill="black")
+    draw.text(xy=(text_left, top+text_inc*3), text="Head Angle (deg): " + str(math.floor(results[0, img_i].item()*100)/100), font=fnt, fill="black")
+    draw.text(xy=(text_left, top+text_inc*4), text="Tail Angle (deg): " + str(math.floor(results[1, img_i].item())*100/100), font=fnt, fill="black")
 
     # sliding window approach
     start_i = int(max(0, img_i + 1 - window_size))
@@ -315,7 +352,7 @@ def analyze_camera_img(img_i, model, ssd_input_transform, category_index, lstm, 
     signal = lstm_input_transform(signal).to(device)
     signal = signal.unsqueeze(0)
     preds = lstm(signal)
-    x = w * 0.25
+    x = w * 0.15
     if preds.cpu().numpy().squeeze() > 0.5:
         results[2][img_i] = 1
         red = (250, 20, 5)
@@ -323,7 +360,8 @@ def analyze_camera_img(img_i, model, ssd_input_transform, category_index, lstm, 
         draw.text(xy=(x, cy), text="OMR", font=fnt, fill=red)
     else:
         results[2][img_i] = 0
-        draw.text(xy=(x, cy), text="No omr", font=fnt, fill="black")
+        if img_i > 0 and results[2][img_i-1] == 1:
+            results[3][0] += 1
 
     original_img.save(img_output_path)
     return True
@@ -337,7 +375,11 @@ if __name__ == "__main__":
     json_path = "model/pascal_voc_classes.json"
     ssd_model_path = "model/ssd.pth"
     lstm_model_path = "model/lstm.pkl"
-    result_output_path = "../../liveData/mouseData.json"
+    omr_output_path = "../../liveData/omrData.json"
+
+    # clearing previous omr data
+    with open(omr_output_path, "w") as file:
+        json.dump({"omr": []}, file)
 
     # loading ssd
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")  # using GPU if possible
@@ -379,11 +421,11 @@ if __name__ == "__main__":
     print("fps: " + str(fps))
 
     next_img = 0 # name of next image that needs to be analyzed
-    max_img = 100
+    max_img = 12
     test_time = 10
 
     window_size = 48
-    results = torch.zeros((3, max_img))
+    results = torch.zeros((4, max_img)) # stores head and tail angles, whether omr is detected at specific frame, and how many omr occurrences total so far
     angle_offsets = torch.tensor([0, 0, 5*180/math.pi]) # 0 is head offsets, 1 is tail offsets, 2 is threshold to offset
 
     with torch.no_grad():
@@ -401,5 +443,20 @@ if __name__ == "__main__":
             print("fps: " + str(1/dif.total_seconds()))
             prev_time = datetime.now()
             # print("img_i: " + str(next_img))
-            if next_img < max_img and analyze_camera_img(next_img, ssd, ssd_transform, category_index, lstm, lstm_transform, results, window_size, angle_offsets, image_folder_path, visualization_folder_path, fps, device):
-                next_img += 1
+            if next_img < max_img:
+                if analyze_camera_img(next_img, ssd, ssd_transform, category_index, lstm, lstm_transform, results, window_size, angle_offsets, image_folder_path, visualization_folder_path, fps, device):
+                    next_img += 1
+            else:
+                with open(omr_output_path, "r") as file:
+                    dict = json.load(file)
+                dict["omr"].append(results[3][0].item())
+                print(dict)
+                with open(omr_output_path, "w") as file:
+                    json.dump(dict, file)
+
+                # resetting so next trial can begin
+                next_img = 0
+                folder = os.listdir(image_folder_path)
+                for file in folder:
+                    os.remove(file)
+                quit()
