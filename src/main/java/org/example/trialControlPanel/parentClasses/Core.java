@@ -59,14 +59,14 @@ public class Core {
 
         pythonRunner = new PythonRunner();
 
-//        Thread pythonThread = new Thread(() -> {
-//            try {
-//                pythonRunner.start();
-//            } catch (IOException | InterruptedException e) {
-//                throw new RuntimeException(e);
-//            }
-//        });
-//        pythonThread.start();
+        Thread pythonThread = new Thread(() -> {
+            try {
+                pythonRunner.start();
+            } catch (IOException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        pythonThread.start();
     }
 
     public CameraManager getCameraManager() {

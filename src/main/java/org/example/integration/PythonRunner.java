@@ -1,9 +1,7 @@
 package org.example.integration;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.util.Properties;
 
 public class PythonRunner {
     public void start() throws IOException, InterruptedException {
@@ -18,10 +16,19 @@ public class PythonRunner {
     }
 
     private Process getProcess() throws IOException {
-        String pythonPath = "C:\\Users\\justi\\anaconda3\\envs\\omrEnv\\python.exe";
+
+        Properties properties = new Properties();
+        try (FileInputStream fis = new FileInputStream("local.properties")) {
+            properties.load(fis);
+        } catch (IOException e) {
+            System.out.println("FAILED TO OPEN LOCAL.PROPERTIES FILE");
+            e.printStackTrace();
+        }
+        String pythonPath = properties.getProperty("pythonEnv.path");
+        String pythonWorkingDir = properties.getProperty("pythonWorkingDirectory.path");
 
         ProcessBuilder pb = new ProcessBuilder(pythonPath, "-m", "src.omrEval");
-        pb.directory(new File("C:\\Users\\justi\\Documents\\GitHub\\OMRProject\\src\\pythonCode")); // setting working directory to be the project root
+        pb.directory(new File(pythonWorkingDir)); // setting working directory to be the project root
         pb.redirectErrorStream(true); // merges error stream with normal output stream so that one buffered reader receives both errors and print statements
 
         return pb.start();
