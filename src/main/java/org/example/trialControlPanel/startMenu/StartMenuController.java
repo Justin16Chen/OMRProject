@@ -114,10 +114,15 @@ public class StartMenuController extends CustomController {
     private Button runQueueButton;
     @FXML
     private void handleRunQueueButtonClick() {
+        int numScreens = MonitorFormat.getNumScreens();
         int num = startMenuMonitorFormat.getMonitorNumber() + 1;
+        if (num > numScreens)
+            num -= numScreens;
         MonitorFormat[] chamberMonitors = new MonitorFormat[Core.NUM_OMR_CHAMBER_CHILDREN + 1];
         for (int i=0; i<Core.NUM_OMR_CHAMBER_CHILDREN + 1; i++) {
             int monitorNum = num + i;
+            if (monitorNum > numScreens)
+                monitorNum -= numScreens;
             chamberMonitors[i] = new MonitorFormat(monitorNum);
             if (LocalPropsReader.shouldUsePrespecifiedChamberMonitorSize())
                 chamberMonitors[i].setPhysicalSize(LocalPropsReader.getChamberMonitorWidthCm(), LocalPropsReader.getChamberMonitorHeightCm());
