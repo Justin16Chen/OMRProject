@@ -1,0 +1,19 @@
+{
+    "experiments": [
+        {
+            "name": "testExperiment",
+            "omr": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "name": "testExperiment2",
+            "omr": [
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    ]
+}
