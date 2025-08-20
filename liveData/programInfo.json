@@ -1,7 +1,7 @@
 {
     "fps": 24,
     "trialPrefix": "trial",
-    "cameraOutputBase": "C:/Users/justi/Documents/GitHub/OMRProject/liveData/cameraImages",
-    "visualizedOutputBase": "C:/Users/justi/Documents/GitHub/OMRProject/liveData/omrVisualizedImages",
+    "cameraOutputBase": "../../liveData/cameraImages",
+    "visualizedOutputBase": "../../liveData/omrVisualizedImages",
     "experiments": []
 }

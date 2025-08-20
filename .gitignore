@@ -41,8 +41,6 @@ bin/
 ### Mac OS ###
 .
 
-### Camera Images ###
-/liveData
 
 ### open CS file location ###
 local.properties

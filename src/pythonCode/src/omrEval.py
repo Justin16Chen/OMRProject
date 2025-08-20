@@ -257,8 +257,9 @@ def run_ssd(model, data_transform, original_img):
     return predict_boxes, predict_classes, predict_scores
 def analyze_camera_img(img_i, model, ssd_input_transform, category_index, lstm, lstm_input_transform, results, window_size, angle_offsets, image_folder_path, visualization_folder_path, fps, device):
     # print("img_i: " + str(img_i))
-    img_path = os.path.join(image_folder_path, str(img_i) + '.png')
+    img_path = image_folder_path + "/" + str(img_i) + '.png'
     if not os.path.exists(img_path):
+        print("path " + img_path + " doesn't exist")
         return False
     original_img = Image.open(img_path)
     w = original_img.size[0]
@@ -367,7 +368,6 @@ def analyze_camera_img(img_i, model, ssd_input_transform, category_index, lstm, 
     return True
 
 if __name__ == "__main__":
-
     # necessary file paths
     program_json_path = "../../liveData/programInfo.json"
     pascal_voc_path = "model/pascal_voc_classes.json"
@@ -495,6 +495,7 @@ if __name__ == "__main__":
                     # checking if in the 'waiting period' -> waiting for another trial or for experiment to be marked as completed
                     if not next_trial_exists and not experiment_complete:
                         string += ", waiting"
+                        print(string)
                         continue
 
                     # saving omr data of last analyzed trial if not in waiting period
@@ -534,3 +535,4 @@ if __name__ == "__main__":
                     results = torch.zeros(4, max_img)
                     visualized_output_path = os.path.join(visualized_output_base, experiment_name, trial_prefix + str(trial_i))
                     camera_output_path = os.path.join(camera_output_base, experiment_name, trial_prefix + str(trial_i))
+            print(string)
