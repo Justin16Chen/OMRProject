@@ -9,7 +9,7 @@
 <AnchorPane prefHeight="498.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.startMenu.StartMenuController">
    <HBox layoutX="45.0" layoutY="16.0" prefHeight="440.0" prefWidth="504.0">
       <VBox prefHeight="373.0" prefWidth="264.0">
-         <Label prefHeight="30.0" prefWidth="154.0" text="Create new trial">
+         <Label prefHeight="30.0" prefWidth="216.0" text="Create new experiment">
             <font>
                <Font size="18.0" />
             </font>
@@ -52,7 +52,7 @@
                <Insets top="-10.0" />
             </VBox.margin>
          </HBox>
-         <Label prefHeight="17.0" prefWidth="103.0" text="Trial Queue">
+         <Label prefHeight="27.0" prefWidth="180.0" text="Experiment Queue">
             <font>
                <Font size="18.0" />
             </font>
@@ -66,7 +66,7 @@
             </VBox.margin></TextArea>
          <HBox prefHeight="6.0" prefWidth="264.0" spacing="10.0">
             <children>
-               <Label prefHeight="20.0" prefWidth="151.0" text="Rest time between trials">
+               <Label prefHeight="20.0" prefWidth="210.0" text="Rest time between experiments">
                   <font>
                      <Font size="14.0" />
                   </font>
@@ -84,9 +84,9 @@
             <VBox.margin>
                <Insets top="10.0" />
             </VBox.margin>
-            <Button mnemonicParsing="false" onAction="#handleQueueTrialButtonClick" text="Queue Trial" />
-            <Button fx:id="clearQueuedTrialsButton" mnemonicParsing="false" onAction="#handleClearQueuedTrialsButtonClick" text="Clear Queue" />
-            <Button fx:id="runQueueButton" mnemonicParsing="false" onAction="#handleRunQueueButtonClick" text="Run Queue" />
+            <Button mnemonicParsing="false" onAction="#handleQueueTrialButtonClick" text="Queue Experiment" />
+            <Button fx:id="clearQueuedTrialsButton" mnemonicParsing="false" onAction="#handleClearQueuedTrialsButtonClick" text="Clear" />
+            <Button fx:id="runQueueButton" mnemonicParsing="false" onAction="#handleRunQueueButtonClick" text="Run" />
          </HBox>
          <padding>
             <Insets top="60.0" />

@@ -20,6 +20,7 @@ public class QueueTrialApplication extends CustomApplication {
             stage.setTitle("Trial Queue");
             stage.setScene(new Scene(loader.load()));
             stage.show();
+            getCore().addStageToClose(stage);
 
             QueueTrialController controller = loader.getController();
             controller.setCore(getCore());

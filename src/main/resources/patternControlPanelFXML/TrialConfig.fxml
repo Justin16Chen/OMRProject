@@ -113,7 +113,7 @@
                   <Insets top="2.0" />
                </VBox.margin>
             </GridPane>
-            <Label text="Trial Parameters">
+            <Label text="Experiment Parameters">
                <font>
                   <Font size="18.0" />
                </font>
@@ -192,7 +192,7 @@
             </HBox>
             <HBox prefHeight="25.0" prefWidth="228.0">
                <children>
-                  <Label prefHeight="17.0" prefWidth="107.0" text="Trial Name">
+                  <Label prefHeight="17.0" prefWidth="181.0" text="Experiment Name">
                      <HBox.margin>
                         <Insets top="20.0" />
                      </HBox.margin>
@@ -227,7 +227,7 @@
       <Insets bottom="70.0" left="50.0" right="50.0" top="50.0" />
    </padding>
    <top>
-      <Label text="Trial Configuration" BorderPane.alignment="CENTER">
+      <Label text="Experiment Configuration" BorderPane.alignment="CENTER">
          <font>
             <Font size="22.0" />
          </font>

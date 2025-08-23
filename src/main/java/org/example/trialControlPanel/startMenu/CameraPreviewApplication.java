@@ -19,6 +19,7 @@ public class CameraPreviewApplication extends CustomApplication {
             stage.setTitle("Camera Preview");
             stage.setScene(new Scene(loader.load()));
             stage.show();
+            getCore().addStageToClose(stage);
 
             CameraPreviewController controller = loader.getController();
             controller.setCore(getCore());

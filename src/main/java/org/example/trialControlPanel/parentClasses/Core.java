@@ -28,6 +28,7 @@ public class Core {
 
     public static final int NUM_OMR_CHAMBER_CHILDREN = 1;
 
+    private ArrayList<Stage> stagesToClose;
     private Stage primaryStage;
     private Stage OMRChamberStage;
     private Stage[] childOMRChamberStages;
@@ -50,12 +51,12 @@ public class Core {
     private final PythonRunner pythonRunner;
 
     public Core() {
+        stagesToClose = new ArrayList<>();
         cameraManager = new CameraManager(0);
         cameraManager.clearRawImagesFolder();
 
         programInfoManager = new ProgramInfoManager();
         programInfoManager.startProgram();
-        programInfoManager.deactivateTrial();
 
         pythonRunner = new PythonRunner();
 
@@ -69,6 +70,10 @@ public class Core {
         pythonThread.start();
     }
 
+    // any stages in the stagesToClose list will be closed when the primary stage closes
+    public void addStageToClose(Stage stage) {
+        stagesToClose.add(stage);
+    }
     public CameraManager getCameraManager() {
         return cameraManager;
     }
@@ -78,25 +83,35 @@ public class Core {
 
     public void init(Stage primaryStage) {
         try {
+
             // setup stages first so controllers don't get null pointers when calling getters
             this.primaryStage = primaryStage; // control panel stage
             primaryStage.setTitle("AutoOMR");
 
+            primaryStage.setOnCloseRequest(e -> {
+                programInfoManager.stopProgram();
+                for (Stage stage : stagesToClose)
+                    stage.close();
+            });
+
             OMRChamberStage = new Stage();
             OMRChamberStage.setTitle("OMR Chamber");
             OMRChamberStage.initStyle(StageStyle.UNDECORATED);
+            stagesToClose.add(OMRChamberStage);
 
             childOMRChamberStages = new Stage[NUM_OMR_CHAMBER_CHILDREN];
             for (int i=0; i<NUM_OMR_CHAMBER_CHILDREN; i++) {
                 childOMRChamberStages[i] = new Stage();
                 childOMRChamberStages[i].setTitle("OMR Chamber");
                 childOMRChamberStages[i].initStyle(StageStyle.UNDECORATED);
+                stagesToClose.add(childOMRChamberStages[i]);
             }
             childOMRChamberScenes = new Scene[NUM_OMR_CHAMBER_CHILDREN];
             childOMRChamberControllers = new ChildOMRController[NUM_OMR_CHAMBER_CHILDREN];
 
             runTrialStage = new Stage(); // stage to be shown when trials are running (shows info about current trial)
             runTrialStage.setTitle("Current Trial Info");
+            stagesToClose.add(runTrialStage);
 
             // load FXML and controllers
             loadStartMenu();

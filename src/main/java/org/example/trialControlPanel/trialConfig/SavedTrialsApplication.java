@@ -19,6 +19,7 @@ public class SavedTrialsApplication extends CustomApplication {
             stage.setTitle("Saved Trials");
             stage.setScene(new Scene(loader.load()));
             stage.show();
+            getCore().addStageToClose(stage);
 
             SavedTrialsController controller = loader.getController();
             controller.setCore(getCore());

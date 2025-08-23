@@ -4,8 +4,8 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.input.KeyCode;
-import javafx.stage.Stage;
 import org.example.cameraCode.CameraManager;
+import org.example.integration.ProgramInfoManager;
 import org.example.trialControlPanel.parentClasses.CustomController;
 import org.example.trialControlPanel.monitorInfo.MonitorFormat;
 import org.example.trialControlPanel.pattern.PatternDrawer;
@@ -52,12 +52,12 @@ public class OMRChamberController extends CustomController {
 	public void setup() {
 		getCore().getOMRChamberScene().setOnKeyPressed(e -> {
 			if (Objects.requireNonNull(e.getCode()) == KeyCode.ESCAPE) {
-				stopTrial();
+				stopTrial(true);
 			}
 		});
 	}
 
-	public void stopTrial() {;
+	public void stopTrial(boolean earlyStop) {;
 		trialRunning = false;
 		patternDrawer.stop();
 		Platform.runLater(getStage()::close);
@@ -70,7 +70,10 @@ public class OMRChamberController extends CustomController {
 
 		getCore().getCameraManager().stopRecording();
 		getCore().getRunTrialController().getStage().close();
-		getCore().getProgramInfoWriter().deactivateTrial();
+		if (earlyStop)
+			getCore().getProgramInfoWriter().stopExperimentsEarly();
+		else
+			getCore().getProgramInfoWriter().completeAllExperiments();
 	}
 
 	@FXML
@@ -84,7 +87,7 @@ public class OMRChamberController extends CustomController {
 
 	public void startTrials() {
 		int patternSleepInterval = 1000 / PATTERN_FPS;
-		getCore().getProgramInfoWriter().activateTrial(trials.getFirst().getTestTime(), trials.getFirst().getRestTime());
+		getCore().getProgramInfoWriter().activateExperiments(trials);
 
 		trialRunning = true;
 		state = State.TESTING;
@@ -114,9 +117,11 @@ public class OMRChamberController extends CustomController {
 
 				if (state == State.TESTING) {
 					if (currentTrialSecondsRunning >= currentTrial.getTotalTime() - currentTrial.getRestTime() && currentTrialIndex + 1 >= trials.size())
-						Platform.runLater(this::stopTrial);
+						Platform.runLater(() -> this.stopTrial(false));
 					else if (currentCycleSecondsRunning >= currentTrial.getTestTime()) {
 						state = State.RESTING;
+						getCore().getProgramInfoWriter().completeExperiment(currentTrial.getName());
+
 						patternDrawer.stopAndBlackOutScreen();
 						for (ChildOMRController child : getCore().getChildOMRControllers())
 							child.getPatternDrawer().stopAndBlackOutScreen();
@@ -126,14 +131,13 @@ public class OMRChamberController extends CustomController {
 				}
 				else if (state == State.RESTING) {
 					if (currentTrialSecondsRunning >= currentTrial.getTotalTime()) {
-						getCore().getProgramInfoWriter().deactivateTrial();
 						state = State.IN_BETWEEN_TRIALS;
 					}
 					else if (currentCycleSecondsRunning >= currentTrial.getCycleTime()) {
 						state = State.TESTING;
 						lastCycleFinishTimeMs = System.currentTimeMillis();
-						patternDrawer.start();
 						patternDrawer.getPatternData().setLightBrightness(patternDrawer.getPatternData().getLightBrightness() - currentTrial.getDimAmount());
+						patternDrawer.start();
 
 						for (ChildOMRController child : getCore().getChildOMRControllers()) {
 							child.getPatternDrawer().start();
@@ -146,14 +150,16 @@ public class OMRChamberController extends CustomController {
 					if (currentTrialSecondsRunning >= currentTrial.getTotalTime() + inBetweenTrialsRestTime) {
 						state = State.TESTING;
 						currentTrialIndex++;
+						currentTrial = trials.get(currentTrialIndex);
 						lastTrialFinishTimeMs = System.currentTimeMillis();
 						lastCycleFinishTimeMs = System.currentTimeMillis();
 						currentCycle = 0;
 						patternDrawer.setPatternData(currentTrial.getInitialPattern());
-						for (ChildOMRController child : getCore().getChildOMRControllers())
+						patternDrawer.start();
+						for (ChildOMRController child : getCore().getChildOMRControllers()) {
 							child.getPatternDrawer().setPatternData(currentTrial.getInitialPattern());
-
-						getCore().getProgramInfoWriter().activateTrial(currentTrial.getTestTime(), currentTrial.getRestTime());
+							child.getPatternDrawer().start();
+						}
 					}
 				}
 
@@ -181,7 +187,6 @@ public class OMRChamberController extends CustomController {
 			}
 		}).start();
 	}
-
 	public void resizeCanvas(int width, int height) {
 		canvas.setWidth(width);
 		canvas.setHeight(height);

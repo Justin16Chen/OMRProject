@@ -1,7 +1,20 @@
 {
+    "programActive": false,
+    "stopEarly": false,
+    "experiments": [
+        {
+            "name": "shortLight",
+            "completed": true,
+            "expectedImages": 120
+        },
+        {
+            "name": "longDark",
+            "completed": true,
+            "expectedImages": 120
+        }
+    ],
     "fps": 24,
     "trialPrefix": "trial",
     "cameraOutputBase": "../../liveData/cameraImages",
-    "visualizedOutputBase": "../../liveData/omrVisualizedImages",
-    "experiments": []
+    "visualizedOutputBase": "../../liveData/omrVisualizedImages"
 }
