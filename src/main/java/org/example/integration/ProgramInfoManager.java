@@ -79,6 +79,17 @@ public class ProgramInfoManager {
         saveJSONToFile(json, "FAILED TO COMPLETE EXPERIMENT");
     }
 
+    public void setCameraOutputPath(String path) {
+        JSONObject json = readJSONFromFile();
+        json.put("cameraOutputBase", path);
+        saveJSONToFile(json, "FAILED TO SET CAMERA OUTPUT BASE");
+    }
+    public void setVisualizedOutputPath(String path) {
+        JSONObject json = readJSONFromFile();
+        json.put("visualizedOutputBase", path);
+        saveJSONToFile(json, "FAILED TO SET VISUALIZED OUTPUT BASE");
+    }
+
 
     private void saveJSONToFile(JSONObject json, String errorMessage) {
         try(FileWriter file = new FileWriter(PROGRAM_INFO_FILE_PATH)) {

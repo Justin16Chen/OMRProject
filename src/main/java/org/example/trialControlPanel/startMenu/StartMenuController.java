@@ -4,6 +4,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import org.example.cameraCode.CameraManager;
 import org.example.localProperties.LocalPropsReader;
@@ -14,6 +15,7 @@ import org.example.trialControlPanel.trialConfig.TrialSaver;
 import org.example.trialControlPanel.utils.FilteredTextField;
 import org.example.trialControlPanel.utils.TimeTextField;
 
+import java.io.File;
 import java.util.ArrayList;
 
 public class StartMenuController extends CustomController {
@@ -48,8 +50,9 @@ public class StartMenuController extends CustomController {
                 previewCameraButton.setDisable(false);
         });
         restTimeTextField.getTextField().textProperty().addListener((obs, oldVal, newVal) ->
-            runQueueButton.setDisable(!restTimeTextField.hasValidInput())
+            updateButtonsEnabled()
         );
+
         startMenuMonitorNumberLabel.setText("Not set");
         startMenuMonitorResolutionLabel.setText("Not set");
         startMenuMonitorSizeLabel.setText("Not set");
@@ -151,9 +154,44 @@ public class StartMenuController extends CustomController {
             previewCameraButton.setDisable(true);
         }
         cameraPortTextField.hasValidInput(); // update error on text field
+        updateButtonsEnabled();
 
         if (cm.isConnected())
             new CameraPreviewApplication(getCore()).start(new Stage());
+    }
+
+    @FXML
+    private TextArea cameraOutputTextArea, visualizedOutputTextArea;
+    @FXML
+    private void handleCameraOutputClick() {
+        String path = promptUserForEmptyFolderPath();
+        if (path != null) {
+            cameraOutputTextArea.setText(path);
+            getCore().getProgramInfoWriter().setCameraOutputPath(path);
+        }
+        else
+            cameraOutputTextArea.setText("not specified");
+    }
+    @FXML
+    private void handleVisualizedOutputClick() {
+        String path = promptUserForEmptyFolderPath();
+        if (path != null) {
+            visualizedOutputTextArea.setText(path);
+            getCore().getProgramInfoWriter().setVisualizedOutputPath(path);
+        }
+        else
+            visualizedOutputTextArea.setText("not specified");
+    }
+    private String promptUserForEmptyFolderPath() {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle("Select an Empty Folder");
+        File file;
+        do {
+            file = directoryChooser.showDialog(getStage());
+            if (file == null)
+                return null;
+        } while (file.listFiles().length > 0);
+        return file.getAbsolutePath();
     }
 
     @FXML
@@ -165,10 +203,13 @@ public class StartMenuController extends CustomController {
         if (queuedTrialNames.isEmpty()) {
             clearQueuedTrialsButton.setDisable(true);
             runQueueButton.setDisable(true);
+            return;
         }
-        else {
-            clearQueuedTrialsButton.setDisable(false);
+        clearQueuedTrialsButton.setDisable(false);
+
+        if (cameraOutputTextArea.getText().equals("not specified") || visualizedOutputTextArea.getText().equals("not specified") || !cameraPortTextField.hasValidInput())
+            runQueueButton.setDisable(true);
+        else
             runQueueButton.setDisable(false);
-        }
     }
 }

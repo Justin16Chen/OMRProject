@@ -1,20 +1,13 @@
 {
     "programActive": false,
-    "stopEarly": false,
-    "experiments": [
-        {
-            "name": "shortLight",
-            "completed": true,
-            "expectedImages": 120
-        },
-        {
-            "name": "longDark",
-            "completed": true,
-            "expectedImages": 120
-        }
-    ],
+    "stopEarly": true,
+    "experiments": [{
+        "name": "longDark",
+        "completed": false,
+        "expectedImages": 120
+    }],
     "fps": 24,
     "trialPrefix": "trial",
-    "cameraOutputBase": "../../liveData/cameraImages",
-    "visualizedOutputBase": "../../liveData/omrVisualizedImages"
+    "cameraOutputBase": "C:\\Users\\justi\\Documents\\omr images\\camera images",
+    "visualizedOutputBase": "C:\\Users\\justi\\Documents\\omr images\\visualized images"
 }

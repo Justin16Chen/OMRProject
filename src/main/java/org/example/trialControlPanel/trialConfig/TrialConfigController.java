@@ -190,11 +190,6 @@ public class TrialConfigController extends CustomController {
 	}
 	@FXML
 	private void handleBackToStartClick() {
-		try {
-			getCore().loadStartMenu();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
 		getCore().getPrimaryStage().setScene(getCore().getStartMenuScene());
 		getCore().getStartMenuController().setup();
     }
