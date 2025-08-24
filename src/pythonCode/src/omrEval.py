@@ -11,6 +11,9 @@ import numpy as np
 from datetime import datetime, timedelta
 import math
 import time
+import socket
+import io
+import struct
 
 def find_box_center(box):
     return [0.5 *(box[0] + box[2]), 0.5 * (box[1] + box[3])]
@@ -123,12 +126,15 @@ def run_ssd(model, data_transform, original_img):
 
     return predict_boxes, predict_classes, predict_scores
 def analyze_camera_img(img_i, model, ssd_input_transform, category_index, lstm, lstm_input_transform, results, window_size, angle_offsets, image_folder_path, visualization_folder_path, fps, device):
+    a = time.time()
     # print("img_i: " + str(img_i))
     img_path = image_folder_path + "/" + str(img_i) + '.png'
     if not os.path.exists(img_path):
         print("path " + img_path + " doesn't exist")
-        return False
+        return False, None
+    before = time.time()
     original_img = Image.open(img_path)
+    print("time to open image: " + str(time.time() - before))
     w = original_img.size[0]
     h = original_img.size[1]
     img_output_path = os.path.join(visualization_folder_path, str(img_i) + ".png")
@@ -230,8 +236,14 @@ def analyze_camera_img(img_i, model, ssd_input_transform, category_index, lstm, 
         results[2][img_i] = 0
         if img_i > 0 and results[2][img_i-1] == 1:
             results[3][0] += 1
-    original_img.save(img_output_path)
-    return True
+    before2 = time.time()
+    print("processing time without saving: " + str(before2 - before))
+    # original_img.save(img_output_path)
+    print("time to save image: " + str(time.time() - before2))
+    print("total time to process one image: " + str(time.time() - a))
+
+    # quit()
+    return True, original_img
 
 if __name__ == "__main__":
     # necessary file paths
@@ -242,8 +254,10 @@ if __name__ == "__main__":
     omr_output_path = "../../liveData/omrData.json"
 
     # clearing previous omr data
+    before = time.time()
     with open(omr_output_path, "w") as file:
         json.dump({"experiments": []}, file, indent=4)
+    print("time to write to json: " + str(time.time() - before))
 
     # loading ssd
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")  # using GPU if possible
@@ -279,8 +293,13 @@ if __name__ == "__main__":
 
     # declaring system variables
     fps = 0
+    before = time.time()
     with open(program_json_path, "r") as file:
-        fps = json.load(file)["fps"]
+        json_file = json.load(file)
+        fps = json_file["fps"]
+        HOST = json_file["HOST"]
+        PORT = json_file["PORT"]
+    print("time to read from json: " + str(time.time() - before))
     spf = 1/fps
     print("fps: " + str(fps))
 
@@ -310,96 +329,106 @@ if __name__ == "__main__":
     results = torch.zeros((4, max_img)) # stores head and tail angles, whether omr is detected at specific frame, and how many omr occurrences total so far
     angle_offsets = torch.tensor([0, 0, 5*180/math.pi]) # 0 is head offsets, 1 is tail offsets, 2 is threshold to offset
 
-    with torch.no_grad():
-        # warming up model
-        init_img = torch.zeros((1, 3, 300, 300), device=device)
-        ssd(init_img)
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        # s.connect((HOST, PORT))
+        # print(f"connected to server {HOST}:{PORT}")
+        with torch.no_grad():
+            # warming up model
+            init_img = torch.zeros((1, 3, 300, 300), device=device)
+            ssd(init_img)
 
-        prev_time = datetime.now()
-        while True:
-            # ensuring fps matches with program fps
-            dif = datetime.now() - prev_time
-            if dif.total_seconds() < spf:
-                continue
-            # string = program_state + ", exi: " + str(experiment_i) + ", ti: " + str(trial_i) + ", imgi: " + str(next_img) + ", fps: " + str(1/dif.total_seconds())
-            prev_time = datetime.now()
+            prev_time = time.time()
+            while True:
+                # ensuring fps matches with program fps
+                if time.time() - prev_time < spf:
+                    continue
+                prev_time = time.time()
 
-            # basic state machine
-            if program_state == "inactive":
-                with open(program_json_path, "r") as file:
-
-                    dict = json.load(file)
-                    experiments = dict["experiments"]
-                # updating experiment variables for first experiment
-                if len(experiments) > 0:
-                    experiment_i = 0
-                    max_experiments = len(experiments)
-                    trial_i = 0
-                    next_img = 0
-                    max_img = experiments[0]["expectedImages"]
-                    results = torch.zeros(4, max_img)
-
-                    experiment_name = experiments[0]["name"]
-                    # these paths are specific to the current trial that is running
-                    camera_output_base = dict["cameraOutputBase"]
-                    camera_output_path = os.path.join(camera_output_base, experiment_name, trial_prefix + str(0))
-                    visualized_output_base = dict["visualizedOutputBase"]
-                    visualized_output_path = os.path.join(visualized_output_base, experiment_name, trial_prefix + str(0))
-                    program_state = "active"
-
-            elif program_state == "active":
-                if next_img < max_img: # means that I am in the middle of a trial
-                    if analyze_camera_img(next_img, ssd, ssd_transform, category_index, lstm, lstm_transform, results, window_size, angle_offsets, camera_output_path, visualized_output_path, fps, device):
-                        next_img += 1
-
-                else: # means that I am done analyzing a trial
-                    next_camera_output_path = os.path.join(camera_output_base, experiment_name, trial_prefix + str(trial_i + 1))
-                    next_trial_exists = os.path.exists(next_camera_output_path)
+                # basic state machine
+                if program_state == "inactive":
                     with open(program_json_path, "r") as file:
-                        program_dict = json.load(file)
-                    experiment_complete = program_dict["experiments"][experiment_i]["completed"]
 
-                    # checking if in the 'waiting period' -> waiting for another trial or for experiment to be marked as completed
-                    if not next_trial_exists and not experiment_complete:
-                        string += ", waiting"
-                        print(string)
-                        continue
+                        dict = json.load(file)
+                        experiments = dict["experiments"]
+                    # updating experiment variables for first experiment
+                    if len(experiments) > 0:
+                        experiment_i = 0
+                        max_experiments = len(experiments)
+                        trial_i = 0
+                        next_img = 0
+                        max_img = experiments[0]["expectedImages"]
+                        results = torch.zeros(4, max_img)
 
-                    # saving omr data of last analyzed trial if not in waiting period
-                    with open(omr_output_path, "r") as file:
-                        omr_dict = json.load(file)
-                    if trial_i == 0:
-                        omr_dict["experiments"].append({
-                            "name": experiment_name,
-                            "omr": [results[3, 0].item()]
-                        })
-                    else:
-                        omr_dict["experiments"][experiment_i]["omr"].append(results[3, 0].item())
+                        experiment_name = experiments[0]["name"]
+                        # these paths are specific to the current trial that is running
+                        camera_output_base = dict["cameraOutputBase"]
+                        camera_output_path = os.path.join(camera_output_base, experiment_name, trial_prefix + str(0))
+                        visualized_output_base = dict["visualizedOutputBase"]
+                        visualized_output_path = os.path.join(visualized_output_base, experiment_name, trial_prefix + str(0))
+                        program_state = "active"
 
-                    with open(omr_output_path, "w") as file:
-                        json.dump(omr_dict, file, indent=4)
-                    string += "saved trial omr"
+                elif program_state == "active":
+                    if next_img < max_img: # means that I am in the middle of a trial
+                        success, img = analyze_camera_img(next_img, ssd, ssd_transform, category_index, lstm, lstm_transform, results, window_size, angle_offsets, camera_output_path, visualized_output_path, fps, device)
+                        if success:
+                            next_img += 1
+                            before = time.time()
+                            # buf = io.BytesIO()
+                            # img.save(buf, format='PNG')
+                            # img_bytes = buf.getvalue()
+                            arr = np.array(img)
+                            img_bytes = arr.tobytes()
+                            print("time to encode img into bytes: " + str(time.time() - before))
+                            quit()
 
-                    if next_trial_exists:
-                        trial_i += 1
-                    # code below will only run if experiment has been completed
-                    elif experiment_complete:
-                        if experiment_i + 1 >= max_experiments: # means that there are no more experiments
-                            program_state = "inactive"
-                            program_dict["experiments"] = []
-                            with open(program_json_path, "w") as file:
-                                json.dump(program_dict, file, indent=4)
-                            experiment_i = -1
-                            trial_i = -1
-                        else: # means that I should progress to the next experiment
-                            experiment_i += 1
-                            experiment_name = program_dict["experiments"][experiment_i]["name"]
-                            trial_i = 0
-                            max_img = program_dict["experiments"][experiment_i]["expectedImages"]
 
-                    # setting up for next trial
-                    next_img = 0
-                    results = torch.zeros(4, max_img)
-                    visualized_output_path = os.path.join(visualized_output_base, experiment_name, trial_prefix + str(trial_i))
-                    camera_output_path = os.path.join(camera_output_base, experiment_name, trial_prefix + str(trial_i))
-            print(string)
+                    else: # means that I am done analyzing a trial
+                        next_camera_output_path = os.path.join(camera_output_base, experiment_name, trial_prefix + str(trial_i + 1))
+                        next_trial_exists = os.path.exists(next_camera_output_path)
+                        with open(program_json_path, "r") as file:
+                            program_dict = json.load(file)
+                        experiment_complete = program_dict["experiments"][experiment_i]["completed"]
+
+                        # checking if in the 'waiting period' -> waiting for another trial or for experiment to be marked as completed
+                        if not next_trial_exists and not experiment_complete:
+                            string += ", waiting"
+                            print(string)
+                            continue
+
+                        # saving omr data of last analyzed trial if not in waiting period
+                        with open(omr_output_path, "r") as file:
+                            omr_dict = json.load(file)
+                        if trial_i == 0:
+                            omr_dict["experiments"].append({
+                                "name": experiment_name,
+                                "omr": [results[3, 0].item()]
+                            })
+                        else:
+                            omr_dict["experiments"][experiment_i]["omr"].append(results[3, 0].item())
+
+                        with open(omr_output_path, "w") as file:
+                            json.dump(omr_dict, file, indent=4)
+                        string += "saved trial omr"
+
+                        if next_trial_exists:
+                            trial_i += 1
+                        # code below will only run if experiment has been completed
+                        elif experiment_complete:
+                            if experiment_i + 1 >= max_experiments: # means that there are no more experiments
+                                program_state = "inactive"
+                                program_dict["experiments"] = []
+                                with open(program_json_path, "w") as file:
+                                    json.dump(program_dict, file, indent=4)
+                                experiment_i = -1
+                                trial_i = -1
+                            else: # means that I should progress to the next experiment
+                                experiment_i += 1
+                                experiment_name = program_dict["experiments"][experiment_i]["name"]
+                                trial_i = 0
+                                max_img = program_dict["experiments"][experiment_i]["expectedImages"]
+
+                        # setting up for next trial
+                        next_img = 0
+                        results = torch.zeros(4, max_img)
+                        visualized_output_path = os.path.join(visualized_output_base, experiment_name, trial_prefix + str(trial_i))
+                        camera_output_path = os.path.join(camera_output_base, experiment_name, trial_prefix + str(trial_i))

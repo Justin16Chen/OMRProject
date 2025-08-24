@@ -3,6 +3,7 @@ package org.example.cameraCode;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Properties;
 
 import javafx.scene.image.Image;
@@ -33,7 +34,8 @@ public class CameraManager {
     public static final String RAW_IMAGES_PATH = "liveData/cameraImages";
 
     private VideoCapture cap;
-    private final Mat image;
+    private final Mat latestImage;
+    private final ArrayList<Mat> images;
     private int i;
     private boolean connected, recording, saveImage;
     private int devicePort;
@@ -41,13 +43,15 @@ public class CameraManager {
     public CameraManager(int devicePort) {
         this.devicePort = devicePort;
 
-        image = new Mat();
+        latestImage = new Mat();
+        images = new ArrayList<>();
         saveImage = true;
         i = 0;
         recording = false;
 
         cap = new VideoCapture(devicePort);
         connected = cap.isOpened();
+        System.out.println(connected);
     }
     public void trySetDevicePort(int index) {
         cap = new VideoCapture(index);
@@ -57,12 +61,21 @@ public class CameraManager {
     public void update() {
         if (!recording || !connected)
             return;
-        if(saveImage) {
-            if (trySaveImage())
-                i++;
-        }
-        else
-            cap.read(image);
+
+        double before = System.currentTimeMillis();
+        if(cap.read(latestImage))
+            if(saveImage)
+//                images.add(latestImage);
+                if (trySaveImage())
+                    i++;
+        System.out.println("time to save img: " + (System.currentTimeMillis() - before) / 1000);
+    }
+    public void updateNew() {
+        if (!recording || !connected)
+            return;
+        if(cap.read(latestImage))
+            if(saveImage)
+                images.add(latestImage);
     }
 
     public int getDevicePort() {
@@ -82,28 +95,17 @@ public class CameraManager {
     }
 
     private boolean trySaveImage() {
-        if(cap.read(image)) {
-            if(image.empty())
-                return false;
-            Imgcodecs.imwrite(RAW_IMAGES_PATH + "\\" + i + ".png", image);
-            return true;
-        }
-        return false;
-    }
+        if(latestImage.empty())
+            return false;
+        Imgcodecs.imwrite(RAW_IMAGES_PATH + "\\" + i + ".png", latestImage);
+        return true;
 
-    public void clearRawImagesFolder() {
-        File folder = new File(RAW_IMAGES_PATH);
-        File[] files = folder.listFiles();
-        if (files != null)
-            for (File file : files)
-                file.delete();
-        i = 0;
     }
 
     public Image getLatestImage() {
-        if (image.empty())
+        if (latestImage.empty())
             return null;
-        return matToImage(image);
+        return matToImage(latestImage);
     }
 
     private Image matToImage(Mat mat) {
@@ -144,5 +146,24 @@ public class CameraManager {
             bgra[j + 3] = (byte)255;  // A (opaque)
         }
         return bgra;
+    }
+
+    public static void main(String[] args) {
+        CameraManager cm = new CameraManager(0);
+        cm.setSaveImage(true);
+        cm.startRecording();
+        double fps = 30;
+        double mspf = 1/ fps * 1000;
+        double before = System.currentTimeMillis();
+        while(true) {
+            double after = System.currentTimeMillis();
+            if(after - before < mspf)
+                continue;
+            System.out.println("fps: " + 1/(after - before) * 1000);
+            System.out.println("running");
+            //cm.updateNew(); //29.4
+            cm.update();
+            before = after;
+        }
     }
 }

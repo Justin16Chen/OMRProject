@@ -98,7 +98,6 @@ public class OMRChamberController extends CustomController {
 		currentTrialIndex = 0;
 		currentCycle = 0;
 		CameraManager cm = getCore().getCameraManager();
-		cm.clearRawImagesFolder();
 		cm.startRecording();
 		cm.setSaveImage(true);
 

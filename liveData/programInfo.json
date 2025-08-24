@@ -9,5 +9,7 @@
     "fps": 24,
     "trialPrefix": "trial",
     "cameraOutputBase": "C:\\Users\\justi\\Documents\\omr images\\camera images",
-    "visualizedOutputBase": "C:\\Users\\justi\\Documents\\omr images\\visualized images"
+    "visualizedOutputBase": "C:\\Users\\justi\\Documents\\omr images\\visualized images",
+    "HOST": "127.0.0.1",
+    "PORT": 65432
 }

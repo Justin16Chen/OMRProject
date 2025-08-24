@@ -53,7 +53,6 @@ public class Core {
     public Core() {
         stagesToClose = new ArrayList<>();
         cameraManager = new CameraManager(0);
-        cameraManager.clearRawImagesFolder();
 
         programInfoManager = new ProgramInfoManager();
         programInfoManager.startProgram();
