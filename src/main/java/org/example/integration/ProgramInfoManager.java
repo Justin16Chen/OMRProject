@@ -27,14 +27,14 @@ public class ProgramInfoManager {
     }
     public void startProgram() {
         JSONObject json = readJSONFromFile();
-        json.put("programActive", true);
+        json.put("programRunning", true);
         json.put("stopEarly", false);
         saveJSONToFile(json, "FAILED TO START PROGRAM");
     }
 
     public void stopProgram() {
         JSONObject json = readJSONFromFile();
-        json.put("programActive", false);
+        json.put("programRunning", false);
 
         saveJSONToFile(json, "FAILED TO STOP PROGRAM");
     }

@@ -1,6 +1,6 @@
 {
-    "programActive": false,
-    "stopEarly": true,
+    "programRunning": false,
+    "stopEarly": false,
     "experiments": [{
         "name": "longDark",
         "completed": false,

@@ -1,6 +1,10 @@
 package org.example.integration;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.Properties;
 
 public class PythonRunner {
@@ -32,5 +36,43 @@ public class PythonRunner {
         pb.redirectErrorStream(true); // merges error stream with normal output stream so that one buffered reader receives both errors and print statements
 
         return pb.start();
+    }
+
+    public static void main(String[] args) {
+        String host = "127.0.0.1";
+        int port = 65432;
+        PythonRunner pythonRunner = new PythonRunner();
+        Thread pythonThread = new Thread(() -> {
+            try {
+                pythonRunner.start();
+            } catch (IOException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        pythonThread.start();
+
+        System.out.println("starting java socket");
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            Socket clientSocket = serverSocket.accept();
+            DataInputStream dataIn = new DataInputStream(clientSocket.getInputStream());
+            while (true) {
+                try {
+                    int length = dataIn.readInt();
+                    double time = System.currentTimeMillis();
+                    byte[] imgBytes = new byte[length];
+                    dataIn.readFully(imgBytes);
+
+                    ByteArrayInputStream bais = new ByteArrayInputStream(imgBytes);
+                    BufferedImage img = ImageIO.read(bais);
+                    System.out.println("time to read img: " + (System.currentTimeMillis() - time) / 1000);
+                    System.out.println("received python image");
+                } catch(EOFException eof) {
+                    System.out.println("client disconnected");
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
