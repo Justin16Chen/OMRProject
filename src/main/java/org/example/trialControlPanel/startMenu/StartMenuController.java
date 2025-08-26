@@ -172,6 +172,9 @@ public class StartMenuController extends CustomController {
         else
             cameraOutputTextArea.setText("not specified");
     }
+    public String getCameraOutputPath() {
+        return cameraOutputTextArea.getText();
+    }
     @FXML
     private void handleVisualizedOutputClick() {
         String path = promptUserForEmptyFolderPath();
@@ -182,13 +185,16 @@ public class StartMenuController extends CustomController {
         else
             visualizedOutputTextArea.setText("not specified");
     }
+    public String getVisualizedOutputPath() {
+        return visualizedOutputTextArea.getText();
+    }
     private String promptUserForEmptyFolderPath() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("Select an Empty Folder");
         File file;
         do {
             file = directoryChooser.showDialog(getStage());
-            if (file == null)
+            if (file == null || file.listFiles() == null)
                 return null;
         } while (file.listFiles().length > 0);
         return file.getAbsolutePath();

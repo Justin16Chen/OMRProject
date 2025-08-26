@@ -31,9 +31,8 @@ public class CameraManager {
         System.out.println("successfully loaded opencv dll");
     }
 
-    public static final String RAW_IMAGES_PATH = "liveData/cameraImages";
-
     private VideoCapture cap;
+    private String imageSavePath;
     private final Mat latestImage;
     private final ArrayList<Mat> images;
     private int i;
@@ -51,7 +50,9 @@ public class CameraManager {
 
         cap = new VideoCapture(devicePort);
         connected = cap.isOpened();
-        System.out.println(connected);
+    }
+    public void setImageSavePath(String path) {
+        this.imageSavePath = path;
     }
     public void trySetDevicePort(int index) {
         cap = new VideoCapture(index);
@@ -68,7 +69,7 @@ public class CameraManager {
 //                images.add(latestImage);
                 if (trySaveImage())
                     i++;
-        System.out.println("time to save img: " + (System.currentTimeMillis() - before) / 1000);
+//        System.out.println("time to save img: " + (System.currentTimeMillis() - before) / 1000);
     }
     public void updateNew() {
         if (!recording || !connected)
@@ -95,9 +96,11 @@ public class CameraManager {
     }
 
     private boolean trySaveImage() {
+        if (imageSavePath == null)
+            throw new IllegalStateException("when calling cameraManager.trySaveImage(), imageSavePath cannot be null");
         if(latestImage.empty())
             return false;
-        Imgcodecs.imwrite(RAW_IMAGES_PATH + "\\" + i + ".png", latestImage);
+        Imgcodecs.imwrite(imageSavePath + "\\" + i + ".png", latestImage);
         return true;
 
     }

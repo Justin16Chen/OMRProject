@@ -25,6 +25,9 @@ public class ProgramInfoManager {
     public int getFPS() {
         return readJSONFromFile().getInt("fps");
     }
+    public int getSocketPort() {
+        return readJSONFromFile().getInt("PORT");
+    }
     public void startProgram() {
         JSONObject json = readJSONFromFile();
         json.put("programRunning", true);

@@ -8,6 +8,8 @@ import java.net.Socket;
 import java.util.Properties;
 
 public class PythonRunner {
+    public static final int PORT = 65432;
+
     public void start() throws IOException, InterruptedException {
         Process p = getProcess();
         BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -39,8 +41,6 @@ public class PythonRunner {
     }
 
     public static void main(String[] args) {
-        String host = "127.0.0.1";
-        int port = 65432;
         PythonRunner pythonRunner = new PythonRunner();
         Thread pythonThread = new Thread(() -> {
             try {
@@ -52,7 +52,7 @@ public class PythonRunner {
         pythonThread.start();
 
         System.out.println("starting java socket");
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             Socket clientSocket = serverSocket.accept();
             DataInputStream dataIn = new DataInputStream(clientSocket.getInputStream());
             while (true) {

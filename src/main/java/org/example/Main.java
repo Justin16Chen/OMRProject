@@ -24,5 +24,4 @@ public class Main extends Application {
         TrialSaver.initializeTrialSaver();
         core.init(primaryStage);
     }
-
 }
