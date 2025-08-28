@@ -12,9 +12,10 @@ import java.util.ArrayList;
 
 // handles reading and writing to programInfo.json file (this is how the java and python code communicates with each other)
 public class ProgramInfoManager {
-    private static final String PROGRAM_INFO_FILE_PATH = "liveData/programInfo.json";
+    private static final String PROGRAM_INFO_FILE_PATH = "liveData/programInfo.json",
+    SAVED_PROPS_FILE_PATH = "savedInfo/SavedProps.json";
 
-    private JSONObject readJSONFromFile() {
+    private JSONObject readProgramInfoJSON() {
         try {
             String content = new String(Files.readAllBytes(Paths.get(PROGRAM_INFO_FILE_PATH)));
             return new JSONObject(content);
@@ -23,32 +24,33 @@ public class ProgramInfoManager {
         }
     }
     public int getFPS() {
-        return readJSONFromFile().getInt("fps");
+        return readProgramInfoJSON().getInt("fps");
     }
     public int getSocketPort() {
-        return readJSONFromFile().getInt("PORT");
+        return readProgramInfoJSON().getInt("PORT");
     }
     public void startProgram() {
-        JSONObject json = readJSONFromFile();
+        JSONObject json = readProgramInfoJSON();
         json.put("programRunning", true);
         json.put("stopEarly", false);
         saveJSONToFile(json, "FAILED TO START PROGRAM");
     }
 
     public void stopProgram() {
-        JSONObject json = readJSONFromFile();
+        JSONObject json = readProgramInfoJSON();
         json.put("programRunning", false);
 
         saveJSONToFile(json, "FAILED TO STOP PROGRAM");
     }
-    public void activateExperiments(ArrayList<TrialConfig> trials) {
-        JSONObject json = readJSONFromFile();
+    public void activateExperiments(ArrayList<TrialConfig> experiments) {
+        JSONObject json = readProgramInfoJSON();
         json.put("stopEarly", false);
         JSONArray experimentsJson = new JSONArray();
-        for (TrialConfig trial : trials) {
+        for (int i=0; i<experiments.size(); i++) {
+            TrialConfig experiment = experiments.get(i);
             JSONObject trialJsonObject = new JSONObject();
-            trialJsonObject.put("name", trial.getName());
-            trialJsonObject.put("expectedImages", trial.getTestTime() * getFPS());
+            trialJsonObject.put("name", (i + 1) + " - " + experiment.getName());
+            trialJsonObject.put("expectedImages", experiment.getTestTime() * getFPS());
             trialJsonObject.put("completed", false);
             experimentsJson.put(trialJsonObject);
         }
@@ -57,13 +59,13 @@ public class ProgramInfoManager {
         saveJSONToFile(json, "FAILED TO ACTIVATE EXPERIMENTS");
     }
     public void stopExperimentsEarly() {
-        JSONObject json = readJSONFromFile();
+        JSONObject json = readProgramInfoJSON();
         json.put("stopEarly", true);
 
         saveJSONToFile(json, "FAILED TO STOP EXPERIMENTS EARLY");
     }
     public void completeAllExperiments() {
-        JSONObject json = readJSONFromFile();
+        JSONObject json = readProgramInfoJSON();
         JSONArray experiments = json.getJSONArray("experiments");
         for (int i=0; i<experiments.length(); i++)
             experiments.getJSONObject(i).put("completed", true);
@@ -71,7 +73,7 @@ public class ProgramInfoManager {
         saveJSONToFile(json, "FAILED TO COMPLETE ALL EXPERIMENTS");
     }
     public void completeExperiment(String name) {
-        JSONObject json = readJSONFromFile();
+        JSONObject json = readProgramInfoJSON();
         JSONArray experiments = json.getJSONArray("experiments");
         for (int i=0; i<experiments.length(); i++)
             if (experiments.getJSONObject(i).get("name").equals(name)) {
@@ -82,13 +84,19 @@ public class ProgramInfoManager {
         saveJSONToFile(json, "FAILED TO COMPLETE EXPERIMENT");
     }
 
+    public String getLastCameraOutputPath() {
+        return readProgramInfoJSON().getString("cameraOutputBase");
+    }
     public void setCameraOutputPath(String path) {
-        JSONObject json = readJSONFromFile();
+        JSONObject json = readProgramInfoJSON();
         json.put("cameraOutputBase", path);
         saveJSONToFile(json, "FAILED TO SET CAMERA OUTPUT BASE");
     }
+    public String getLastVisualizedOutputPath() {
+        return readProgramInfoJSON().getString("visualizedOutputBase");
+    }
     public void setVisualizedOutputPath(String path) {
-        JSONObject json = readJSONFromFile();
+        JSONObject json = readProgramInfoJSON();
         json.put("visualizedOutputBase", path);
         saveJSONToFile(json, "FAILED TO SET VISUALIZED OUTPUT BASE");
     }

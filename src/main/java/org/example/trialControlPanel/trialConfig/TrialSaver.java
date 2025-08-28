@@ -14,7 +14,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 
 public class TrialSaver {
-	public static final String FILE_PATH = "SavedTrials.json";
+	public static final String FILE_PATH = "savedInfo/SavedTrials.json";
 	public static final TrialConfig NEW_DEFAULT_TRIAL = new TrialConfig("newTrial", new Pattern(PatternDirection.CLOCKWISE, 1, 255, 0, 1), 60, 60, 30, 5);
 	private static ArrayList<TrialConfig> trials;
 

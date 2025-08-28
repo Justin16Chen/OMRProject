@@ -67,6 +67,9 @@ public class StartMenuController extends CustomController {
         cameraPortTextField.setValidationFunction(str -> FilteredTextField.VALID_INTEGER.test(str) && getCore().getCameraManager().isConnected());
         previewCameraButton.setDisable(!cameraPortTextField.hasValidInput());
         getCore().getStartMenuMonitorManager().updateMonitorFormat(getCore().getPrimaryStage());
+
+        cameraOutputTextArea.setText(getCore().getProgramInfoWriter().getLastCameraOutputPath());
+        visualizedOutputTextArea.setText(getCore().getProgramInfoWriter().getLastVisualizedOutputPath());
     }
 
     private void updateDefaultQueuedTrials() {
@@ -169,8 +172,6 @@ public class StartMenuController extends CustomController {
             cameraOutputTextArea.setText(path);
             getCore().getProgramInfoWriter().setCameraOutputPath(path);
         }
-        else
-            cameraOutputTextArea.setText("not specified");
     }
     public String getCameraOutputPath() {
         return cameraOutputTextArea.getText();
@@ -182,8 +183,6 @@ public class StartMenuController extends CustomController {
             visualizedOutputTextArea.setText(path);
             getCore().getProgramInfoWriter().setVisualizedOutputPath(path);
         }
-        else
-            visualizedOutputTextArea.setText("not specified");
     }
     public String getVisualizedOutputPath() {
         return visualizedOutputTextArea.getText();
@@ -194,10 +193,14 @@ public class StartMenuController extends CustomController {
         File file;
         do {
             file = directoryChooser.showDialog(getStage());
-            if (file == null || file.listFiles() == null)
+            if (file == null)
                 return null;
-        } while (file.listFiles().length > 0);
-        return file.getAbsolutePath();
+            File[] nonDirs = file.listFiles(f -> !f.isDirectory());
+            if (nonDirs == null)
+                return null;
+            if (nonDirs.length == 0)
+                return file.getAbsolutePath();
+        } while (true);
     }
 
     @FXML
