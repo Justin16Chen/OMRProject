@@ -1,15 +1,11 @@
 {
     "stopEarly": false,
     "PORT": 65432,
-    "experiments": [{
-        "name": "1 - longDark",
-        "completed": false,
-        "expectedImages": 120
-    }],
+    "experiments": [],
     "fps": 24,
     "HOST": "127.0.0.1",
     "trialPrefix": "trial",
     "cameraOutputBase": "C:\\Users\\justi\\Documents\\omr images\\camera images",
-    "programRunning": false,
+    "programRunning": true,
     "visualizedOutputBase": "C:\\Users\\justi\\Documents\\omr images\\visualized images"
 }
