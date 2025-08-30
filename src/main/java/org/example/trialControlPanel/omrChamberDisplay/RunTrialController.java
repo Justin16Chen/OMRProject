@@ -6,7 +6,7 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import org.example.trialControlPanel.parentClasses.CustomController;
-import org.example.trialControlPanel.trialConfig.TrialConfig;
+import org.example.trialControlPanel.trialConfig.Experiment;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -35,7 +35,7 @@ public class RunTrialController extends CustomController {
 
     public void updateUILabels() {
         OMRChamberController chamberController = getCore().getOMRChamberController();
-        TrialConfig trial = trials.get(chamberController.getCurrentTrialIndex());
+        Experiment trial = trials.get(chamberController.getCurrentTrialIndex());
         nameLabel.setText(trial.getName());
         stateLabel.setText("" + chamberController.getState());
 
@@ -59,15 +59,14 @@ public class RunTrialController extends CustomController {
     public void updateCameraImageView(Image image) {
         cameraDataLabel.setText(image == null ? "Camera Data (None available)" : "Camera Data");
         cameraDataImageView.setImage(image);
-        System.out.println("updated camera image view");
     }
 
     private String formatSeconds(int seconds) {
         return timeDf.format(seconds / 60) + ":" + timeDf.format(seconds % 60);
     }
 
-    private ArrayList<TrialConfig> trials;
-    public void setTrials(ArrayList<TrialConfig> trials) {
+    private ArrayList<Experiment> trials;
+    public void setTrials(ArrayList<Experiment> trials) {
         this.trials = trials;
     }
 }

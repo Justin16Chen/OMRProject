@@ -3,18 +3,15 @@ package org.example.trialControlPanel.omrChamberDisplay;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import org.example.cameraCode.CameraManager;
 import org.example.trialControlPanel.parentClasses.CustomController;
 import org.example.trialControlPanel.monitorInfo.MonitorFormat;
 import org.example.trialControlPanel.pattern.PatternDrawer;
 import org.example.trialControlPanel.pattern.PatternDrawer.SimulatedSurface;
-import org.example.trialControlPanel.trialConfig.TrialConfig;
+import org.example.trialControlPanel.trialConfig.Experiment;
 
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -26,23 +23,23 @@ public class OMRChamberController extends CustomController {
 	public enum State {
 		TESTING, RESTING, IN_BETWEEN_TRIALS
 	}
-	private ArrayList<TrialConfig> trials;
+	private ArrayList<Experiment> trials;
 	private int currentTrialIndex;
 	private int inBetweenTrialsRestTime;
-	private double lastTrialFinishTimeMs, lastCycleFinishTimeMs;
+	private double lastExperimentFinishTimeMs, lastCycleFinishTimeMs;
 	public int getCurrentTrialIndex() {
 		return currentTrialIndex;
 	}
 	private PatternDrawer patternDrawer;
 	private ScheduledExecutorService[] executors;
 	private int lastActualImageIndex;
-	private double totalSecondsRunning, currentTrialSecondsRunning, currentCycleSecondsRunning; // 1 cycle = 1 test and 1 rest
+	private double totalSecondsRunning, currentExperimentSecondsRunning, currentCycleSecondsRunning; // 1 cycle = 1 test and 1 rest
 	public double getTotalSecondsRunning() {
 		return totalSecondsRunning;
 	}
 	public double getTotalTime() {
 		return trials.stream()
-				.mapToInt(TrialConfig::getTotalTime)
+				.mapToInt(Experiment::getTotalTime)
 				.sum() + (trials.size() - 1) * inBetweenTrialsRestTime - trials.getLast().getRestTime();
 	}
 	private int currentCycle;
@@ -54,8 +51,7 @@ public class OMRChamberController extends CustomController {
 		return state;
 	}
 
-	private DataInputStream visualizedImageDataIn;
-	private Image visualizedImg;
+	private VisualizedImageReader visualizedImageReader;
 
 	@Override
 	public void setup() {
@@ -64,6 +60,7 @@ public class OMRChamberController extends CustomController {
 				stopTrial(true);
 			}
 		});
+		visualizedImageReader = new VisualizedImageReader(getCore());
 	}
 
 	public void stopTrial(boolean earlyStop) {;
@@ -90,7 +87,7 @@ public class OMRChamberController extends CustomController {
 	@FXML
 	private Canvas canvas;
 
-	public void initPatternDrawer(MonitorFormat monitorFormat, ArrayList<TrialConfig> trials, int restTime) {
+	public void initPatternDrawer(MonitorFormat monitorFormat, ArrayList<Experiment> trials, int restTime) {
 		this.trials = trials;
 		patternDrawer = new PatternDrawer(monitorFormat, trials.getFirst().getInitialPattern(), canvas, SimulatedSurface.CIRCULAR);
 		inBetweenTrialsRestTime = restTime;
@@ -111,14 +108,6 @@ public class OMRChamberController extends CustomController {
 		cm.setSaveImage(true);
 		cm.setImageIndexCap(getCore().getProgramInfoWriter().getExpectedImages(0, trials.getFirst().getName()) - 1);
 
-		// connect datastream to python socket (python code sends visualized images to java code - java code displays the images)
-		try (ServerSocket serverSocket = new ServerSocket(getCore().getProgramInfoWriter().getSocketPort())) {
-			Socket clientSocket = serverSocket.accept();
-			visualizedImageDataIn = new DataInputStream(clientSocket.getInputStream());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
 		// create independent executors
 		executors = new ScheduledExecutorService[3];
 		for (int i=0; i<executors.length; i++)
@@ -130,7 +119,7 @@ public class OMRChamberController extends CustomController {
 		// create proper file structure (experiment folder -> trial folder -> images)
 		// do this 2x (for camera images and visualized image)
 		for (int i=0; i<trials.size(); i++) {
-			TrialConfig experiment = trials.get(i);
+			Experiment experiment = trials.get(i);
 			boolean ec = getCameraImageExperimentFolder(experiment.getName(), i).mkdir();
 			boolean tc = getCameraImageTrialFolder(experiment.getName(), i, 0).mkdir();
 			boolean ev = getVisualizedImageExperimentFolder(experiment.getName(), i).mkdir();
@@ -144,21 +133,21 @@ public class OMRChamberController extends CustomController {
 
 		// set timestamps used to manage trial test/rest
 		final double startTimeMs = System.currentTimeMillis();
-		lastTrialFinishTimeMs = startTimeMs;
+		lastExperimentFinishTimeMs = startTimeMs;
 		lastCycleFinishTimeMs = startTimeMs;
 
 		// manage trial logic on separate thread
 		executors[0].scheduleAtFixedRate(() -> {
 			totalSecondsRunning = (System.currentTimeMillis() - startTimeMs) / 1000.;
-			currentTrialSecondsRunning = (System.currentTimeMillis() - lastTrialFinishTimeMs) / 1000.;
+			currentExperimentSecondsRunning = (System.currentTimeMillis() - lastExperimentFinishTimeMs) / 1000.;
 			currentCycleSecondsRunning = (System.currentTimeMillis() - lastCycleFinishTimeMs) / 1000.;
 
-			TrialConfig currentTrial = trials.get(currentTrialIndex);
+			Experiment currentTrial = trials.get(currentTrialIndex);
 
 			if (state == State.TESTING) {
-				if (currentTrialSecondsRunning >= currentTrial.getTotalTime() - currentTrial.getRestTime() && currentTrialIndex + 1 >= trials.size()) {
+				if (currentExperimentSecondsRunning >= currentTrial.getTotalTime() - currentTrial.getRestTime() && currentTrialIndex + 1 >= trials.size()) {
 					lastActualImageIndex = cm.getImageIndex() - 1;
-					if (lastActualImageIndex <= cm.getImageIndexCap()) {
+					if (lastActualImageIndex < cm.getImageIndexCap()) {
 						writeTrialCameraInfoFile(currentTrial.getName(), currentTrialIndex, currentCycle);
 						cm.fillImagesToCap();
 					}
@@ -173,16 +162,15 @@ public class OMRChamberController extends CustomController {
 						child.getPatternDrawer().stopAndBlackOutScreen();
 
 					cm.setSaveImage(false);
-					if (cm.getImageIndex() <= cm.getImageIndexCap()) {
-						lastActualImageIndex = cm.getImageIndex() - 1;
+					lastActualImageIndex = cm.getImageIndex() - 1;
+					if (lastActualImageIndex < cm.getImageIndexCap()) {
 						writeTrialCameraInfoFile(currentTrial.getName(), currentTrialIndex, currentCycle);
 						cm.fillImagesToCap();
 					}
-
 				}
 			}
 			else if (state == State.RESTING) {
-				if (currentTrialSecondsRunning >= currentTrial.getTotalTime()) {
+				if (currentExperimentSecondsRunning >= currentTrial.getTotalTime()) {
 					state = State.IN_BETWEEN_TRIALS;
 				}
 				else if (currentCycleSecondsRunning >= currentTrial.getCycleTime()) {
@@ -203,11 +191,11 @@ public class OMRChamberController extends CustomController {
 				}
 			}
 			else if (state == State.IN_BETWEEN_TRIALS) {
-				if (currentTrialSecondsRunning >= currentTrial.getTotalTime() + inBetweenTrialsRestTime) {
+				if (currentExperimentSecondsRunning >= currentTrial.getTotalTime() + inBetweenTrialsRestTime) {
 					state = State.TESTING;
 					currentTrialIndex++;
 					currentTrial = trials.get(currentTrialIndex);
-					lastTrialFinishTimeMs = System.currentTimeMillis();
+					lastExperimentFinishTimeMs = System.currentTimeMillis();
 					lastCycleFinishTimeMs = System.currentTimeMillis();
 					currentCycle = 0;
 					patternDrawer.setPatternData(currentTrial.getInitialPattern());
@@ -226,19 +214,7 @@ public class OMRChamberController extends CustomController {
 		}, 0, cameraIntervalNanos, TimeUnit.NANOSECONDS);
 
 		// manage reading visualized images from python on separate thread so python lag does not block java program
-		executors[1].scheduleAtFixedRate(() -> {
-			try {
-				byte[] imgBytes = new byte[visualizedImageDataIn.readInt()];
-				System.out.println("image reading thread started");
-				visualizedImageDataIn.readFully(imgBytes);
-				ByteArrayInputStream bais = new ByteArrayInputStream(imgBytes);
-				visualizedImg = new Image(bais);
-				Platform.runLater(() -> getCore().getRunTrialController().updateCameraImageView(visualizedImg));
-				System.out.println("image read and command sent to image view");
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}, 0, cameraIntervalNanos, TimeUnit.NANOSECONDS);
+		visualizedImageReader.start(cameraIntervalNanos);
 
 		// manage camera on separate thread for custom FPS
 		executors[2].scheduleAtFixedRate(() -> {

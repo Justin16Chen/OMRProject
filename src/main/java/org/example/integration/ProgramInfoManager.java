@@ -1,6 +1,6 @@
 package org.example.integration;
 
-import org.example.trialControlPanel.trialConfig.TrialConfig;
+import org.example.trialControlPanel.trialConfig.Experiment;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -51,12 +51,12 @@ public class ProgramInfoManager {
     private String getExperimentFileName(int index, String experimentName) {
         return index + " - " + experimentName;
     }
-    public void activateExperiments(ArrayList<TrialConfig> experiments) {
+    public void activateExperiments(ArrayList<Experiment> experiments) {
         JSONObject json = readProgramInfoJSON();
         json.put("stopEarly", false);
         JSONArray experimentsJson = new JSONArray();
         for (int i=0; i<experiments.size(); i++) {
-            TrialConfig experiment = experiments.get(i);
+            Experiment experiment = experiments.get(i);
             JSONObject trialJsonObject = new JSONObject();
             trialJsonObject.put("name", getExperimentFileName(i, experiment.getName()));
             trialJsonObject.put("expectedImages", experiment.getTestTime() * getFPS());

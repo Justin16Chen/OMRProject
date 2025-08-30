@@ -11,8 +11,6 @@ import org.example.trialControlPanel.pattern.PatternDrawer.SimulatedSurface;
 import org.example.trialControlPanel.utils.FilteredTextField;
 import org.example.trialControlPanel.utils.TimeTextField;
 
-import java.io.IOException;
-
 public class TrialConfigController extends CustomController {
 	@FXML
 	public void initialize() {
@@ -71,13 +69,13 @@ public class TrialConfigController extends CustomController {
 	private Canvas patternPreviewCanvas;
 
 	// stores current trial data
-	private TrialConfig currentTrial;
+	private Experiment currentTrial;
 	// draws the patternControlPanel.pattern preview onto the canvas
 	private PatternDrawer patternPreviewDrawer;
 
 	@Override
 	public void setup() {
-		TrialConfig initialTrial = TrialSaver.NEW_DEFAULT_TRIAL;
+		Experiment initialTrial = TrialSaver.NEW_DEFAULT_TRIAL;
 		patternPreviewDrawer = new PatternDrawer(getCore().getStartMenuController().getStartMenuMonitorFormat(), initialTrial.getInitialPattern(), patternPreviewCanvas, SimulatedSurface.FLAT);
 		useTrial(TrialSaver.NEW_DEFAULT_TRIAL);
 	}
@@ -97,7 +95,7 @@ public class TrialConfigController extends CustomController {
 		brightnessDarkTextField.getTextField().setText("" + Math.round(brightnessDarkSlider.getValue()));
 	}
 
-	public void useTrial(TrialConfig trial) {
+	public void useTrial(Experiment trial) {
 		currentTrial = trial;
 
 		trialNameTextField.getTextField().setText(currentTrial.getName());

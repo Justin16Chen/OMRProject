@@ -37,6 +37,8 @@ public class CameraManager {
     private int index, maxIndex;
     private boolean connected, recording, saveImage;
     private int devicePort;
+    private int updateNum;
+    private double lastPrintTimeNano;
 
     public CameraManager(int devicePort) {
         this.devicePort = devicePort;
@@ -83,7 +85,13 @@ public class CameraManager {
         if (!recording || !connected)
             return;
 
-        long before = System.nanoTime();
+        updateNum++;
+        if (System.nanoTime() - lastPrintTimeNano > 250_000_000L) {
+            lastPrintTimeNano = System.nanoTime();
+            System.out.println("saveImage: " + saveImage + " | FPS: " + updateNum * 4);
+            updateNum = 0;
+        }
+//        long before = System.nanoTime();
         if(cap.read(latestImage)) {
             if (saveImage) {
                 if (index > maxIndex) {
@@ -96,7 +104,7 @@ public class CameraManager {
                     index++;
             }
         }
-        System.out.println("cm ms: " + (System.nanoTime() - before) / 1_000_000);
+//        System.out.println("cm ms: " + (System.nanoTime() - before) / 1_000_000);
     }
 
     public int getDevicePort() {

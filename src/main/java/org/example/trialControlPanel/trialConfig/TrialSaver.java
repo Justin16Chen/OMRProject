@@ -15,15 +15,15 @@ import java.util.ArrayList;
 
 public class TrialSaver {
 	public static final String FILE_PATH = "savedInfo/SavedTrials.json";
-	public static final TrialConfig NEW_DEFAULT_TRIAL = new TrialConfig("newTrial", new Pattern(PatternDirection.CLOCKWISE, 1, 255, 0, 1), 60, 60, 30, 5);
-	private static ArrayList<TrialConfig> trials;
+	public static final Experiment NEW_DEFAULT_TRIAL = new Experiment("newTrial", new Pattern(PatternDirection.CLOCKWISE, 1, 255, 0, 1), 60, 60, 30, 5);
+	private static ArrayList<Experiment> trials;
 
 	public static void initializeTrialSaver() {
 		trials = new ArrayList<>();
 		JSONArray jsonTrials = getJSONTrialsFromFile();
 		for (int i=0; i<jsonTrials.length(); i++) {
 			JSONObject jsonTrial = jsonTrials.getJSONObject(i);
-			TrialConfig trial = getTrialDataFromJSONObject(jsonTrial); // convert JSON object to patternControlPanel.pattern data
+			Experiment trial = getTrialDataFromJSONObject(jsonTrial); // convert JSON object to patternControlPanel.pattern data
 
 			trials.add(trial);
 		}
@@ -47,7 +47,7 @@ public class TrialSaver {
 	}
 
 	// converts a JSON object to a patternControlPanel.pattern data object
-	private static TrialConfig getTrialDataFromJSONObject(JSONObject jsonTrial) {
+	private static Experiment getTrialDataFromJSONObject(JSONObject jsonTrial) {
 		JSONObject jsonPattern = jsonTrial.getJSONObject("initialPattern");
 
 		String directionStr = jsonPattern.getString("direction").toLowerCase();
@@ -58,7 +58,7 @@ public class TrialSaver {
 			default -> throw new JSONException("pattern direction of " + directionStr + " is not valid");
 		}
 
-		return new TrialConfig(
+		return new Experiment(
 				jsonTrial.getString("name"),
 				new Pattern(
 						direction,
@@ -87,21 +87,21 @@ public class TrialSaver {
 		}
 	}
 
-	public static ArrayList<TrialConfig> getTrials(ArrayList<String> names) {
-		ArrayList<TrialConfig> trials = new ArrayList<>();
+	public static ArrayList<Experiment> getTrials(ArrayList<String> names) {
+		ArrayList<Experiment> trials = new ArrayList<>();
 		for (String name : names)
 			if (hasTrial(name))
 				trials.add(TrialSaver.getTrial(name));
 		return trials;
 	}
-	public static TrialConfig getTrial(String name) {
-		for (TrialConfig trial : trials)
+	public static Experiment getTrial(String name) {
+		for (Experiment trial : trials)
 			if (trial.getName().equals(name))
 				return trial.deepCopy();
 		throw new IllegalArgumentException(name + " is not a name of a trial");
 	}
 	public static boolean hasTrial(String trialName) {
-		for (TrialConfig trial : trials) {
+		for (Experiment trial : trials) {
 			if (trial.getName().equals(trialName))
 				return true;
 		}
@@ -109,7 +109,7 @@ public class TrialSaver {
 	}
 
 	// either add trial or updates saved trial if there is already a trial with the same name as newTrial
-	public static void addTrial(TrialConfig newTrial) {
+	public static void addTrial(Experiment newTrial) {
 		for (int i=0; i<trials.size(); i++) {
 			if (trials.get(i).getName().equals(newTrial.getName())) {
 				trials.remove(i);

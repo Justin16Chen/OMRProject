@@ -14,7 +14,7 @@ import org.example.trialControlPanel.monitorInfo.MonitorFormat;
 import org.example.trialControlPanel.omrChamberDisplay.RunTrialController;
 import org.example.trialControlPanel.omrChamberDisplay.ChildOMRController;
 import org.example.trialControlPanel.startMenu.StartMenuController;
-import org.example.trialControlPanel.trialConfig.TrialConfig;
+import org.example.trialControlPanel.trialConfig.Experiment;
 import org.example.trialControlPanel.trialConfig.TrialConfigController;
 
 import java.io.IOException;
@@ -143,7 +143,7 @@ public class Core {
         }
     }
 
-    public void runOMRTrials(MonitorFormat[] chamberMonitorFormats, ArrayList<TrialConfig> trials, int restTime) {
+    public void runOMRTrials(MonitorFormat[] chamberMonitorFormats, ArrayList<Experiment> trials, int restTime) {
         OMRChamberController.initPatternDrawer(chamberMonitorFormats[0], trials, restTime);
         Rectangle2D bounds = chamberMonitorFormats[0].getBounds();
         OMRChamberStage.setX(bounds.getMinX());

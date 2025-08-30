@@ -3,7 +3,7 @@ package org.example.trialControlPanel.trialConfig;
 import org.example.trialControlPanel.pattern.Pattern;
 
 // meant to store ONLY the configuration data of each trial - not the data gathered from actual experimentation
-public class TrialConfig {
+public class Experiment {
     private String name;
     private final Pattern initialPattern;
     private int testTime;
@@ -11,7 +11,7 @@ public class TrialConfig {
     private int dimAmount;
     private int maxTests;
 
-    public TrialConfig(String name, Pattern initialPattern, int testTime, int restTime, int dimAmount, int maxTests) {
+    public Experiment(String name, Pattern initialPattern, int testTime, int restTime, int dimAmount, int maxTests) {
         this.name = name;
         this.initialPattern = initialPattern;
         this.testTime = testTime;
@@ -71,8 +71,8 @@ public class TrialConfig {
         return name;
     }
 
-    public TrialConfig deepCopy() {
-        return new TrialConfig(
+    public Experiment deepCopy() {
+        return new Experiment(
                 name,
                 initialPattern,
                 testTime,
