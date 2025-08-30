@@ -8,7 +8,6 @@ public class LocalPropsReader {
     private static final boolean usePrespecifiedChamberMonitorSize;
     private static double chamberMonitorWidthCm, chamberMonitorHeightCm;
     static {
-        System.out.println("HELLOOOOOOOOOO");
         Properties properties = new Properties();
         try (FileInputStream fis = new FileInputStream("local.properties")) {
             properties.load(fis);

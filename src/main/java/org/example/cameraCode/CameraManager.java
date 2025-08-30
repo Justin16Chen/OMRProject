@@ -1,6 +1,5 @@
 package org.example.cameraCode;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,7 +34,7 @@ public class CameraManager {
     private String imageSavePath;
     private final Mat latestImage;
     private final ArrayList<Mat> images;
-    private int i;
+    private int index, maxIndex;
     private boolean connected, recording, saveImage;
     private int devicePort;
 
@@ -45,11 +44,32 @@ public class CameraManager {
         latestImage = new Mat();
         images = new ArrayList<>();
         saveImage = true;
-        i = 0;
+        index = 0;
         recording = false;
 
         cap = new VideoCapture(devicePort);
         connected = cap.isOpened();
+    }
+    public int getImageIndex() {
+        return index;
+    }
+    public void resetImageIndex() {
+        index = 0;
+    }
+    public int getImageIndexCap() {
+        return maxIndex;
+    }
+    public void setImageIndexCap(int maxIndex) {
+        this.maxIndex = maxIndex;
+    }
+    public void fillImagesToCap() {
+        int failedAttempts = 0;
+        while (index <= maxIndex && failedAttempts < 10) {
+            if (trySaveImage())
+                index++;
+            else
+                failedAttempts++;
+        }
     }
     public void setImageSavePath(String path) {
         this.imageSavePath = path;
@@ -63,20 +83,20 @@ public class CameraManager {
         if (!recording || !connected)
             return;
 
-        double before = System.currentTimeMillis();
-        if(cap.read(latestImage))
-            if(saveImage)
-//                images.add(latestImage);
-                if (trySaveImage())
-                    i++;
-//        System.out.println("time to save img: " + (System.currentTimeMillis() - before) / 1000);
-    }
-    public void updateNew() {
-        if (!recording || !connected)
-            return;
-        if(cap.read(latestImage))
-            if(saveImage)
+        long before = System.nanoTime();
+        if(cap.read(latestImage)) {
+            if (saveImage) {
+                if (index > maxIndex) {
+                    saveImage = false;
+                    return;
+                }
+
                 images.add(latestImage);
+                if (trySaveImage())
+                    index++;
+            }
+        }
+        System.out.println("cm ms: " + (System.nanoTime() - before) / 1_000_000);
     }
 
     public int getDevicePort() {
@@ -100,7 +120,11 @@ public class CameraManager {
             throw new IllegalStateException("when calling cameraManager.trySaveImage(), imageSavePath cannot be null");
         if(latestImage.empty())
             return false;
-        Imgcodecs.imwrite(imageSavePath + "\\" + i + ".png", latestImage);
+        if (index > maxIndex) {
+            System.out.println("index is " + index + ", maxIndex is " + maxIndex);
+            System.out.println(index > maxIndex);
+        }
+        Imgcodecs.imwrite(imageSavePath + "\\" + index + ".png", latestImage);
         return true;
 
     }

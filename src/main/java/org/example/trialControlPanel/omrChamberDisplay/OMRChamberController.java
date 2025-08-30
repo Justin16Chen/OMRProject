@@ -12,30 +12,30 @@ import org.example.trialControlPanel.pattern.PatternDrawer;
 import org.example.trialControlPanel.pattern.PatternDrawer.SimulatedSurface;
 import org.example.trialControlPanel.trialConfig.TrialConfig;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class OMRChamberController extends CustomController {
-
-	private static final int PATTERN_FPS = 60;
 	public enum State {
 		TESTING, RESTING, IN_BETWEEN_TRIALS
 	}
 	private ArrayList<TrialConfig> trials;
 	private int currentTrialIndex;
 	private int inBetweenTrialsRestTime;
+	private double lastTrialFinishTimeMs, lastCycleFinishTimeMs;
 	public int getCurrentTrialIndex() {
 		return currentTrialIndex;
 	}
 	private PatternDrawer patternDrawer;
-	private boolean trialRunning;
+	private ScheduledExecutorService[] executors;
+	private int lastActualImageIndex;
 	private double totalSecondsRunning, currentTrialSecondsRunning, currentCycleSecondsRunning; // 1 cycle = 1 test and 1 rest
 	public double getTotalSecondsRunning() {
 		return totalSecondsRunning;
@@ -43,7 +43,7 @@ public class OMRChamberController extends CustomController {
 	public double getTotalTime() {
 		return trials.stream()
 				.mapToInt(TrialConfig::getTotalTime)
-				.sum() + (trials.size() - 1) * inBetweenTrialsRestTime;
+				.sum() + (trials.size() - 1) * inBetweenTrialsRestTime - trials.getLast().getRestTime();
 	}
 	private int currentCycle;
 	public int getCurrentCycle() {
@@ -67,7 +67,6 @@ public class OMRChamberController extends CustomController {
 	}
 
 	public void stopTrial(boolean earlyStop) {;
-		trialRunning = false;
 		patternDrawer.stop();
 		Platform.runLater(getStage()::close);
 		for (ChildOMRController child : getCore().getChildOMRControllers()) {
@@ -76,6 +75,9 @@ public class OMRChamberController extends CustomController {
 				child.getPatternDrawer().stop();
 			});
 		}
+
+		for (ScheduledExecutorService executor : executors)
+			executor.shutdown();
 
 		getCore().getCameraManager().stopRecording();
 		getCore().getRunTrialController().getStage().close();
@@ -95,10 +97,8 @@ public class OMRChamberController extends CustomController {
 	}
 
 	public void startTrials() {
-		int patternSleepInterval = 1000 / PATTERN_FPS;
 		getCore().getProgramInfoWriter().activateExperiments(trials);
 
-		trialRunning = true;
 		state = State.TESTING;
 		patternDrawer.start();
 		for (ChildOMRController child : getCore().getChildOMRControllers())
@@ -109,6 +109,7 @@ public class OMRChamberController extends CustomController {
 		CameraManager cm = getCore().getCameraManager();
 		cm.startRecording();
 		cm.setSaveImage(true);
+		cm.setImageIndexCap(getCore().getProgramInfoWriter().getExpectedImages(0, trials.getFirst().getName()) - 1);
 
 		// connect datastream to python socket (python code sends visualized images to java code - java code displays the images)
 		try (ServerSocket serverSocket = new ServerSocket(getCore().getProgramInfoWriter().getSocketPort())) {
@@ -118,118 +119,135 @@ public class OMRChamberController extends CustomController {
 			e.printStackTrace();
 		}
 
+		// create independent executors
+		executors = new ScheduledExecutorService[3];
+		for (int i=0; i<executors.length; i++)
+			executors[i] = Executors.newSingleThreadScheduledExecutor();
+
+		// declare executor intervals
+		long cameraIntervalNanos = 1_000_000_000L / getCore().getProgramInfoWriter().getFPS();
+
+		// create proper file structure (experiment folder -> trial folder -> images)
+		// do this 2x (for camera images and visualized image)
+		for (int i=0; i<trials.size(); i++) {
+			TrialConfig experiment = trials.get(i);
+			boolean ec = getCameraImageExperimentFolder(experiment.getName(), i).mkdir();
+			boolean tc = getCameraImageTrialFolder(experiment.getName(), i, 0).mkdir();
+			boolean ev = getVisualizedImageExperimentFolder(experiment.getName(), i).mkdir();
+			boolean tv = getVisualizedImageTrialFolder(experiment.getName(), i, 0).mkdir();
+//				System.out.println("FOLDER CREATION SUCCESS");
+//				System.out.println(ec + " " + tc + " " + ev + " " + tv);
+		}
+
+		// specify where the camera should save the raw images
+		getCore().getCameraManager().setImageSavePath(getCameraImageTrialFolder(trials.getFirst().getName(), 0, 0).getPath());
+
+		// set timestamps used to manage trial test/rest
+		final double startTimeMs = System.currentTimeMillis();
+		lastTrialFinishTimeMs = startTimeMs;
+		lastCycleFinishTimeMs = startTimeMs;
+
 		// manage trial logic on separate thread
-		new Thread(() -> {
-			double startTimeMs = System.currentTimeMillis();
-			double lastTrialFinishTimeMs = startTimeMs;
-			double lastCycleFinishTimeMs = startTimeMs;
+		executors[0].scheduleAtFixedRate(() -> {
+			totalSecondsRunning = (System.currentTimeMillis() - startTimeMs) / 1000.;
+			currentTrialSecondsRunning = (System.currentTimeMillis() - lastTrialFinishTimeMs) / 1000.;
+			currentCycleSecondsRunning = (System.currentTimeMillis() - lastCycleFinishTimeMs) / 1000.;
 
-			// create proper file structure (experiment folder -> trial folder -> images)
-			// do this 2x (for camera images and visualized image)
-			for (int i=0; i<trials.size(); i++) {
-				TrialConfig experiment = trials.get(i);
-				int experimentNum = i + 1;
-				boolean ec = getCameraImageExperimentFolder(experiment.getName(), experimentNum).mkdir();
-				boolean tc = getCameraImageTrialFolder(experiment.getName(), experimentNum, 1).mkdir();
-				boolean ev = getVisualizedImageExperimentFolder(experiment.getName(), experimentNum).mkdir();
-				boolean tv = getVisualizedImageTrialFolder(experiment.getName(), experimentNum, 1).mkdir();
-				System.out.println("FOLDER CREATION SUCCESS");
-				System.out.println(ec + " " + tc + " " + ev + " " + tv);
+			TrialConfig currentTrial = trials.get(currentTrialIndex);
+
+			if (state == State.TESTING) {
+				if (currentTrialSecondsRunning >= currentTrial.getTotalTime() - currentTrial.getRestTime() && currentTrialIndex + 1 >= trials.size()) {
+					lastActualImageIndex = cm.getImageIndex() - 1;
+					if (lastActualImageIndex <= cm.getImageIndexCap()) {
+						writeTrialCameraInfoFile(currentTrial.getName(), currentTrialIndex, currentCycle);
+						cm.fillImagesToCap();
+					}
+					Platform.runLater(() -> this.stopTrial(false));
+				}
+				else if (currentCycleSecondsRunning >= currentTrial.getTestTime()) {
+					state = State.RESTING;
+					getCore().getProgramInfoWriter().completeExperiment(currentTrialIndex, currentTrial.getName());
+
+					patternDrawer.stopAndBlackOutScreen();
+					for (ChildOMRController child : getCore().getChildOMRControllers())
+						child.getPatternDrawer().stopAndBlackOutScreen();
+
+					cm.setSaveImage(false);
+					if (cm.getImageIndex() <= cm.getImageIndexCap()) {
+						lastActualImageIndex = cm.getImageIndex() - 1;
+						writeTrialCameraInfoFile(currentTrial.getName(), currentTrialIndex, currentCycle);
+						cm.fillImagesToCap();
+					}
+
+				}
+			}
+			else if (state == State.RESTING) {
+				if (currentTrialSecondsRunning >= currentTrial.getTotalTime()) {
+					state = State.IN_BETWEEN_TRIALS;
+				}
+				else if (currentCycleSecondsRunning >= currentTrial.getCycleTime()) {
+					state = State.TESTING;
+					lastCycleFinishTimeMs = System.currentTimeMillis();
+					patternDrawer.getPatternData().setLightBrightness(patternDrawer.getPatternData().getLightBrightness() - currentTrial.getDimAmount());
+					patternDrawer.start();
+
+					for (ChildOMRController child : getCore().getChildOMRControllers()) {
+						child.getPatternDrawer().start();
+						child.getPatternDrawer().getPatternData().setLightBrightness(patternDrawer.getPatternData().getLightBrightness() - currentTrial.getDimAmount());
+					}
+					currentCycle++;
+					cm.setSaveImage(true);
+					getCameraImageTrialFolder(currentTrial.getName(), currentTrialIndex, currentCycle).mkdir();
+					getCore().getCameraManager().resetImageIndex();
+					getCore().getCameraManager().setImageSavePath(getCameraImageTrialFolder(currentTrial.getName(), currentTrialIndex, currentCycle).getPath());
+				}
+			}
+			else if (state == State.IN_BETWEEN_TRIALS) {
+				if (currentTrialSecondsRunning >= currentTrial.getTotalTime() + inBetweenTrialsRestTime) {
+					state = State.TESTING;
+					currentTrialIndex++;
+					currentTrial = trials.get(currentTrialIndex);
+					lastTrialFinishTimeMs = System.currentTimeMillis();
+					lastCycleFinishTimeMs = System.currentTimeMillis();
+					currentCycle = 0;
+					patternDrawer.setPatternData(currentTrial.getInitialPattern());
+					patternDrawer.start();
+					for (ChildOMRController child : getCore().getChildOMRControllers()) {
+						child.getPatternDrawer().setPatternData(currentTrial.getInitialPattern());
+						child.getPatternDrawer().start();
+					}
+					getCore().getCameraManager().resetImageIndex();
+					cm.setImageIndexCap(getCore().getProgramInfoWriter().getExpectedImages(currentTrialIndex, currentTrial.getName()) - 1);
+					getCore().getCameraManager().setImageSavePath(getCameraImageTrialFolder(currentTrial.getName(), currentTrialIndex, 0).getPath());
+				}
 			}
 
-			// specify where the camera should save the raw images
-			getCore().getCameraManager().setImageSavePath(getCameraImageTrialFolder(trials.getFirst().getName(), 1, 1).getPath());
+			Platform.runLater(getCore().getRunTrialController()::updateUILabels);
+		}, 0, cameraIntervalNanos, TimeUnit.NANOSECONDS);
 
-			while (trialRunning) {
-				totalSecondsRunning = (System.currentTimeMillis() - startTimeMs) / 1000.;
-				currentTrialSecondsRunning = (System.currentTimeMillis() - lastTrialFinishTimeMs) / 1000.;
-				currentCycleSecondsRunning = (System.currentTimeMillis() - lastCycleFinishTimeMs) / 1000.;
-
-				TrialConfig currentTrial = trials.get(currentTrialIndex);
-
-				if (state == State.TESTING) {
-					if (currentTrialSecondsRunning >= currentTrial.getTotalTime() - currentTrial.getRestTime() && currentTrialIndex + 1 >= trials.size())
-						Platform.runLater(() -> this.stopTrial(false));
-					else if (currentCycleSecondsRunning >= currentTrial.getTestTime()) {
-						state = State.RESTING;
-						getCore().getProgramInfoWriter().completeExperiment(currentTrial.getName());
-
-						patternDrawer.stopAndBlackOutScreen();
-						for (ChildOMRController child : getCore().getChildOMRControllers())
-							child.getPatternDrawer().stopAndBlackOutScreen();
-
-						cm.setSaveImage(false);
-					}
-					else {
-						try {
-							byte[] imgBytes = new byte[visualizedImageDataIn.readInt()];
-							visualizedImageDataIn.readFully(imgBytes);
-							ByteArrayInputStream bais = new ByteArrayInputStream(imgBytes);
-							visualizedImg = new Image(bais);
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-					}
-				}
-				else if (state == State.RESTING) {
-					if (currentTrialSecondsRunning >= currentTrial.getTotalTime()) {
-						state = State.IN_BETWEEN_TRIALS;
-					}
-					else if (currentCycleSecondsRunning >= currentTrial.getCycleTime()) {
-						state = State.TESTING;
-						lastCycleFinishTimeMs = System.currentTimeMillis();
-						patternDrawer.getPatternData().setLightBrightness(patternDrawer.getPatternData().getLightBrightness() - currentTrial.getDimAmount());
-						patternDrawer.start();
-
-						for (ChildOMRController child : getCore().getChildOMRControllers()) {
-							child.getPatternDrawer().start();
-							child.getPatternDrawer().getPatternData().setLightBrightness(patternDrawer.getPatternData().getLightBrightness() - currentTrial.getDimAmount());
-						}
-						currentCycle++;
-						cm.setSaveImage(true);
-						getCore().getCameraManager().setImageSavePath(getCameraImageTrialFolder(currentTrial.getName(), currentTrialIndex + 1, currentCycle + 1).getPath());
-					}
-				} else if (state == State.IN_BETWEEN_TRIALS) {
-					if (currentTrialSecondsRunning >= currentTrial.getTotalTime() + inBetweenTrialsRestTime) {
-						state = State.TESTING;
-						currentTrialIndex++;
-						currentTrial = trials.get(currentTrialIndex);
-						lastTrialFinishTimeMs = System.currentTimeMillis();
-						lastCycleFinishTimeMs = System.currentTimeMillis();
-						currentCycle = 0;
-						patternDrawer.setPatternData(currentTrial.getInitialPattern());
-						patternDrawer.start();
-						for (ChildOMRController child : getCore().getChildOMRControllers()) {
-							child.getPatternDrawer().setPatternData(currentTrial.getInitialPattern());
-							child.getPatternDrawer().start();
-						}
-						getCore().getCameraManager().setImageSavePath(getCameraImageTrialFolder(currentTrial.getName(), currentTrialIndex + 1, 1).getPath());
-					}
-				}
-
-				Platform.runLater(getCore().getRunTrialController()::updateUILabels);
+		// manage reading visualized images from python on separate thread so python lag does not block java program
+		executors[1].scheduleAtFixedRate(() -> {
+			try {
+				byte[] imgBytes = new byte[visualizedImageDataIn.readInt()];
+				System.out.println("image reading thread started");
+				visualizedImageDataIn.readFully(imgBytes);
+				ByteArrayInputStream bais = new ByteArrayInputStream(imgBytes);
+				visualizedImg = new Image(bais);
 				Platform.runLater(() -> getCore().getRunTrialController().updateCameraImageView(visualizedImg));
-
-				try {
-					Thread.sleep(patternSleepInterval);
-				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
-				}
+				System.out.println("image read and command sent to image view");
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
-		}).start();
+		}, 0, cameraIntervalNanos, TimeUnit.NANOSECONDS);
 
 		// manage camera on separate thread for custom FPS
-		int cameraSleepInterval = 1000 / getCore().getProgramInfoWriter().getFPS();
-		new Thread(() -> {
-			while (trialRunning) {
-				try {
-					cm.update();
-					Thread.sleep(cameraSleepInterval);
-				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
-				}
+		executors[2].scheduleAtFixedRate(() -> {
+			try {
+				cm.update();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-		}).start();
+		}, 0, cameraIntervalNanos, TimeUnit.NANOSECONDS);
 	}
 
 	// folder structure/file helper functions
@@ -246,6 +264,19 @@ public class OMRChamberController extends CustomController {
 		return Paths.get(getVisualizedImageExperimentFolder(experimentName, experimentNum).getPath(), "trial" + trialNum).toFile();
 	}
 
+	private void writeTrialCameraInfoFile(String experimentName, int experimentNum, int trialNum) {
+		File file = Paths.get(getCameraImageTrialFolder(experimentName, experimentNum, trialNum).getPath(), "duplicatedImages.txt").toFile();
+
+		try {
+			file.createNewFile();
+
+			try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+				writer.write("lastActualFile: " + lastActualImageIndex + ".png");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	// getters
 	public void resizeCanvas(int width, int height) {

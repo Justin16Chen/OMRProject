@@ -90,7 +90,7 @@ public class PatternDrawer extends AnimationTimer {
         frameNum++;
         if (System.currentTimeMillis() - lastPrintTimeMs > 1000) {
             lastPrintTimeMs = System.currentTimeMillis();
-            System.out.println("FPS: " + frameNum);
+//            System.out.println("FPS: " + frameNum);
             frameNum = 0;
         }
 

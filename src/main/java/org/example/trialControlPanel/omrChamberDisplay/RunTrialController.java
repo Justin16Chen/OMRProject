@@ -59,7 +59,7 @@ public class RunTrialController extends CustomController {
     public void updateCameraImageView(Image image) {
         cameraDataLabel.setText(image == null ? "Camera Data (None available)" : "Camera Data");
         cameraDataImageView.setImage(image);
-
+        System.out.println("updated camera image view");
     }
 
     private String formatSeconds(int seconds) {

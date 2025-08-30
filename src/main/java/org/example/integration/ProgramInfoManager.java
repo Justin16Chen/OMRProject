@@ -12,8 +12,7 @@ import java.util.ArrayList;
 
 // handles reading and writing to programInfo.json file (this is how the java and python code communicates with each other)
 public class ProgramInfoManager {
-    private static final String PROGRAM_INFO_FILE_PATH = "liveData/programInfo.json",
-    SAVED_PROPS_FILE_PATH = "savedInfo/SavedProps.json";
+    private static final String PROGRAM_INFO_FILE_PATH = "liveData/programInfo.json";
 
     private JSONObject readProgramInfoJSON() {
         try {
@@ -25,6 +24,13 @@ public class ProgramInfoManager {
     }
     public int getFPS() {
         return readProgramInfoJSON().getInt("fps");
+    }
+    public int getExpectedImages(int index, String experimentName) {
+        JSONArray experiments = readProgramInfoJSON().getJSONArray("experiments");
+        for (int i=0; i<experiments.length(); i++)
+            if (experiments.getJSONObject(i).getString("name").equals(getExperimentFileName(index, experimentName)))
+                return experiments.getJSONObject(i).getInt("expectedImages");
+        return -1;
     }
     public int getSocketPort() {
         return readProgramInfoJSON().getInt("PORT");
@@ -42,6 +48,9 @@ public class ProgramInfoManager {
 
         saveJSONToFile(json, "FAILED TO STOP PROGRAM");
     }
+    private String getExperimentFileName(int index, String experimentName) {
+        return index + " - " + experimentName;
+    }
     public void activateExperiments(ArrayList<TrialConfig> experiments) {
         JSONObject json = readProgramInfoJSON();
         json.put("stopEarly", false);
@@ -49,7 +58,7 @@ public class ProgramInfoManager {
         for (int i=0; i<experiments.size(); i++) {
             TrialConfig experiment = experiments.get(i);
             JSONObject trialJsonObject = new JSONObject();
-            trialJsonObject.put("name", (i + 1) + " - " + experiment.getName());
+            trialJsonObject.put("name", getExperimentFileName(i, experiment.getName()));
             trialJsonObject.put("expectedImages", experiment.getTestTime() * getFPS());
             trialJsonObject.put("completed", false);
             experimentsJson.put(trialJsonObject);
@@ -72,14 +81,16 @@ public class ProgramInfoManager {
 
         saveJSONToFile(json, "FAILED TO COMPLETE ALL EXPERIMENTS");
     }
-    public void completeExperiment(String name) {
+    public void completeExperiment(int index, String name) {
         JSONObject json = readProgramInfoJSON();
         JSONArray experiments = json.getJSONArray("experiments");
-        for (int i=0; i<experiments.length(); i++)
-            if (experiments.getJSONObject(i).get("name").equals(name)) {
+        for (int i=0; i<experiments.length(); i++) {
+            String rawExperimentName = experiments.getJSONObject(i).getString("name");
+            if (getExperimentFileName(index, rawExperimentName).equals(name)) {
                 experiments.getJSONObject(i).put("completed", true);
                 break;
             }
+        }
 
         saveJSONToFile(json, "FAILED TO COMPLETE EXPERIMENT");
     }

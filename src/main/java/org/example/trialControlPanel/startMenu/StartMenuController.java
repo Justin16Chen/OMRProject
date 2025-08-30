@@ -137,7 +137,6 @@ public class StartMenuController extends CustomController {
         chamberMonitorResolutionLabel.setText(chamberMonitors[0].getResolutionSpecs());
         chamberMonitorSizeLabel.setText(chamberMonitors[0].getSizeSpecs());
         getCore().runOMRTrials(chamberMonitors, TrialSaver.getTrials(queuedTrialNames), restTimeTextField.getSeconds());
-        System.out.println(queuedTrialNames);
     }
 
     @FXML
@@ -167,7 +166,7 @@ public class StartMenuController extends CustomController {
     private TextArea cameraOutputTextArea, visualizedOutputTextArea;
     @FXML
     private void handleCameraOutputClick() {
-        String path = promptUserForEmptyFolderPath();
+        String path = promptUserForEmptyFolderPath(getCore().getProgramInfoWriter().getLastCameraOutputPath());
         if (path != null) {
             cameraOutputTextArea.setText(path);
             getCore().getProgramInfoWriter().setCameraOutputPath(path);
@@ -178,7 +177,7 @@ public class StartMenuController extends CustomController {
     }
     @FXML
     private void handleVisualizedOutputClick() {
-        String path = promptUserForEmptyFolderPath();
+        String path = promptUserForEmptyFolderPath(getCore().getProgramInfoWriter().getLastVisualizedOutputPath());
         if (path != null) {
             visualizedOutputTextArea.setText(path);
             getCore().getProgramInfoWriter().setVisualizedOutputPath(path);
@@ -187,9 +186,11 @@ public class StartMenuController extends CustomController {
     public String getVisualizedOutputPath() {
         return visualizedOutputTextArea.getText();
     }
-    private String promptUserForEmptyFolderPath() {
+    private String promptUserForEmptyFolderPath(String startingPath) {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("Select an Empty Folder");
+        if (startingPath != null)
+            directoryChooser.setInitialDirectory(new File(startingPath));
         File file;
         do {
             file = directoryChooser.showDialog(getStage());

@@ -129,7 +129,7 @@ def analyze_camera_img(img_i, model, ssd_input_transform, category_index, lstm, 
     a = time.time()
     img_path = os.path.join(image_folder_path, str(img_i) + '.png')
     if not os.path.exists(img_path):
-        print("path " + img_path + " doesn't exist")
+        #print("path " + img_path + " doesn't exist")
         return False, None
     before = time.time()
     original_img = Image.open(img_path)
