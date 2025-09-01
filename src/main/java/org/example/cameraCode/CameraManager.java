@@ -94,7 +94,7 @@ public class CameraManager {
 //        long before = System.nanoTime();
         if(cap.read(latestImage)) {
             if (saveImage) {
-                if (index > maxIndex) {
+                if (index > maxIndex && maxIndex > 0) {
                     saveImage = false;
                     return;
                 }
@@ -128,10 +128,9 @@ public class CameraManager {
             throw new IllegalStateException("when calling cameraManager.trySaveImage(), imageSavePath cannot be null");
         if(latestImage.empty())
             return false;
-        if (index > maxIndex) {
+        if (index > maxIndex && maxIndex != -1)
             System.out.println("index is " + index + ", maxIndex is " + maxIndex);
-            System.out.println(index > maxIndex);
-        }
+
         Imgcodecs.imwrite(imageSavePath + "\\" + index + ".png", latestImage);
         return true;
 

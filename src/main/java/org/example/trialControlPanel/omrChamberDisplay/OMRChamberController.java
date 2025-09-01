@@ -3,7 +3,6 @@ package org.example.trialControlPanel.omrChamberDisplay;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.input.KeyCode;
 import org.example.cameraCode.CameraManager;
 import org.example.trialControlPanel.parentClasses.CustomController;
 import org.example.trialControlPanel.monitorInfo.MonitorFormat;
@@ -14,13 +13,15 @@ import org.example.trialControlPanel.trialConfig.Experiment;
 import java.io.*;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class OMRChamberController extends CustomController {
+
+	private static final long MAX_SETUP_TIME = 10;
+	private static final int SETUP_CONSISTENCY_FRAMES = 10;
 	private PatternDrawer patternDrawer;
 	private int lastActualImageIndex;
 
@@ -65,8 +66,8 @@ public class OMRChamberController extends CustomController {
 			}
 
 			getCore().getCameraManager().setSaveImage(true);
-			getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrial()).mkdir();
 			getCore().getCameraManager().resetImageIndex();
+			getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrial()).mkdir();
 			getCore().getCameraManager().setImageSavePath(getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrial()).getPath());
 		});
 
@@ -79,8 +80,10 @@ public class OMRChamberController extends CustomController {
 				child.getPatternDrawer().setPatternData(displaySM.getCurExperiment().getInitialPattern());
 				child.getPatternDrawer().start();
 			}
+			getCore().getCameraManager().setSaveImage(true);
 			getCore().getCameraManager().resetImageIndex();
 			getCore().getCameraManager().setImageIndexCap(getCore().getProgramInfoWriter().getExpectedImages(displaySM.getCurExperimentIndex(), displaySM.getCurExperiment().getName()) - 1);
+			getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), 0).mkdir();
 			getCore().getCameraManager().setImageSavePath(getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), 0).getPath());
 		});
 	}
@@ -119,23 +122,11 @@ public class OMRChamberController extends CustomController {
 	@FXML
 	private Canvas canvas;
 
-	public void startTrials(MonitorFormat monitorFormat, ArrayList<Experiment> experiments, int restTime) {
-		long updateIntervalNanos = 1_000_000_000L / getCore().getProgramInfoWriter().getFPS();
+	public void setupAndStartExperiments(MonitorFormat monitorFormat, ArrayList<Experiment> experiments, int restTime) {
 
-		patternDrawer = new PatternDrawer(monitorFormat, experiments.getFirst().getInitialPattern(), canvas, SimulatedSurface.CIRCULAR);
-		patternDrawer.start();
-		for (ChildOMRController child : getCore().getChildOMRControllers())
-			child.getPatternDrawer().start();
-
-		displaySM.runExperiments(experiments, updateIntervalNanos, restTime);
-		getCore().getProgramInfoWriter().activateExperiments(experiments);
-
-		CameraManager cm = getCore().getCameraManager();
-		cm.startRecording();
-		cm.setSaveImage(true);
-		cm.setImageIndexCap(getCore().getProgramInfoWriter().getExpectedImages(0, experiments.getFirst().getName()) - 1);
-
-		// create proper file structure
+		// create starting file structure
+		File setupImagesFolder = Paths.get(getCore().getStartMenuController().getCameraOutputPath(), "setup").toFile();
+		setupImagesFolder.mkdir();
 		for (int i=0; i<experiments.size(); i++) {
 			Experiment experiment = experiments.get(i);
 			boolean ec = getCameraImageExperimentFolder(experiment.getName(), i).mkdir();
@@ -144,20 +135,67 @@ public class OMRChamberController extends CustomController {
 			boolean tv = getVisualizedImageTrialFolder(experiment.getName(), i, 0).mkdir();
 		}
 
-		// specify where the camera should save the raw images
-		getCore().getCameraManager().setImageSavePath(getCameraImageTrialFolder(experiments.getFirst().getName(), 0, 0).getPath());
+		// setup camera manager
+		CameraManager cm = getCore().getCameraManager();
+		cm.startRecording();
+		cm.resetImageIndex();
+		cm.setSaveImage(true);
+		cm.setImageIndexCap(-1); // no image cap
+		cm.setImageSavePath(setupImagesFolder.getPath());
+
+		// show blank display
+		patternDrawer = new PatternDrawer(monitorFormat, experiments.getFirst().getInitialPattern(), canvas, SimulatedSurface.CIRCULAR);
+		patternDrawer.stopAndBlackOutScreen();
+		for (ChildOMRController child : getCore().getChildOMRControllers())
+			child.getPatternDrawer().stopAndBlackOutScreen();
+
+		// calculate desired update interval
+		long updateIntervalNanos = 1_000_000_000L / getCore().getProgramInfoWriter().getFPS();
+
+		// setup period - finishes once camera reaches stable FPS or when 5 seconds have past
+		new Thread(() -> {
+			long startTime = System.nanoTime();
+			long lastUpdateTimeNanos = 0;
+			ArrayList<Long> pastDts = new ArrayList<>();
+			while (true) {
+				if (System.nanoTime() - startTime > MAX_SETUP_TIME * 1_000_000_000L)
+					break;
+				pastDts.addFirst(System.nanoTime() - lastUpdateTimeNanos);
+				lastUpdateTimeNanos = System.nanoTime();
+				if (pastDts.size() > SETUP_CONSISTENCY_FRAMES) {
+					boolean allGood = true;
+					for (int i = 0; i < SETUP_CONSISTENCY_FRAMES; i++) {
+						if (pastDts.get(i) > updateIntervalNanos) {
+							allGood = false;
+							break;
+						}
+					}
+					if (allGood)
+						break;
+				}
+				cm.update();
+			}
+			startExperiments(experiments, updateIntervalNanos, restTime);
+		}).start();
+	}
+	private void startExperiments(ArrayList<Experiment> experiments, long updateIntervalNanos, int restTime) {
+		// start experiments
+		patternDrawer.start();
+		for (ChildOMRController child : getCore().getChildOMRControllers())
+			child.getPatternDrawer().start();
+
+		displaySM.runExperiments(experiments, updateIntervalNanos, restTime);
+		getCore().getProgramInfoWriter().activateExperiments(experiments);
+
+		// manage camera on separate thread for custom FPS
+		CameraManager cm = getCore().getCameraManager();
+		cm.resetImageIndex();
+		cm.setImageIndexCap(getCore().getProgramInfoWriter().getExpectedImages(0, experiments.getFirst().getName()) - 1);
+		cm.setImageSavePath((getCameraImageTrialFolder(experiments.getFirst().getName(), 0, 0).getPath()));
+		cameraManagerExecutorHandler = cameraManagerExecutor.scheduleAtFixedRate(cm::update, 0, updateIntervalNanos, TimeUnit.NANOSECONDS);
 
 		// manage reading visualized images from python on separate thread so python lag does not block java program
 		visualizedImageReader.start(updateIntervalNanos);
-
-		// manage camera on separate thread for custom FPS
-		cameraManagerExecutorHandler = cameraManagerExecutor.scheduleAtFixedRate(() -> {
-			try {
-				cm.update();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}, 0, updateIntervalNanos, TimeUnit.NANOSECONDS);
 	}
 
 	// folder structure/file helper functions

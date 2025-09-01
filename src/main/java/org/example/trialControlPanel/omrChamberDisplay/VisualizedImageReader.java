@@ -39,7 +39,7 @@ public class VisualizedImageReader {
         if (!connectInputStream())
             return;
 
-        executorHandler =executor.scheduleAtFixedRate(() -> {
+        executorHandler = executor.scheduleAtFixedRate(() -> {
             try {
                 byte[] imgBytes = new byte[visualizedImageDataIn.readInt()];
                 visualizedImageDataIn.readFully(imgBytes);

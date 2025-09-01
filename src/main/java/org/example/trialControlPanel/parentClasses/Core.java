@@ -135,8 +135,7 @@ public class Core {
             throw new RuntimeException(e);
         }
 
-        omrChamberController.startTrials(chamberMonitorFormats[0], experiments, restTime);
-        runTrialController.updateUILabels();
+        omrChamberController.setupAndStartExperiments(chamberMonitorFormats[0], experiments, restTime);
     }
     public void loadStartMenu() throws IOException {
         FXMLLoader loader = getLoaderFromResources("/patternControlPanelFXML/StartMenu.fxml");

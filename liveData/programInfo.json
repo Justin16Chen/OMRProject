@@ -1,11 +1,7 @@
 {
-    "stopEarly": false,
+    "stopEarly": true,
     "PORT": 65432,
-    "experiments": [{
-        "name": "0 - shortLight",
-        "completed": true,
-        "expectedImages": 120
-    }],
+    "experiments": [],
     "fps": 24,
     "HOST": "127.0.0.1",
     "trialPrefix": "trial",

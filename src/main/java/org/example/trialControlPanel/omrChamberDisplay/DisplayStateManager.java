@@ -45,15 +45,12 @@ public class DisplayStateManager {
     public void setTransitionFunction(DisplayState from, DisplayState to, Runnable function) {
         transitionFunctions.put(new Transition(from, to), function);
     }
-
     public void runExperiments(ArrayList<Experiment> experiments, long intervalNanos, int inBetweenExperimentsRestTime) {
         this.experiments = experiments;
-        System.out.println(experiments);
         this.inBetweenExperimentsRestTime = inBetweenExperimentsRestTime;
         currentExperimentIndex = 0;
         currentTrial = 0;
         state = DisplayState.TESTING;
-        transitionFunctions.getOrDefault(new Transition(DisplayState.SETUP, DisplayState.TESTING), () -> {}).run();
         final double startTimeMs = System.currentTimeMillis();
         lastExperimentFinishTimeMs = startTimeMs;
         lastTrialFinishTimeMs = startTimeMs;
@@ -64,8 +61,6 @@ public class DisplayStateManager {
             currentTrialSecondsRunning = (System.currentTimeMillis() - lastTrialFinishTimeMs) / 1000.;
 
             switch (state) {
-                case SETUP:
-                    break;
                 case TESTING:
                     if (currentExperimentSecondsRunning >= getCurExperiment().getTotalTime() - getCurExperiment().getRestTime() && currentExperimentIndex + 1 >= experiments.size()) {
                         transitionFunctions.getOrDefault(new Transition(DisplayState.TESTING, DisplayState.NORMAL_STOP), () -> {}).run();
