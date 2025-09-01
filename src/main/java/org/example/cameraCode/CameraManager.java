@@ -88,7 +88,7 @@ public class CameraManager {
         updateNum++;
         if (System.nanoTime() - lastPrintTimeNano > 250_000_000L) {
             lastPrintTimeNano = System.nanoTime();
-            System.out.println("saveImage: " + saveImage + " | FPS: " + updateNum * 4);
+//            System.out.println("saveImage: " + saveImage + " | FPS: " + updateNum * 4);
             updateNum = 0;
         }
 //        long before = System.nanoTime();

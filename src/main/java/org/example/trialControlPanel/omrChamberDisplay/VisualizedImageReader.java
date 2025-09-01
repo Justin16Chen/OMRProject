@@ -11,11 +11,13 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class VisualizedImageReader {
     private final Core core;
     private final ScheduledExecutorService executor;
+    private ScheduledFuture<?> executorHandler;
     private DataInputStream visualizedImageDataIn;
     public VisualizedImageReader(Core core) {
         this.core = core;
@@ -37,7 +39,7 @@ public class VisualizedImageReader {
         if (!connectInputStream())
             return;
 
-        executor.scheduleAtFixedRate(() -> {
+        executorHandler =executor.scheduleAtFixedRate(() -> {
             try {
                 byte[] imgBytes = new byte[visualizedImageDataIn.readInt()];
                 visualizedImageDataIn.readFully(imgBytes);
@@ -49,7 +51,11 @@ public class VisualizedImageReader {
         }, 0, intervalNanos, TimeUnit.NANOSECONDS);
     }
 
-    public void stop() {
+    public void stopRunning() {
+        if (executorHandler != null && !executorHandler.isCancelled())
+        executorHandler.cancel(true);
+    }
+    public void shutDownExecutor() {
         executor.shutdown();
     }
 }

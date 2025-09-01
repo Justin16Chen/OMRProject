@@ -10,6 +10,6 @@
     "HOST": "127.0.0.1",
     "trialPrefix": "trial",
     "cameraOutputBase": "C:\\Users\\justi\\Documents\\omr images\\camera images",
-    "programRunning": false,
+    "programRunning": true,
     "visualizedOutputBase": "C:\\Users\\justi\\Documents\\omr images\\visualized images"
 }

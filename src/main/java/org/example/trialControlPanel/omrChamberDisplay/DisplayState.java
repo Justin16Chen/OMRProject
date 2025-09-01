@@ -1,5 +1,5 @@
 package org.example.trialControlPanel.omrChamberDisplay;
 
 public enum DisplayState {
-    SETUP, TESTING, RESTING, IN_BETWEEN_EXPERIMENTS, STOP
+    SETUP, TESTING, RESTING, IN_BETWEEN_EXPERIMENTS, NORMAL_STOP, EARLY_STOP
 }

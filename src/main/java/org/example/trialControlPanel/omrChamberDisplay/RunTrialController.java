@@ -9,7 +9,6 @@ import org.example.trialControlPanel.parentClasses.CustomController;
 import org.example.trialControlPanel.trialConfig.Experiment;
 
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 
 public class RunTrialController extends CustomController {
     private static final DecimalFormat timeDf = new DecimalFormat("00");
@@ -25,35 +24,38 @@ public class RunTrialController extends CustomController {
 
     @Override
     public void setup() {
-        getStage().setOnCloseRequest(e -> getCore().getOMRChamberController().stopTrial(true));
+        getStage().setOnCloseRequest(e -> {
+            System.out.println("closing run trial controller");
+            getCore().getOmrChamberController().stopTrial(true);
+        });
     }
     @FXML
     private void handleStopEarlyClick() {
-        getCore().getOMRChamberController().stopTrial(true);
+        System.out.println("early stop click");
+        getCore().getOmrChamberController().stopTrial(true);
         getStage().close();
     }
 
     public void updateUILabels() {
-        OMRChamberController chamberController = getCore().getOMRChamberController();
-        Experiment trial = trials.get(chamberController.getCurrentTrialIndex());
-        nameLabel.setText(trial.getName());
-        stateLabel.setText("" + chamberController.getState());
+        Experiment experiment = displaySM.getCurExperiment();
+        nameLabel.setText(experiment.getName());
+        stateLabel.setText("" + displaySM.getState());
 
-        trialLabel.setText(chamberController.getCurrentTrialIndex() + 1 + "/" + trials.size());
-        trialProgress.setProgress((chamberController.getCurrentTrialIndex() + 1.) / trials.size());
+        trialLabel.setText(displaySM.getCurExperimentIndex() + 1 + "/" + displaySM.getNumExperiments());
+        trialProgress.setProgress((displaySM.getCurExperimentIndex() + 1.) / displaySM.getNumExperiments());
 
-        cycleLabel.setText(chamberController.getCurrentCycle() + 1 + "/" + trial.getMaxTests());
-        cycleProgress.setProgress((chamberController.getCurrentCycle() + 1.) / trial.getMaxTests());
+        cycleLabel.setText((displaySM.getCurTrial() + 1) + "/" + experiment.getMaxTests());
+        cycleProgress.setProgress((displaySM.getCurTrial() + 1.) / experiment.getMaxTests());
 
-        int totalTime = (int) chamberController.getTotalTime();
-        totalTimeLabel.setText(formatSeconds((int) chamberController.getTotalSecondsRunning()) + "/" + formatSeconds(totalTime));
-        totalTimeProgress.setProgress(Math.min(chamberController.getTotalSecondsRunning() / totalTime, 1) % 1);
+        int totalTime = (int) displaySM.getTotalTime();
+        totalTimeLabel.setText(formatSeconds((int) displaySM.getTotalSecondsRunning()) + "/" + formatSeconds(totalTime));
+        totalTimeProgress.setProgress(Math.min(displaySM.getTotalSecondsRunning() / totalTime, 1) % 1);
 
-        testTimeLabel.setText(formatSeconds((int) chamberController.getTestRunTime()) + "/" + formatSeconds(trial.getTestTime()));
-        testTimeProgress.setProgress(Math.min(chamberController.getTestRunTime() / trial.getTestTime(), 1) % 1);
+        testTimeLabel.setText(formatSeconds((int) displaySM.getTestRunTime()) + "/" + formatSeconds(experiment.getTestTime()));
+        testTimeProgress.setProgress(Math.min(displaySM.getTestRunTime() / experiment.getTestTime(), 1) % 1);
 
-        restTimeLabel.setText(formatSeconds((int) chamberController.getRestRunTime()) + "/" + formatSeconds(trial.getRestTime()));
-        restTimeProgress.setProgress(Math.min(chamberController.getRestRunTime() / trial.getRestTime(), 1) % 1);
+        restTimeLabel.setText(formatSeconds((int) displaySM.getRestRunTime()) + "/" + formatSeconds(experiment.getRestTime()));
+        restTimeProgress.setProgress(Math.min(displaySM.getRestRunTime() / experiment.getRestTime(), 1) % 1);
     }
 
     public void updateCameraImageView(Image image) {
@@ -65,8 +67,8 @@ public class RunTrialController extends CustomController {
         return timeDf.format(seconds / 60) + ":" + timeDf.format(seconds % 60);
     }
 
-    private ArrayList<Experiment> trials;
-    public void setTrials(ArrayList<Experiment> trials) {
-        this.trials = trials;
+    private DisplayStateManager displaySM;
+    public void setDisplaySM(DisplayStateManager displaySM) {
+        this.displaySM = displaySM;
     }
 }
