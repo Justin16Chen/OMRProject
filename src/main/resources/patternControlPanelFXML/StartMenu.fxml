@@ -133,7 +133,7 @@
          </Label>
          <VBox prefHeight="326.0" prefWidth="200.0">
             <children>
-               <Label text="Current Monitor Specs">
+               <Label text="Current Monitor Info">
                   <font>
                      <Font size="15.0" />
                   </font>
@@ -160,7 +160,7 @@
                      <Insets bottom="30.0" top="10.0" />
                   </VBox.margin>
                </GridPane>
-               <Label text="Chamber Monitor Specs">
+               <Label text="Chamber Monitor Info">
                   <font>
                      <Font size="15.0" />
                   </font>
