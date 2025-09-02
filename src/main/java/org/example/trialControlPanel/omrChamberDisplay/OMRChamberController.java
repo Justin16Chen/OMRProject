@@ -34,6 +34,7 @@ public class OMRChamberController extends CustomController {
 	public void setup() {
 		displaySM = new DisplayStateManager(getCore());
 		visualizedImageReader = new VisualizedImageReader(getCore());
+		getCore().getCameraManager().connectOutputStream();
 		visualizedImageReader.connectInputStream();
 		cameraManagerExecutor = Executors.newSingleThreadScheduledExecutor();
 
@@ -142,7 +143,7 @@ public class OMRChamberController extends CustomController {
 		CameraManager cm = getCore().getCameraManager();
 		cm.startRecording();
 		cm.resetImageIndex();
-		cm.setSaveImage(true);
+		cm.setSaveImage(false);
 		cm.setImageIndexCap(-1); // no image cap
 		cm.setImageSavePath(setupImagesFolder.getPath());
 
@@ -195,6 +196,7 @@ public class OMRChamberController extends CustomController {
 		cm.resetImageIndex();
 		cm.setImageIndexCap(getCore().getProgramInfoWriter().getExpectedImages(0, experiments.getFirst().getName()) - 1);
 		cm.setImageSavePath((getCameraImageTrialFolder(experiments.getFirst().getName(), 0, 0).getPath()));
+		cm.setSaveImage(true);
 		cameraManagerExecutorHandler = cameraManagerExecutor.scheduleAtFixedRate(cm::update, 0, updateIntervalNanos, TimeUnit.NANOSECONDS);
 
 		// manage reading visualized images from python on separate thread so python lag does not block java program

@@ -1,7 +1,11 @@
 package org.example.cameraCode;
 
+import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Properties;
 
@@ -9,10 +13,12 @@ import javafx.scene.image.Image;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
+import org.example.trialControlPanel.parentClasses.Core;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.videoio.VideoCapture;
+import org.opencv.videoio.Videoio;
 
 public class CameraManager {
     static {
@@ -40,8 +46,13 @@ public class CameraManager {
     private int updateNum;
     private double lastPrintTimeNano;
 
-    public CameraManager(int devicePort) {
+    private DataOutputStream outputStream;
+    private final Core core;
+    public final int width, height;
+
+    public CameraManager(int devicePort, Core core) {
         this.devicePort = devicePort;
+        this.core = core;
 
         latestImage = new Mat();
         images = new ArrayList<>();
@@ -51,6 +62,26 @@ public class CameraManager {
 
         cap = new VideoCapture(devicePort);
         connected = cap.isOpened();
+
+        width = (int)cap.get(Videoio.CAP_PROP_FRAME_WIDTH);
+        height = (int)cap.get(Videoio.CAP_PROP_FRAME_HEIGHT);
+    }
+    public void connectOutputStream() {
+        try (ServerSocket serverSocket = new ServerSocket(core.getProgramInfoWriter().getRawImagesPort())) {
+            Socket clientSocket = serverSocket.accept();
+            outputStream = new DataOutputStream(clientSocket.getOutputStream());
+            System.out.println("camera connected to python client");
+            ByteBuffer header = ByteBuffer.allocate(12);
+            header.putInt(width);
+            header.putInt(height);
+            header.putInt(core.fps);
+            outputStream.write(header.array());
+            outputStream.flush();
+            System.out.println("camera data sent to python client; width: " + width + ", height: " + height);
+        } catch (IOException e) {
+            System.out.println("camera failed to connect to python client");
+            throw new RuntimeException(e);
+        }
     }
     public int getImageIndex() {
         return index;
@@ -67,7 +98,7 @@ public class CameraManager {
     public void fillImagesToCap() {
         int failedAttempts = 0;
         while (index <= maxIndex && failedAttempts < 10) {
-            if (trySaveImage())
+            if (trySendImage())
                 index++;
             else
                 failedAttempts++;
@@ -101,7 +132,7 @@ public class CameraManager {
                 }
 
                 images.add(latestImage);
-                if (trySaveImage()) {
+                if (trySendImage()) {
                     index++;
 //                    System.out.println("time to save: " + (System.currentTimeMillis() - time));
                 }
@@ -126,17 +157,32 @@ public class CameraManager {
         this.saveImage = saveImage;
     }
 
-    private boolean trySaveImage() {
-        if (imageSavePath == null)
-            throw new IllegalStateException("when calling cameraManager.trySaveImage(), imageSavePath cannot be null");
+    private boolean trySendImage() {
+//        if (imageSavePath == null)
+//            throw new IllegalStateException("when calling cameraManager.trySaveImage(), imageSavePath cannot be null");
         if(latestImage.empty())
             return false;
-        if (index > maxIndex && maxIndex != -1)
-            System.out.println("index is " + index + ", maxIndex is " + maxIndex);
+//        if (index > maxIndex && maxIndex != -1)
+//            System.out.println("index is " + index + ", maxIndex is " + maxIndex);
 
-        Imgcodecs.imwrite(imageSavePath + "\\" + index + ".png", latestImage);
-        return true;
+        try {
+            double before = System.currentTimeMillis();
 
+            byte[] indexBytes = ByteBuffer.allocate(4).putInt(index).array();
+
+            byte[] imgBytes = new byte[width * height * 3];
+            latestImage.get(0, 0, imgBytes);
+            outputStream.write(indexBytes);
+            outputStream.write(imgBytes);
+            outputStream.flush();
+            System.out.println("camera data sent in " + (System.currentTimeMillis() - before) +"ms");
+            return true;
+        }
+        catch (IOException e) {
+            System.out.println("failed to send images");
+            return false;
+        }
+//        Imgcodecs.imwrite(imageSavePath + "\\" + index + ".png", latestImage);
     }
 
     public Image getLatestImage() {
@@ -183,24 +229,5 @@ public class CameraManager {
             bgra[j + 3] = (byte)255;  // A (opaque)
         }
         return bgra;
-    }
-
-    public static void main(String[] args) {
-        CameraManager cm = new CameraManager(0);
-        cm.setSaveImage(true);
-        cm.startRecording();
-        double fps = 30;
-        double mspf = 1/ fps * 1000;
-        double before = System.currentTimeMillis();
-        while(true) {
-            double after = System.currentTimeMillis();
-            if(after - before < mspf)
-                continue;
-            System.out.println("fps: " + 1/(after - before) * 1000);
-            System.out.println("running");
-            //cm.updateNew(); //29.4
-            cm.update();
-            before = after;
-        }
     }
 }

@@ -35,6 +35,9 @@ public class ProgramInfoManager {
     public int getVisualizedImagesPort() {
         return readProgramInfoJSON().getInt("PYTHON_SEND_PORT");
     }
+    public int getRawImagesPort() {
+        return readProgramInfoJSON().getInt("PYTHON_RECEIVE_PORT");
+    }
     public void startProgram() {
         JSONObject json = readProgramInfoJSON();
         json.put("programRunning", true);

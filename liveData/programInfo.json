@@ -1,9 +1,9 @@
 {
-    "stopEarly": false,
+    "stopEarly": true,
     "PYTHON_RECEIVE_PORT": 65433,
     "experiments": [{
         "name": "0 - shortLight",
-        "completed": true,
+        "completed": false,
         "expectedImages": 120
     }],
     "fps": 24,

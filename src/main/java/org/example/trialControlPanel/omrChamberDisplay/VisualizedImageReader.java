@@ -33,6 +33,7 @@ public class VisualizedImageReader {
             Socket clientSocket = serverSocket.accept();
             visualizedImageDataIn = new DataInputStream(clientSocket.getInputStream());
             connected = true;
+            System.out.println("visualized connected to python client");
         } catch (IOException e) {
             System.out.println("failed to connect input stream in VisualizedImageReader.java");
             connected = false;
@@ -45,38 +46,33 @@ public class VisualizedImageReader {
 
         executorHandler = executor.scheduleAtFixedRate(() -> {
             try {
-
                 double time = System.currentTimeMillis();
-                byte[] header = visualizedImageDataIn.readNBytes(8);
+                byte[] header = visualizedImageDataIn.readNBytes(4);
 //                System.out.println("time to read header: " + (System.currentTimeMillis() - time));
                 ByteBuffer bb = ByteBuffer.wrap(header);
 //                System.out.println("time to create buffer: " + (System.currentTimeMillis() - time));
-                int width = bb.getInt();
-                int height = bb.getInt();
+                int omr = bb.getInt();
 
 //                System.out.println("time to read w&h bytes: " + (System.currentTimeMillis() - time));
 
-                int byteCount = width * height * 3;
+                int byteCount = core.getCameraManager().width * core.getCameraManager().height * 3;
                 byte[] imgBytes = visualizedImageDataIn.readNBytes(byteCount);
 
 //                System.out.println("time to read imgBytes: " + (System.currentTimeMillis() - time));
 
-                WritableImage wimg = new WritableImage(width, height);
+                WritableImage wimg = new WritableImage(core.getCameraManager().width, core.getCameraManager().height);
                 PixelWriter pw = wimg.getPixelWriter();
                 int idx = 0;
-                for(int y = 0; y < height; y++)
-                    for(int x = 0; x < width; x++) {
+                for(int y = 0; y < core.getCameraManager().height; y++)
+                    for(int x = 0; x < core.getCameraManager().width; x++) {
                         int r = imgBytes[idx++] & 0xFF;
                         int g = imgBytes[idx++] & 0xFF;
                         int b = imgBytes[idx++] & 0xFF;
                         pw.setColor(x, y, Color.rgb(r, g, b));
                     }
 
-//                System.out.println("time to receive img: " + (System.currentTimeMillis() - time));
+                System.out.println("time to receive visualized img: " + (System.currentTimeMillis() - time));
 
-//                byte[] imgBytes = new byte[visualizedImageDataIn.readInt()];
-//                visualizedImageDataIn.readFully(imgBytes);
-//                ByteArrayInputStream bais = new ByteArrayInputStream(imgBytes);
                 Platform.runLater(() -> core.getRunTrialController().updateCameraImageView(wimg));
             } catch (IOException e) {
                 System.out.println("failed to read image from input stream");

@@ -113,7 +113,7 @@ def select_highest(list):
             highest_i = i
     return highest, highest_i
 
-def run_ssd(model, data_transform, original_img):
+def run_ssd(model, device, data_transform, original_img):
     img, _ = data_transform(original_img)
     # expand batch dimension
     img = torch.unsqueeze(img, dim=0)
@@ -128,7 +128,14 @@ def run_ssd(model, data_transform, original_img):
     predict_boxes[:, [1, 3]] = predict_boxes[:, [1, 3]] * original_img.size[1]
 
     return predict_boxes, predict_classes, predict_scores
-def analyze_camera_img(img_i, original_img, model, ssd_input_transform, category_index, lstm, lstm_input_transform, results, window_size, angle_offsets, fps, device):
+
+
+# shifts result one to the left and adds new onto
+def shift_results(r, index, new):
+    r[index, :-1] = r[index, 1:].clone()
+    r[index, -1] = new
+    return r
+def analyze_camera_img(img_i, original_img, model, ssd_input_transform, ci, lstm, lstm_input_transform, results, window_size, angle_offsets, fps, device):
     a = time.time()
     before = time.time()
     # print("time to open img " + str(img_i) + ": " + str(time.time() - before))
@@ -136,8 +143,8 @@ def analyze_camera_img(img_i, original_img, model, ssd_input_transform, category
     h = original_img.size[1]
 
     # running model and analyzing model predictions
-    pred_box, pred_class, pred_score = run_ssd(model, ssd_input_transform, original_img)
-    data = get_head_and_tail_data(pred_box, pred_class, pred_score, category_index, original_img.size)
+    pred_box, pred_class, pred_score = run_ssd(model, device, ssd_input_transform, original_img)
+    data = get_head_and_tail_data(pred_box, pred_class, pred_score, ci, original_img.size)
 
     # drawing some data onto img
     cx = w * 0.8
@@ -155,15 +162,19 @@ def analyze_camera_img(img_i, original_img, model, ssd_input_transform, category
     draw.text(xy=(text_left, top+text_inc), text="Frame: " + str(img_i), font=fnt, fill="black")
     draw.text(xy=(text_left, top+text_inc*2), text="Time: " + str(timedelta(seconds=img_i/fps)), font=fnt, fill="black")
 
+    cur_i = min(img_i, window_size - 1)
     # print("ssd successful: " + str(data["ssd_successful"]))
     # copying last frames data if ssd fails; if it fails on first frame, then it takes the default values
     if not data["ssd_successful"]:
-        if img_i > 0:
+        if img_i == 0:
+            results[0, img_i] = data["head_angle"]
+            results[1, img_i] = data["tail_angle"]
+        elif img_i < window_size:
             results[0, img_i] = results[0, img_i - 1]
             results[1, img_i] = results[1, img_i - 1]
         else:
-            results[0, img_i] = data["head_angle"]
-            results[1, img_i] = data["tail_angle"]
+            shift_results(results, 0, results[0, -1])
+            shift_results(results, 1, results[1, -1])
     else:
         # drawing ear and tail positions
         box_r = 15
@@ -189,32 +200,35 @@ def analyze_camera_img(img_i, original_img, model, ssd_input_transform, category
             data["head_angle"] += angle_offsets[0]
             data["tail_angle"] += angle_offsets[1]
 
-            dif = data["head_angle"] - results[0, img_i-1]
+            dif = data["head_angle"] - results[0, cur_i-1]
             if abs(dif) > angle_offsets[2]:
                 offset = -sign(dif) * 360
                 angle_offsets[0] += offset
                 data["head_angle"] += offset
 
-            dif = data["tail_angle"] - results[1, img_i - 1]
+            dif = data["tail_angle"] - results[1, cur_i - 1]
             if abs(dif) > angle_offsets[2]:
                 offset = -sign(dif) * 360
                 angle_offsets[1] += offset
                 data["tail_angle"] += offset
 
-        results[0, img_i] = data["head_angle"]
-        results[1, img_i] = data["tail_angle"]
+        if img_i < window_size:
+            results[0, img_i] = data["head_angle"]
+            results[1, img_i] = data["tail_angle"]
+        else:
+            shift_results(results, 0, data["head_angle"])
+            shift_results(results, 1, data["tail_angle"])
 
     # drawing head and tail angle
-    draw.text(xy=(text_left, top+text_inc*3), text="Head Angle (deg): " + str(math.floor(results[0, img_i].item()*100)/100), font=fnt, fill="black")
-    draw.text(xy=(text_left, top+text_inc*4), text="Tail Angle (deg): " + str(math.floor(results[1, img_i].item())*100/100), font=fnt, fill="black")
+    draw.text(xy=(text_left, top+text_inc*3), text="Head Angle (deg): " + str(math.floor(results[0, cur_i].item()*100)/100), font=fnt, fill="black")
+    draw.text(xy=(text_left, top+text_inc*4), text="Tail Angle (deg): " + str(math.floor(results[1, cur_i].item())*100/100), font=fnt, fill="black")
 
     # print("starting sliding window")
     # sliding window approach
-    start_i = int(max(0, img_i + 1 - window_size))
-    head_window = results[0, start_i:img_i + 1]
-    tail_window = results[1, start_i:img_i + 1]
-    if img_i < window_size - 1:
-        pad = window_size - img_i - 1
+    head_window = results[0, 0 : cur_i + 1]
+    tail_window = results[1, 0 : cur_i + 1]
+    if cur_i < window_size - 1:
+        pad = window_size - cur_i - 1
         head_window = torch.cat([torch.zeros(pad), head_window], dim=0)
         tail_window = torch.cat([torch.zeros(pad), tail_window], dim=0)
     head_window = head_window.unsqueeze(-1)
@@ -225,22 +239,15 @@ def analyze_camera_img(img_i, original_img, model, ssd_input_transform, category
     preds = lstm(signal)
     x = w * 0.15
     if preds.cpu().numpy().squeeze() > 0.5:
-        results[2][img_i] = 1
+        results[2, 0] = 1
         red = (250, 20, 5)
         draw.rectangle(xy=(50, 500, 100, 520), fill=None, outline=red, width=line_width)
         draw.text(xy=(x, cy), text="OMR", font=fnt, fill=red)
     else:
-        results[2][img_i] = 0
-        if img_i > 0 and results[2][img_i-1] == 1:
-            results[3][0] += 1
+        results[2, 0] = 0
     # print("total time to process img " + str(img_i) + ": " + str(time.time() - a))
 
     return original_img
-
-def reset_experiments(program_info_dict, program_json_path):
-    program_info_dict["experiments"] = []
-    with open(program_json_path, "w") as file:
-        json.dump(program_info_dict, file, indent=4)
 
 def connect_to_server(host, port):
     while True:
@@ -253,28 +260,28 @@ def connect_to_server(host, port):
             print("java server not ready yet, waiting 0.1s")
             time.sleep(0.1)
 
+
 if __name__ == "__main__":
-    # necessary file paths
+    # necessary file paths and variables
     program_json_path = "../../liveData/programInfo.json"
     pascal_voc_path = "model/pascal_voc_classes.json"
     ssd_model_path = "model/ssd.pth"
     lstm_model_path = "model/lstm.pkl"
-    omr_output_path = "../../liveData/omrData.json"
 
-    # clearing previous omr data
-    with open(omr_output_path, "w") as file:
-        json.dump({"experiments": []}, file, indent=4)
+    HOST = "127.0.0.1"
+    RECEIVE_PORT = 65433
+    SEND_PORT = 65432
 
     # loading ssd
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")  # using GPU if possible
-    print("using " + str(device))
+    model_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")  # using GPU if possible
+    print("using " + str(model_device))
 
-    ssd = SSD300(backbone=Backbone(), num_classes=3)
-    weights_dict = torch.load(ssd_model_path, map_location=device)
+    ssd_model = SSD300(backbone=Backbone(), num_classes=3)
+    weights_dict = torch.load(ssd_model_path, map_location=model_device)
     weights_dict = weights_dict["model"] if "model" in weights_dict else weights_dict
-    ssd.load_state_dict(weights_dict)
-    ssd.to(device)
-    ssd.eval()
+    ssd_model.load_state_dict(weights_dict)
+    ssd_model.to(model_device)
+    ssd_model.eval()
     # loading ssd class dict
     assert os.path.exists(pascal_voc_path), "file '{}' dose not exist.".format(pascal_voc_path)
     json_file = open(pascal_voc_path, 'r')
@@ -288,174 +295,62 @@ if __name__ == "__main__":
     print("ssd loaded")
 
     # loading lstm
-    lstm = LSTMClassifier().to(device)
-    checkpoint = torch.load(lstm_model_path, map_location=device)
-    lstm.load_state_dict(checkpoint["model_state_dict"])
-    lstm.to(device)
-    lstm.eval()
+    lstm_model = LSTMClassifier().to(model_device)
+    checkpoint = torch.load(lstm_model_path, map_location=model_device)
+    lstm_model.load_state_dict(checkpoint["model_state_dict"])
+    lstm_model.to(model_device)
+    lstm_model.eval()
     # normalizes lstm input
     lstm_transform = ChannelNormalize()
     print("lstm loaded")
 
-    # declaring system variables
-    fps = 0
-    with open(program_json_path, "r") as file:
-        json_file = json.load(file)
-        fps = json_file["fps"]
-        HOST = json_file["HOST"]
-        RECEIVE_PORT = json_file["PYTHON_RECEIVE_PORT"]
-        SEND_PORT = json_file["PYTHON_SEND_PORT"]
-    spf = 1/fps
-
-    program_state = "inactive"
-    experiment_name = ""
-    trial_prefix = json_file["trialPrefix"]
-
-    camera_output_base = ""
-    camera_output_path = ""
-
-    visualized_output_base = ""
-    visualized_output_folder = ""
-
-
-    # time for ssd and lstm is 0.36 on cpu
-
-    experiment_i = -1
-    max_experiments = 0
-    trial_i = -1
-
-    next_img = 0 # name of next image that needs to be analyzed
-    max_img = 0 # max number of images per trial
-    images = [] # pil images to save to file path at end of every trial
-
-    window_size = 48
-    results = torch.zeros((4, max_img)) # stores head and tail angles, whether omr is detected at specific frame, and how many omr occurrences total so far
-    angle_offsets = torch.tensor([0, 0, 5*180/math.pi]) # 0 is head offsets, 1 is tail offsets, 2 is threshold to offset
+    # lstm preprocessing settings
+    lstm_window_size = 48
+    analysis_results = torch.zeros((3, lstm_window_size)) # stores head and tail angles and whether omr is detected at specific frame
+    angle_offset_data = torch.tensor([0, 0, 5 * 180 / math.pi]) # 0 is head offsets, 1 is tail offsets, 2 is threshold to offset
 
     # initializing socket connections
-    # receive_socket = connect_to_server(HOST, RECEIVE_PORT)
+    receive_socket = connect_to_server(HOST, RECEIVE_PORT)
     send_socket = connect_to_server(HOST, SEND_PORT)
+
+    # system variables
+    header = receive_socket.recv(12)
+    img_width = int.from_bytes(header[0:4], "big")
+    img_height = int.from_bytes(header[4:8], "big")
+    num_img_bytes = img_width * img_height * 3
+    camera_fps = int.from_bytes(header[8:12], "big")
+    print(f"camera data received width: {img_width} height: {img_height}")
 
     with torch.no_grad():
         # warming up model
-        init_img = torch.zeros((1, 3, 300, 300), device=device)
-        ssd(init_img)
+        init_img = torch.zeros((1, 3, 300, 300), device=model_device)
+        ssd_model(init_img)
 
-        prev_time = time.time()
         while True:
-            # ensuring fps matches with program fps
-            dt = time.time() - prev_time
-            if dt < spf:
-                time.sleep(spf - dt)
-            prev_time = time.time()
+            image_i_byte = receive_socket.recv(4)
+            timeA = time.time()
+            image_i = int.from_bytes(image_i_byte, "big")
 
-            print(program_state + ", expI:" + str(experiment_i) + ", trialI: " + str(trial_i) + ", imgI: " + str(next_img))
-            with open(program_json_path, "r") as file:
-                program_info_dict = json.load(file)
+            byte_data = b''
+            while len(byte_data) < num_img_bytes:
+                packet = receive_socket.recv(num_img_bytes - len(byte_data))
+                byte_data += packet
+            arr = np.frombuffer(byte_data, dtype=np.uint8).reshape((img_height, img_width, 3))
+            arr = arr[:, :, ::-1]
+            img = Image.fromarray(arr)
+            # print("time to receive camera img: " + str(time.time() - timeA))
 
-            if not program_info_dict["programRunning"]:
-                # receive_socket.close()
-                send_socket.close()
-                print("programRunning in programJson = false; stopping python program")
-                quit()
+            if image_i == 0:
+                analysis_results = torch.zeros((3, lstm_window_size))
 
-            # basic state machine
-            if program_state == "inactive":
-                experiments = program_info_dict["experiments"]
-                # updating experiment variables for first experiment
-                if len(experiments) > 0:
-                    experiment_i = 0
-                    max_experiments = len(experiments)
-                    trial_i = 0
-                    next_img = 0
-                    max_img = experiments[0]["expectedImages"]
-                    results = torch.zeros(4, max_img)
+            img = analyze_camera_img(image_i, img, ssd_model, ssd_transform, category_index, lstm_model, lstm_transform, analysis_results, lstm_window_size, angle_offset_data, camera_fps, model_device)
 
-                    experiment_name = experiments[0]["name"]
-                    # these paths are specific to the current trial that is running
-                    camera_output_base = program_info_dict["cameraOutputBase"]
-                    camera_output_path = os.path.join(camera_output_base, experiment_name, trial_prefix + str(0))
-                    visualized_output_base = program_info_dict["visualizedOutputBase"]
-                    visualized_output_folder = os.path.join(visualized_output_base, experiment_name, trial_prefix + str(0))
-                    program_state = "active"
+            # print("time to analyze camera img: " + str(time.time() - timeA))
 
-            elif program_state == "active":
-                if program_info_dict["stopEarly"]:
-                    program_state = "inactive"
-                    reset_experiments(program_info_dict, program_json_path)
-                    experiment_i = -1
-                    trial_i = -1
-                    images = []
-                elif next_img < max_img: # means that I am in the middle of a trial
-                    img_path = os.path.join(camera_output_path, str(next_img) + ".png")
-                    if not os.path.exists(img_path):
-                        continue
-                    img = Image.open(img_path)
-                    img = analyze_camera_img(next_img, img, ssd, ssd_transform, category_index, lstm, lstm_transform, results, window_size, angle_offsets, fps, device)
+            arr = np.array(img, dtype=np.uint8)
 
-                    timeA = time.time()
-                    next_img += 1
-                    images.append(img)
+            # i send back the annotated image and whether it shows omr or not
+            send_socket.sendall(round(analysis_results[2, 0].item()).to_bytes(4, "big"))
+            send_socket.sendall(arr.tobytes())
 
-                    rgb_img = img.convert("RGB")
-                    arr = np.array(rgb_img, dtype=np.uint8)
-                    # print("time to convert img: " + str(time.time() - timeA))
-
-                    height, width, channels = arr.shape
-                    header = width.to_bytes(4, "big") + height.to_bytes(4, "big")
-                    # print("time to bytes: " + str(time.time() - timeA))
-
-                    send_socket.sendall(header)
-                    send_socket.sendall(arr.tobytes())
-                    # print("time to send img: " + str(time.time() - timeA))
-
-
-                else: # means that I am done analyzing a trial
-                    next_camera_output_path = os.path.join(camera_output_base, experiment_name, trial_prefix + str(trial_i + 1))
-                    next_trial_exists = os.path.exists(next_camera_output_path)
-                    experiment_complete = program_info_dict["experiments"][experiment_i]["completed"]
-
-                    # checking if in the 'waiting period' -> waiting for another trial or for experiment to be marked as completed
-                    if not next_trial_exists and not experiment_complete:
-                        continue
-
-                    # saving omr data of last analyzed trial if not in waiting period
-                    with open(omr_output_path, "r") as file:
-                        omr_dict = json.load(file)
-                    if trial_i == 0:
-                        omr_dict["experiments"].append({
-                            "name": experiment_name,
-                            "omr": [results[3, 0].item()]
-                        })
-                    else:
-                        omr_dict["experiments"][experiment_i]["omr"].append(results[3, 0].item())
-                    with open(omr_output_path, "w") as file:
-                        json.dump(omr_dict, file, indent=4)
-
-                    if next_trial_exists:
-                        trial_i += 1
-                    # code below will only run if experiment has been completed
-                    elif experiment_complete:
-                        if experiment_i + 1 >= max_experiments: # means that there are no more experiments
-                            program_state = "inactive"
-                            reset_experiments(program_info_dict, program_json_path)
-                            experiment_i = -1
-                            trial_i = -1
-                        else: # means that I should progress to the next experiment
-                            experiment_i += 1
-                            experiment_name = program_info_dict["experiments"][experiment_i]["name"]
-                            trial_i = 0
-                            max_img = program_info_dict["experiments"][experiment_i]["expectedImages"]
-
-                    # uploading trial images
-                    for i in range(len(images)):
-                        path = os.path.join(visualized_output_folder, str(i) + ".png")
-                        images[i].save(path)
-                    print("images saved at " + visualized_output_folder)
-
-                    # setting up for next trial
-                    images = []
-                    next_img = 0
-                    results = torch.zeros(4, max_img)
-                    visualized_output_folder = os.path.join(visualized_output_base, experiment_name, trial_prefix + str(trial_i))
-                    camera_output_path = os.path.join(camera_output_base, experiment_name, trial_prefix + str(trial_i))
+            print("time to process/send visualized img: " + str(time.time() - timeA))

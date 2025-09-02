@@ -49,13 +49,15 @@ public class Core {
     private final CameraManager cameraManager;
     private final ProgramInfoManager programInfoManager;
     private final PythonRunner pythonRunner;
+    public final int fps = 24;
 
     public Core() {
         stagesToClose = new ArrayList<>();
-        cameraManager = new CameraManager(0);
 
         programInfoManager = new ProgramInfoManager();
         programInfoManager.startProgram();
+
+        cameraManager = new CameraManager(0, this);
 
         pythonRunner = new PythonRunner();
 
