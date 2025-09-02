@@ -34,6 +34,7 @@ public class OMRChamberController extends CustomController {
 	public void setup() {
 		displaySM = new DisplayStateManager(getCore());
 		visualizedImageReader = new VisualizedImageReader(getCore());
+		visualizedImageReader.connectInputStream();
 		cameraManagerExecutor = Executors.newSingleThreadScheduledExecutor();
 
 		declareDisplaySMTransitions();
@@ -68,6 +69,7 @@ public class OMRChamberController extends CustomController {
 			getCore().getCameraManager().setSaveImage(true);
 			getCore().getCameraManager().resetImageIndex();
 			getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrial()).mkdir();
+			getVisualizedImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrial()).mkdir();
 			getCore().getCameraManager().setImageSavePath(getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrial()).getPath());
 		});
 
@@ -84,6 +86,7 @@ public class OMRChamberController extends CustomController {
 			getCore().getCameraManager().resetImageIndex();
 			getCore().getCameraManager().setImageIndexCap(getCore().getProgramInfoWriter().getExpectedImages(displaySM.getCurExperimentIndex(), displaySM.getCurExperiment().getName()) - 1);
 			getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), 0).mkdir();
+			getVisualizedImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrial()).mkdir();
 			getCore().getCameraManager().setImageSavePath(getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), 0).getPath());
 		});
 	}

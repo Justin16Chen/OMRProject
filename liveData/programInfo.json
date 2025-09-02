@@ -1,9 +1,14 @@
 {
-    "stopEarly": true,
-    "PORT": 65432,
-    "experiments": [],
+    "stopEarly": false,
+    "PYTHON_RECEIVE_PORT": 65433,
+    "experiments": [{
+        "name": "0 - shortLight",
+        "completed": true,
+        "expectedImages": 120
+    }],
     "fps": 24,
     "HOST": "127.0.0.1",
+    "PYTHON_SEND_PORT": 65432,
     "trialPrefix": "trial",
     "cameraOutputBase": "C:\\Users\\justi\\Documents\\omr images\\camera images",
     "programRunning": false,

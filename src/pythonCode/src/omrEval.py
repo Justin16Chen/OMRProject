@@ -1,4 +1,5 @@
-from src import transforms
+import cv2
+from src.transforms import *
 from src.LSTMClassifier import LSTMClassifier
 from src.Loader import ChannelNormalize
 from src.ssd_model import SSD300, Backbone
@@ -14,6 +15,8 @@ import time
 import socket
 import io
 import struct
+
+
 
 def find_box_center(box):
     return [0.5 *(box[0] + box[2]), 0.5 * (box[1] + box[3])]
@@ -125,15 +128,10 @@ def run_ssd(model, data_transform, original_img):
     predict_boxes[:, [1, 3]] = predict_boxes[:, [1, 3]] * original_img.size[1]
 
     return predict_boxes, predict_classes, predict_scores
-def analyze_camera_img(img_i, model, ssd_input_transform, category_index, lstm, lstm_input_transform, results, window_size, angle_offsets, image_folder_path, fps, device):
+def analyze_camera_img(img_i, original_img, model, ssd_input_transform, category_index, lstm, lstm_input_transform, results, window_size, angle_offsets, fps, device):
     a = time.time()
-    img_path = os.path.join(image_folder_path, str(img_i) + '.png')
-    if not os.path.exists(img_path):
-        #print("path " + img_path + " doesn't exist")
-        return False, None
     before = time.time()
-    original_img = Image.open(img_path)
-    print("time to open img " + str(img_i) + ": " + str(time.time() - before))
+    # print("time to open img " + str(img_i) + ": " + str(time.time() - before))
     w = original_img.size[0]
     h = original_img.size[1]
 
@@ -210,6 +208,7 @@ def analyze_camera_img(img_i, model, ssd_input_transform, category_index, lstm, 
     draw.text(xy=(text_left, top+text_inc*3), text="Head Angle (deg): " + str(math.floor(results[0, img_i].item()*100)/100), font=fnt, fill="black")
     draw.text(xy=(text_left, top+text_inc*4), text="Tail Angle (deg): " + str(math.floor(results[1, img_i].item())*100/100), font=fnt, fill="black")
 
+    # print("starting sliding window")
     # sliding window approach
     start_i = int(max(0, img_i + 1 - window_size))
     head_window = results[0, start_i:img_i + 1]
@@ -234,14 +233,25 @@ def analyze_camera_img(img_i, model, ssd_input_transform, category_index, lstm, 
         results[2][img_i] = 0
         if img_i > 0 and results[2][img_i-1] == 1:
             results[3][0] += 1
-    print("total time to process one image: " + str(time.time() - a))
+    # print("total time to process img " + str(img_i) + ": " + str(time.time() - a))
 
-    return True, original_img
+    return original_img
 
 def reset_experiments(program_info_dict, program_json_path):
     program_info_dict["experiments"] = []
     with open(program_json_path, "w") as file:
         json.dump(program_info_dict, file, indent=4)
+
+def connect_to_server(host, port):
+    while True:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((host, port))
+            print(f"python socket connected at {host}:{port}")
+            return s
+        except ConnectionRefusedError:
+            print("java server not ready yet, waiting 0.1s")
+            time.sleep(0.1)
 
 if __name__ == "__main__":
     # necessary file paths
@@ -272,9 +282,9 @@ if __name__ == "__main__":
     json_file.close()
     category_index = {str(v): str(k) for k, v in class_dict.items()}
     # transformation to normalize images for ssd input
-    ssd_transform = transforms.Compose([transforms.Resize(),
-                                        transforms.ToTensor(),
-                                        transforms.Normalization()])
+    ssd_transform = Compose([Resize(),
+                             ToTensor(),
+                             Normalization()])
     print("ssd loaded")
 
     # loading lstm
@@ -293,12 +303,13 @@ if __name__ == "__main__":
         json_file = json.load(file)
         fps = json_file["fps"]
         HOST = json_file["HOST"]
-        PORT = json_file["PORT"]
+        RECEIVE_PORT = json_file["PYTHON_RECEIVE_PORT"]
+        SEND_PORT = json_file["PYTHON_SEND_PORT"]
     spf = 1/fps
 
     program_state = "inactive"
     experiment_name = ""
-    trial_prefix = "trial"
+    trial_prefix = json_file["trialPrefix"]
 
     camera_output_base = ""
     camera_output_path = ""
@@ -321,17 +332,9 @@ if __name__ == "__main__":
     results = torch.zeros((4, max_img)) # stores head and tail angles, whether omr is detected at specific frame, and how many omr occurrences total so far
     angle_offsets = torch.tensor([0, 0, 5*180/math.pi]) # 0 is head offsets, 1 is tail offsets, 2 is threshold to offset
 
-    # initializing socket connection
-    s = None
-    while True:
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect((HOST, PORT))
-            print(f"python client connected at {HOST}:{PORT}")
-            break
-        except ConnectionRefusedError:
-            print("java server not ready yet, waiting 0.1s")
-            time.sleep(0.1)
+    # initializing socket connections
+    # receive_socket = connect_to_server(HOST, RECEIVE_PORT)
+    send_socket = connect_to_server(HOST, SEND_PORT)
 
     with torch.no_grad():
         # warming up model
@@ -341,16 +344,19 @@ if __name__ == "__main__":
         prev_time = time.time()
         while True:
             # ensuring fps matches with program fps
-            if time.time() - prev_time < spf:
-                continue
+            dt = time.time() - prev_time
+            if dt < spf:
+                time.sleep(spf - dt)
             prev_time = time.time()
 
+            print(program_state + ", expI:" + str(experiment_i) + ", trialI: " + str(trial_i) + ", imgI: " + str(next_img))
             with open(program_json_path, "r") as file:
                 program_info_dict = json.load(file)
 
             if not program_info_dict["programRunning"]:
-                # s.close()
-                print("programRunning in programJson = false")
+                # receive_socket.close()
+                send_socket.close()
+                print("programRunning in programJson = false; stopping python program")
                 quit()
 
             # basic state machine
@@ -379,18 +385,29 @@ if __name__ == "__main__":
                     reset_experiments(program_info_dict, program_json_path)
                     experiment_i = -1
                     trial_i = -1
+                    images = []
                 elif next_img < max_img: # means that I am in the middle of a trial
-                    success, img = analyze_camera_img(next_img, ssd, ssd_transform, category_index, lstm, lstm_transform, results, window_size, angle_offsets, camera_output_path, fps, device)
-                    if success:
-                        next_img += 1
-                        images.append(img)
-                        # before = time.time()
-                        arr = np.array(img)
-                        img_bytes = arr.tobytes()
-                        s.sendall(len(img_bytes).to_bytes(4, "big"))
-                        s.sendall(img_bytes)
-                        # print("time to encode and send img: " + str(time.time() - before))
-                        # print("entire update time: " + str(time.time() - prev_time))
+                    img_path = os.path.join(camera_output_path, str(next_img) + ".png")
+                    if not os.path.exists(img_path):
+                        continue
+                    img = Image.open(img_path)
+                    img = analyze_camera_img(next_img, img, ssd, ssd_transform, category_index, lstm, lstm_transform, results, window_size, angle_offsets, fps, device)
+
+                    timeA = time.time()
+                    next_img += 1
+                    images.append(img)
+
+                    rgb_img = img.convert("RGB")
+                    arr = np.array(rgb_img, dtype=np.uint8)
+                    # print("time to convert img: " + str(time.time() - timeA))
+
+                    height, width, channels = arr.shape
+                    header = width.to_bytes(4, "big") + height.to_bytes(4, "big")
+                    # print("time to bytes: " + str(time.time() - timeA))
+
+                    send_socket.sendall(header)
+                    send_socket.sendall(arr.tobytes())
+                    # print("time to send img: " + str(time.time() - timeA))
 
 
                 else: # means that I am done analyzing a trial
@@ -432,7 +449,9 @@ if __name__ == "__main__":
 
                     # uploading trial images
                     for i in range(len(images)):
-                        images[i].save(os.path.join(visualized_output_folder, str(i) + ".png"))
+                        path = os.path.join(visualized_output_folder, str(i) + ".png")
+                        images[i].save(path)
+                    print("images saved at " + visualized_output_folder)
 
                     # setting up for next trial
                     images = []

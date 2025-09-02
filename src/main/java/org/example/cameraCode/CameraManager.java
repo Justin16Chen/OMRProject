@@ -82,6 +82,7 @@ public class CameraManager {
         connected = cap.isOpened();
     }
     public void update() {
+        double time = System.currentTimeMillis();
         if (!recording || !connected)
             return;
 
@@ -100,8 +101,10 @@ public class CameraManager {
                 }
 
                 images.add(latestImage);
-                if (trySaveImage())
+                if (trySaveImage()) {
                     index++;
+//                    System.out.println("time to save: " + (System.currentTimeMillis() - time));
+                }
             }
         }
 //        System.out.println("cm ms: " + (System.nanoTime() - before) / 1_000_000);

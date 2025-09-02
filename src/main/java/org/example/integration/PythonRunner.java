@@ -5,10 +5,10 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.Properties;
 
 public class PythonRunner {
-    public static final int PORT = 65432;
 
     public void start() throws IOException, InterruptedException {
         Process p = getProcess();
@@ -33,7 +33,7 @@ public class PythonRunner {
         String pythonPath = properties.getProperty("pythonEnv.path");
         String pythonWorkingDir = properties.getProperty("pythonWorkingDirectory.path");
 
-        ProcessBuilder pb = new ProcessBuilder(pythonPath, "-m", "src.omrEval");
+        ProcessBuilder pb = new ProcessBuilder(pythonPath, "-u", "-m", "src.omrEval");
         pb.directory(new File(pythonWorkingDir)); // setting working directory to be the project root
         pb.redirectErrorStream(true); // merges error stream with normal output stream so that one buffered reader receives both errors and print statements
 
@@ -41,6 +41,9 @@ public class PythonRunner {
     }
 
     public static void main(String[] args) {
+//        System.out.println("available cores: " + Runtime.getRuntime().availableProcessors());
+//        System.exit(0);
+
         PythonRunner pythonRunner = new PythonRunner();
         Thread pythonThread = new Thread(() -> {
             try {
@@ -52,10 +55,12 @@ public class PythonRunner {
         pythonThread.start();
 
         System.out.println("starting java socket");
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+        try (ServerSocket serverSocket = new ServerSocket(65432)) {
             Socket clientSocket = serverSocket.accept();
             DataInputStream dataIn = new DataInputStream(clientSocket.getInputStream());
+            int i = 0;
             while (true) {
+                i++;
                 try {
                     int length = dataIn.readInt();
                     double time = System.currentTimeMillis();
@@ -63,9 +68,23 @@ public class PythonRunner {
                     dataIn.readFully(imgBytes);
 
                     ByteArrayInputStream bais = new ByteArrayInputStream(imgBytes);
+//                    System.out.println(length);
+//                    System.out.println();
+//                    System.out.println();
+//                    System.out.println(Arrays.toString(imgBytes));
+//                    System.out.println();
+//                    System.out.println();
                     BufferedImage img = ImageIO.read(bais);
                     System.out.println("time to read img: " + (System.currentTimeMillis() - time) / 1000);
-                    System.out.println("received python image");
+
+                    if (img == null) {
+                        System.out.println("IMAGE IS NULL");
+                        System.exit(1);
+                    }
+
+                    File output = new File("C:\\Users\\justi\\Documents\\GitHub\\OMRProject\\liveData\\test " + i + ".png");
+                    ImageIO.write(img, "png", output);
+                    System.out.println("saved python image");
                 } catch(EOFException eof) {
                     System.out.println("client disconnected");
                     break;

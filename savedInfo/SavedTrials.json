@@ -17,10 +17,10 @@
     },
     {
         "restTime": 1,
-        "cycleTime": 6,
-        "totalTime": 18,
+        "cycleTime": 16,
+        "totalTime": 48,
         "name": "longDark",
-        "testTime": 5,
+        "testTime": 15,
         "maxTests": 3,
         "initialPattern": {
             "bandWidth": 1,

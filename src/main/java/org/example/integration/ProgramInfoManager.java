@@ -32,8 +32,8 @@ public class ProgramInfoManager {
                 return experiments.getJSONObject(i).getInt("expectedImages");
         return -1;
     }
-    public int getSocketPort() {
-        return readProgramInfoJSON().getInt("PORT");
+    public int getVisualizedImagesPort() {
+        return readProgramInfoJSON().getInt("PYTHON_SEND_PORT");
     }
     public void startProgram() {
         JSONObject json = readProgramInfoJSON();
