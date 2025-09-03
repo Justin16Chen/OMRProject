@@ -20,7 +20,7 @@ public class CameraPreviewController extends CustomController {
         AnimationTimer updateCameraTimer = new AnimationTimer() {
             @Override
             public void handle(long l) {
-                getCore().getCameraManager().update();
+                getCore().getCameraManager().updateImageReading();
                 Image image = getCore().getCameraManager().getLatestImage();
                 if (image != null)
                     cameraImageView.setImage(image);

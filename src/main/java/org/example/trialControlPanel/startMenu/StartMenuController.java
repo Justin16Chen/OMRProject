@@ -68,8 +68,8 @@ public class StartMenuController extends CustomController {
         previewCameraButton.setDisable(!cameraPortTextField.hasValidInput());
         getCore().getStartMenuMonitorManager().updateMonitorFormat(getCore().getPrimaryStage());
 
-        cameraOutputTextArea.setText(getCore().getProgramInfoWriter().getLastCameraOutputPath());
-        visualizedOutputTextArea.setText(getCore().getProgramInfoWriter().getLastVisualizedOutputPath());
+        cameraOutputTextArea.setText(getCore().getJsonManager().getLastCameraOutputPath());
+        visualizedOutputTextArea.setText(getCore().getJsonManager().getLastVisualizedOutputPath());
     }
 
     private void updateDefaultQueuedTrials() {
@@ -166,10 +166,10 @@ public class StartMenuController extends CustomController {
     private TextArea cameraOutputTextArea, visualizedOutputTextArea;
     @FXML
     private void handleCameraOutputClick() {
-        String path = promptUserForEmptyFolderPath(getCore().getProgramInfoWriter().getLastCameraOutputPath());
+        String path = promptUserForEmptyFolderPath(getCore().getJsonManager().getLastCameraOutputPath());
         if (path != null) {
             cameraOutputTextArea.setText(path);
-            getCore().getProgramInfoWriter().setCameraOutputPath(path);
+            getCore().getJsonManager().setCameraOutputPath(path);
         }
     }
     public String getCameraOutputPath() {
@@ -177,10 +177,10 @@ public class StartMenuController extends CustomController {
     }
     @FXML
     private void handleVisualizedOutputClick() {
-        String path = promptUserForEmptyFolderPath(getCore().getProgramInfoWriter().getLastVisualizedOutputPath());
+        String path = promptUserForEmptyFolderPath(getCore().getJsonManager().getLastVisualizedOutputPath());
         if (path != null) {
             visualizedOutputTextArea.setText(path);
-            getCore().getProgramInfoWriter().setVisualizedOutputPath(path);
+            getCore().getJsonManager().setVisualizedOutputPath(path);
         }
     }
     public String getVisualizedOutputPath() {

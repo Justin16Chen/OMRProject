@@ -34,27 +34,27 @@ public class OMRChamberController extends CustomController {
 	public void setup() {
 		displaySM = new DisplayStateManager(getCore());
 		visualizedImageReader = new VisualizedImageReader(getCore());
-		getCore().getCameraManager().connectOutputStream();
-		visualizedImageReader.connectInputStream();
 		cameraManagerExecutor = Executors.newSingleThreadScheduledExecutor();
 
 		declareDisplaySMTransitions();
 	}
+
+	public void connectVisualizedImageInputSocket() {
+		visualizedImageReader.connectInputStream();
+	}
 	private void declareDisplaySMTransitions() {
 		displaySM.setTransitionFunction(DisplayState.TESTING, DisplayState.NORMAL_STOP, () -> {
-			getCore().getCameraManager().setSaveImage(false);
 			checkToFillImages();
-			System.out.println("testing to normal stop");
 			Platform.runLater(() -> this.stopTrial(false));
 		});
+		// early stop is handled by javaFX event listeners
 
 		displaySM.setTransitionFunction(DisplayState.TESTING, DisplayState.RESTING, () -> {
-			getCore().getProgramInfoWriter().completeExperiment(displaySM.getCurExperimentIndex(), displaySM.getCurExperiment().getName());
-
 			patternDrawer.stopAndBlackOutScreen();
 			for (ChildOMRController child : getCore().getChildOMRControllers())
 				child.getPatternDrawer().stopAndBlackOutScreen();
 
+			getCore().getCameraManager().stopSendingImages();
 			getCore().getCameraManager().setSaveImage(false);
 			checkToFillImages();
 		});
@@ -67,8 +67,10 @@ public class OMRChamberController extends CustomController {
 				child.getPatternDrawer().start();
 			}
 
+			getCore().getCameraManager().clearOldImageData();
 			getCore().getCameraManager().setSaveImage(true);
-			getCore().getCameraManager().resetImageIndex();
+			getCore().getCameraManager().startSendingImages(1_000_000_000L / getCore().fps);
+
 			getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrial()).mkdir();
 			getVisualizedImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrial()).mkdir();
 			getCore().getCameraManager().setImageSavePath(getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrial()).getPath());
@@ -84,8 +86,10 @@ public class OMRChamberController extends CustomController {
 				child.getPatternDrawer().start();
 			}
 			getCore().getCameraManager().setSaveImage(true);
-			getCore().getCameraManager().resetImageIndex();
-			getCore().getCameraManager().setImageIndexCap(getCore().getProgramInfoWriter().getExpectedImages(displaySM.getCurExperimentIndex(), displaySM.getCurExperiment().getName()) - 1);
+			getCore().getCameraManager().clearOldImageData();
+			getCore().getCameraManager().startSendingImages(1_000_000_000L / getCore().fps);
+			getCore().getCameraManager().setImageIndexCap(displaySM.getCurExperiment().getTestTime() * getCore().fps - 1);
+
 			getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), 0).mkdir();
 			getVisualizedImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrial()).mkdir();
 			getCore().getCameraManager().setImageSavePath(getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), 0).getPath());
@@ -100,7 +104,6 @@ public class OMRChamberController extends CustomController {
 	}
 
 	public void stopTrial(boolean earlyStop) {
-		System.out.println("stopping trial");
 		patternDrawer.stop();
 		Platform.runLater(getStage()::close);
 		for (ChildOMRController child : getCore().getChildOMRControllers()) {
@@ -110,17 +113,16 @@ public class OMRChamberController extends CustomController {
 			});
 		}
 
-		getCore().getCameraManager().stopRecording();
-		getCore().getRunTrialController().getStage().close();
-		if (earlyStop)
-			getCore().getProgramInfoWriter().stopExperimentsEarly();
-		else
-			getCore().getProgramInfoWriter().completeAllExperiments();
-
-		displaySM.stopRunning(!earlyStop);
-		visualizedImageReader.stopRunning();
 		if (cameraManagerExecutorHandler != null && !cameraManagerExecutorHandler.isCancelled())
 			cameraManagerExecutorHandler.cancel(true);
+		getCore().getCameraManager().stopRecording();
+		getCore().getCameraManager().setSaveImage(false);
+		getCore().getCameraManager().stopSendingImages();
+		visualizedImageReader.stopRunning();
+
+		displaySM.stopRunning(!earlyStop);
+
+		getCore().getRunTrialController().getStage().close();
 	}
 
 	@FXML
@@ -142,7 +144,7 @@ public class OMRChamberController extends CustomController {
 		// setup camera manager
 		CameraManager cm = getCore().getCameraManager();
 		cm.startRecording();
-		cm.resetImageIndex();
+		cm.clearOldImageData();
 		cm.setSaveImage(false);
 		cm.setImageIndexCap(-1); // no image cap
 		cm.setImageSavePath(setupImagesFolder.getPath());
@@ -154,7 +156,7 @@ public class OMRChamberController extends CustomController {
 			child.getPatternDrawer().stopAndBlackOutScreen();
 
 		// calculate desired update interval
-		long updateIntervalNanos = 1_000_000_000L / getCore().getProgramInfoWriter().getFPS();
+		long updateIntervalNanos = 1_000_000_000L / getCore().fps;
 
 		// setup period - finishes once camera reaches stable FPS or when 5 seconds have past
 		new Thread(() -> {
@@ -177,29 +179,30 @@ public class OMRChamberController extends CustomController {
 					if (allGood)
 						break;
 				}
-				cm.update();
+				cm.updateImageReading();
 			}
 			startExperiments(experiments, updateIntervalNanos, restTime);
 		}).start();
 	}
 	private void startExperiments(ArrayList<Experiment> experiments, long updateIntervalNanos, int restTime) {
+
 		// start experiments
 		patternDrawer.start();
 		for (ChildOMRController child : getCore().getChildOMRControllers())
 			child.getPatternDrawer().start();
 
 		displaySM.runExperiments(experiments, updateIntervalNanos, restTime);
-		getCore().getProgramInfoWriter().activateExperiments(experiments);
 
 		// manage camera on separate thread for custom FPS
 		CameraManager cm = getCore().getCameraManager();
-		cm.resetImageIndex();
-		cm.setImageIndexCap(getCore().getProgramInfoWriter().getExpectedImages(0, experiments.getFirst().getName()) - 1);
+		cm.clearOldImageData();
+		cm.setImageIndexCap(displaySM.getCurExperiment().getTestTime() * getCore().fps - 1);
 		cm.setImageSavePath((getCameraImageTrialFolder(experiments.getFirst().getName(), 0, 0).getPath()));
 		cm.setSaveImage(true);
-		cameraManagerExecutorHandler = cameraManagerExecutor.scheduleAtFixedRate(cm::update, 0, updateIntervalNanos, TimeUnit.NANOSECONDS);
 
-		// manage reading visualized images from python on separate thread so python lag does not block java program
+		// start executors for reading raw images, sending raw images, and receiving visualized images
+		cameraManagerExecutorHandler = cameraManagerExecutor.scheduleAtFixedRate(getCore().getCameraManager()::updateImageReading, 0, updateIntervalNanos, TimeUnit.NANOSECONDS);
+		cm.startSendingImages(updateIntervalNanos);
 		visualizedImageReader.start(updateIntervalNanos);
 	}
 

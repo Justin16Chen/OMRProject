@@ -5,7 +5,8 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import org.example.integration.ProgramInfoManager;
+import org.example.integration.JsonManager;
+import org.example.integration.SocketManager;
 import org.example.integration.PythonRunner;
 import org.example.cameraCode.CameraManager;
 import org.example.trialControlPanel.monitorInfo.ApplicationMonitorManager;
@@ -47,18 +48,17 @@ public class Core {
     private RunTrialController runTrialController;
 
     private final CameraManager cameraManager;
-    private final ProgramInfoManager programInfoManager;
+    private final SocketManager socketManager;
+    private final JsonManager jsonManager;
     private final PythonRunner pythonRunner;
     public final int fps = 24;
 
     public Core() {
         stagesToClose = new ArrayList<>();
 
-        programInfoManager = new ProgramInfoManager();
-        programInfoManager.startProgram();
-
+        socketManager = new SocketManager(this);
+        jsonManager = new JsonManager();
         cameraManager = new CameraManager(0, this);
-
         pythonRunner = new PythonRunner();
 
         Thread pythonThread = new Thread(() -> {
@@ -78,8 +78,18 @@ public class Core {
     public CameraManager getCameraManager() {
         return cameraManager;
     }
-    public ProgramInfoManager getProgramInfoWriter() {
-        return programInfoManager;
+    public JsonManager getJsonManager() {
+        return jsonManager;
+    }
+    public SocketManager getSocketManager() {
+        return socketManager;
+    }
+
+    private void closeApplication() {
+        for (Stage stage : stagesToClose)
+            stage.close();
+        omrChamberController.shutDownExecutors();
+        cameraManager.permanentlyStopSendingImages();
     }
 
     public void init(Stage primaryStage) {
@@ -89,10 +99,7 @@ public class Core {
             primaryStage.setTitle("AutoOMR");
 
             primaryStage.setOnCloseRequest(e -> {
-                programInfoManager.stopProgram();
-                for (Stage stage : stagesToClose)
-                    stage.close();
-                omrChamberController.shutDownExecutors();
+                closeApplication();
             });
 
             // load FXML and controllers
@@ -113,6 +120,19 @@ public class Core {
             startMenuController.setup();
             trialConfigController.setup();
             omrChamberController.setup();
+
+            // connect output socket
+            try {
+                System.out.println("before connecting socket");
+                socketManager.connectOutputStream();
+                socketManager.writeHeaderData(cameraManager.getFrameWidth(), cameraManager.getFrameHeight(), fps);
+                System.out.println("after connecting socket");
+            } catch (IOException e) {
+                System.out.println("failed to connect socketManager.outputStream/failed to write header data");
+                throw new RuntimeException(e);
+            }
+            // connect input socket
+            omrChamberController.connectVisualizedImageInputSocket();
 
         } catch(Exception e) {
             System.out.println("FAILED TO LOAD STAGES/SCENES/CONTROLLERS IN CORE");
