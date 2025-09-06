@@ -353,4 +353,4 @@ if __name__ == "__main__":
             send_socket.sendall(round(analysis_results[2, 0].item()).to_bytes(4, "big"))
             send_socket.sendall(arr.tobytes())
 
-            print("time to process/send visualized img: " + str(time.time() - timeA))
+            # print("time to process/send visualized img: " + str(time.time() - timeA))

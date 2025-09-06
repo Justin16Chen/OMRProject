@@ -49,7 +49,7 @@ public class VisualizedImageReader {
         }
     }
 
-    public void start(long intervalNanos) {
+    public void startReadingVisualizedImages(long intervalNanos) {
         if (!connected)
             throw new IllegalStateException("data input stream is not connected in VisualizedImageReader.java");
 
@@ -57,7 +57,7 @@ public class VisualizedImageReader {
 
         executorHandler = executor.scheduleAtFixedRate(() -> {
             try {
-                double time = System.currentTimeMillis();
+//                double time = System.currentTimeMillis();
                 byte[] header = visualizedImageDataIn.readNBytes(4);
 //                System.out.println("time to read header: " + (System.currentTimeMillis() - time));
                 ByteBuffer bb = ByteBuffer.wrap(header);
@@ -82,8 +82,7 @@ public class VisualizedImageReader {
                         pw.setColor(x, y, Color.rgb(r, g, b));
                     }
 
-                System.out.println("time to receive visualized img: " + (System.currentTimeMillis() - time));
-
+//                System.out.println("time to receive visualized img: " + (System.currentTimeMillis() - time));
                 receivedImages.add(wimg);
 
                 Platform.runLater(() -> core.getRunTrialController().updateCameraImageView(wimg));

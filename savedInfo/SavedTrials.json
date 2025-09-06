@@ -1,11 +1,10 @@
 {"trials": [
     {
-        "restTime": 3,
-        "cycleTime": 8,
-        "totalTime": 8,
+        "restTime": 1,
+        "cycleTime": 9,
+        "totalTime": 9,
         "name": "shortLight",
-        "testTime": 5,
-        "maxTests": 1,
+        "testTime": 8,
         "initialPattern": {
             "bandWidth": 1,
             "lightBrightness": 255,
@@ -13,15 +12,15 @@
             "speed": 1,
             "direction": "CLOCKWISE"
         },
+        "maxTests": 1,
         "dimAmount": 30
     },
     {
         "restTime": 1,
-        "cycleTime": 16,
-        "totalTime": 48,
+        "cycleTime": 6,
+        "totalTime": 12,
         "name": "longDark",
-        "testTime": 15,
-        "maxTests": 3,
+        "testTime": 5,
         "initialPattern": {
             "bandWidth": 1,
             "lightBrightness": 84,
@@ -29,6 +28,7 @@
             "speed": 1,
             "direction": "COUNTER_CLOCKWISE"
         },
+        "maxTests": 2,
         "dimAmount": 0
     }
 ]}

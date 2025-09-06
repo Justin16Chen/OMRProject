@@ -36,16 +36,18 @@ public class OMRChamberController extends CustomController {
 		visualizedImageReader = new VisualizedImageReader(getCore());
 		cameraManagerExecutor = Executors.newSingleThreadScheduledExecutor();
 
-		declareDisplaySMTransitions();
+		declareDisplaySMStateLogic();
 	}
 
 	public void connectVisualizedImageInputSocket() {
 		visualizedImageReader.connectInputStream();
 	}
-	private void declareDisplaySMTransitions() {
+	private void declareDisplaySMStateLogic() {
 		displaySM.setTransitionFunction(DisplayState.TESTING, DisplayState.NORMAL_STOP, () -> {
-			checkToFillImages();
+//			checkToFillImages();
+			getCore().getCameraManager().saveImageData(getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrial()).toString());
 			Platform.runLater(() -> this.stopTrial(false));
+			System.out.println("testing -> normal stop transition function called");
 		});
 		// early stop is handled by javaFX event listeners
 
@@ -54,9 +56,13 @@ public class OMRChamberController extends CustomController {
 			for (ChildOMRController child : getCore().getChildOMRControllers())
 				child.getPatternDrawer().stopAndBlackOutScreen();
 
-			getCore().getCameraManager().stopSendingImages();
 			getCore().getCameraManager().setSaveImage(false);
-			checkToFillImages();
+		});
+		displaySM.setUpdateFunction(DisplayState.RESTING, () -> {
+			CameraManager cm = getCore().getCameraManager();
+			System.out.println("send state: " + cm.getSendState() + " | save state: " + cm.getSaveState() + " | send idx: " + cm.getSendIndex() + "/" + (cm.getImageIndexCap() + 1));
+			if (cm.getSendState() == CameraManager.State.READY && cm.getSaveState() == CameraManager.State.WAITING)
+				cm.saveImageData(getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrial()).toString());
 		});
 
 		displaySM.setTransitionFunction(DisplayState.RESTING, DisplayState.TESTING, () -> {
@@ -71,12 +77,14 @@ public class OMRChamberController extends CustomController {
 			getCore().getCameraManager().setSaveImage(true);
 			getCore().getCameraManager().startSendingImages(1_000_000_000L / getCore().fps);
 
-			getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrial()).mkdir();
-			getVisualizedImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrial()).mkdir();
-			getCore().getCameraManager().setImageSavePath(getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrial()).getPath());
-		});
+			String experimentName = displaySM.getCurExperiment().getName();
+			int experimentIndex = displaySM.getCurExperimentIndex();
+			int trialNum = displaySM.getCurTrial();
 
-		displaySM.setTransitionFunction(DisplayState.RESTING, DisplayState.IN_BETWEEN_EXPERIMENTS, () -> {}); // nothing happens
+			getCameraImageTrialFolder(experimentName, experimentIndex, trialNum).mkdir();
+			getVisualizedImageTrialFolder(experimentName, experimentIndex, trialNum).mkdir();
+			getCore().getCameraManager().setImageSavePath(getCameraImageTrialFolder(experimentName, experimentIndex, trialNum).getPath());
+		});
 
 		displaySM.setTransitionFunction(DisplayState.IN_BETWEEN_EXPERIMENTS, DisplayState.TESTING, () -> {
 			patternDrawer.setPatternData(displaySM.getCurExperiment().getInitialPattern());
@@ -90,8 +98,12 @@ public class OMRChamberController extends CustomController {
 			getCore().getCameraManager().startSendingImages(1_000_000_000L / getCore().fps);
 			getCore().getCameraManager().setImageIndexCap(displaySM.getCurExperiment().getTestTime() * getCore().fps - 1);
 
-			getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), 0).mkdir();
-			getVisualizedImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrial()).mkdir();
+			String experimentName = displaySM.getCurExperiment().getName();
+			int experimentIndex = displaySM.getCurExperimentIndex();
+			int trialNum = displaySM.getCurTrial();
+
+			getCameraImageTrialFolder(experimentName, experimentIndex, trialNum).mkdir();
+			getVisualizedImageTrialFolder(experimentName, experimentIndex, trialNum).mkdir();
 			getCore().getCameraManager().setImageSavePath(getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), 0).getPath());
 		});
 	}
@@ -120,7 +132,7 @@ public class OMRChamberController extends CustomController {
 		getCore().getCameraManager().stopSendingImages();
 		visualizedImageReader.stopRunning();
 
-		displaySM.stopRunning(!earlyStop);
+		displaySM.stopExecutor();
 
 		getCore().getRunTrialController().getStage().close();
 	}
@@ -157,7 +169,14 @@ public class OMRChamberController extends CustomController {
 
 		// calculate desired update interval
 		long updateIntervalNanos = 1_000_000_000L / getCore().fps;
+		startExperiments(experiments, updateIntervalNanos, restTime);
+//		setupExperiments(updateIntervalNanos, () -> startExperiments(experiments, updateIntervalNanos, restTime));
+//		cm.startSendingImages(updateIntervalNanos);
+//		visualizedImageReader.startReadingVisualizedImages(updateIntervalNanos);
 
+
+	}
+	private void setupExperiments(long updateIntervalNanos, Runnable startExperimentsFunc) {
 		// setup period - finishes once camera reaches stable FPS or when 5 seconds have past
 		new Thread(() -> {
 			long startTime = System.nanoTime();
@@ -179,9 +198,9 @@ public class OMRChamberController extends CustomController {
 					if (allGood)
 						break;
 				}
-				cm.updateImageReading();
+				getCore().getCameraManager().updateImageReading();
 			}
-			startExperiments(experiments, updateIntervalNanos, restTime);
+			startExperimentsFunc.run();
 		}).start();
 	}
 	private void startExperiments(ArrayList<Experiment> experiments, long updateIntervalNanos, int restTime) {
@@ -193,7 +212,7 @@ public class OMRChamberController extends CustomController {
 
 		displaySM.runExperiments(experiments, updateIntervalNanos, restTime);
 
-		// manage camera on separate thread for custom FPS
+		// setup camera
 		CameraManager cm = getCore().getCameraManager();
 		cm.clearOldImageData();
 		cm.setImageIndexCap(displaySM.getCurExperiment().getTestTime() * getCore().fps - 1);
@@ -203,7 +222,7 @@ public class OMRChamberController extends CustomController {
 		// start executors for reading raw images, sending raw images, and receiving visualized images
 		cameraManagerExecutorHandler = cameraManagerExecutor.scheduleAtFixedRate(getCore().getCameraManager()::updateImageReading, 0, updateIntervalNanos, TimeUnit.NANOSECONDS);
 		cm.startSendingImages(updateIntervalNanos);
-		visualizedImageReader.start(updateIntervalNanos);
+		visualizedImageReader.startReadingVisualizedImages(updateIntervalNanos);
 	}
 
 	// folder structure/file helper functions

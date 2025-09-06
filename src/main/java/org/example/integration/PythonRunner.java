@@ -14,7 +14,7 @@ public class PythonRunner {
         Process p = getProcess();
         BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
         String line;
-        while ((line = reader.readLine()) != null) {
+        while ((line = reader.readLine()) != null && !line.isEmpty()) {
             System.out.println("py:" + line);
         }
         int exitCode = p.waitFor(); // thread blocking function call; java will not continue until python script finishes

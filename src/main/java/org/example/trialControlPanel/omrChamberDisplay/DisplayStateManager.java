@@ -1,6 +1,7 @@
 package org.example.trialControlPanel.omrChamberDisplay;
 
 import javafx.application.Platform;
+import org.example.cameraCode.CameraManager;
 import org.example.trialControlPanel.parentClasses.Core;
 import org.example.trialControlPanel.trialConfig.Experiment;
 
@@ -19,16 +20,17 @@ public class DisplayStateManager {
     private ArrayList<Experiment> experiments;
     private int currentExperimentIndex;
     private int inBetweenExperimentsRestTime;
-    private double lastExperimentFinishTimeMs, lastTrialFinishTimeMs;
-    private double totalSecondsRunning, currentExperimentSecondsRunning, currentTrialSecondsRunning;
+    private double rumExperimentsStartTime, currentStateStartTime;
     private int currentTrial;
     private DisplayState state;
     private final HashMap<Transition, Runnable> transitionFunctions;
+    private final HashMap<DisplayState, Runnable> updateFunctions;
 
     public DisplayStateManager(Core core) {
         this.core = core;
         executor = Executors.newSingleThreadScheduledExecutor();
         transitionFunctions = new HashMap<>();
+        updateFunctions = new HashMap<>();
         experiments = new ArrayList<>();
     }
 
@@ -41,9 +43,25 @@ public class DisplayStateManager {
     public int getCurTrial() {
         return currentTrial;
     }
+    public double getCurStateTime() {
+        return (System.currentTimeMillis() - currentStateStartTime) / 1000.;
+    }
+    private void setNewState(DisplayState newState) {
+        DisplayState oldState = this.state;
+        this.state = newState;
+        currentStateStartTime = System.currentTimeMillis();
+        transitionFunctions.getOrDefault(new Transition(oldState, newState), () -> {}).run();
+        System.out.println("setNewState from " + oldState + " to " + newState);
+    }
 
     public void setTransitionFunction(DisplayState from, DisplayState to, Runnable function) {
         transitionFunctions.put(new Transition(from, to), function);
+    }
+    public void setUpdateFunction(DisplayState state, Runnable function) {
+        updateFunctions.put(state, function);
+    }
+    private void updateState() {
+        updateFunctions.getOrDefault(state, () -> {}).run();
     }
     public void runExperiments(ArrayList<Experiment> experiments, long intervalNanos, int inBetweenExperimentsRestTime) {
         this.experiments = experiments;
@@ -51,46 +69,44 @@ public class DisplayStateManager {
         currentExperimentIndex = 0;
         currentTrial = 0;
         state = DisplayState.TESTING;
-        final double startTimeMs = System.currentTimeMillis();
-        lastExperimentFinishTimeMs = startTimeMs;
-        lastTrialFinishTimeMs = startTimeMs;
+        currentStateStartTime = (double) System.currentTimeMillis();
+
 
         executorHandler = executor.scheduleAtFixedRate(() -> {
-            totalSecondsRunning = (System.currentTimeMillis() - startTimeMs) / 1000.;
-            currentExperimentSecondsRunning = (System.currentTimeMillis() - lastExperimentFinishTimeMs) / 1000.;
-            currentTrialSecondsRunning = (System.currentTimeMillis() - lastTrialFinishTimeMs) / 1000.;
-
+            updateState();
             switch (state) {
                 case TESTING:
-                    if (currentExperimentSecondsRunning >= getCurExperiment().getTotalTime() - getCurExperiment().getRestTime() && currentExperimentIndex + 1 >= experiments.size()) {
-                        transitionFunctions.getOrDefault(new Transition(DisplayState.TESTING, DisplayState.NORMAL_STOP), () -> {}).run();
-                        stopRunning(true);
-                    }
-                    else if (currentTrialSecondsRunning >= getCurExperiment().getTestTime()) {
-                        state = DisplayState.RESTING;
-                        transitionFunctions.getOrDefault(new Transition(DisplayState.TESTING, DisplayState.RESTING), () -> {}).run();
+                    if (getCurStateTime() >= getCurExperiment().getTestTime()) {
+                        if (getCurTrial() + 1 >= getCurExperiment().getMaxTests() && getCurExperimentIndex() + 1 >= experiments.size()) {
+                            stopExecutor();
+                            setNewState(DisplayState.NORMAL_STOP);
+                        } else
+                            setNewState(DisplayState.RESTING);
                     }
                     break;
                 case RESTING:
-                    if (currentExperimentSecondsRunning >= getCurExperiment().getTotalTime()) {
-                        state = DisplayState.IN_BETWEEN_EXPERIMENTS;
-                        transitionFunctions.getOrDefault(new Transition(DisplayState.RESTING, DisplayState.IN_BETWEEN_EXPERIMENTS), () -> {}).run();
-                    }
-                    else if (currentTrialSecondsRunning >= getCurExperiment().getCycleTime()) {
-                        currentTrial++;
-                        lastTrialFinishTimeMs = System.currentTimeMillis();
-                        state = DisplayState.TESTING;
-                        transitionFunctions.getOrDefault(new Transition(DisplayState.RESTING, DisplayState.TESTING), () -> {}).run();
+                    if (getCurStateTime() >= getCurExperiment().getRestTime()) {
+                        if (getCurTrial() + 1 >= getCurExperiment().getMaxTests()) {
+                            setNewState(DisplayState.IN_BETWEEN_EXPERIMENTS);
+                        }
+                        else {
+                            boolean canMoveOn = core.getCameraManager().getSendState() == CameraManager.State.READY
+                                    && core.getCameraManager().getSaveState() == CameraManager.State.READY;
+                            System.out.println("can go from resting to testing: " + canMoveOn);
+                            if (canMoveOn) {
+                                currentTrial++;
+                                setNewState(DisplayState.TESTING);
+                            }
+                        }
                     }
                     break;
                 case IN_BETWEEN_EXPERIMENTS:
-                    if (currentExperimentSecondsRunning >= getCurExperiment().getTotalTime() + inBetweenExperimentsRestTime) {
-                        state = DisplayState.TESTING;
-                        lastExperimentFinishTimeMs = System.currentTimeMillis();
-                        lastTrialFinishTimeMs = System.currentTimeMillis();
+                    if (getCurStateTime() > inBetweenExperimentsRestTime
+                            && core.getCameraManager().getSendState() == CameraManager.State.READY
+                            && core.getCameraManager().getSaveState() == CameraManager.State.READY) {
                         currentExperimentIndex++;
                         currentTrial = 0;
-                        transitionFunctions.getOrDefault(new Transition(DisplayState.IN_BETWEEN_EXPERIMENTS, DisplayState.TESTING), () -> {}).run();
+                        setNewState(DisplayState.TESTING);
                     }
                     break;
             }
@@ -99,10 +115,9 @@ public class DisplayStateManager {
         }, 0, intervalNanos, TimeUnit.NANOSECONDS);
     }
 
-    public void stopRunning(boolean normalStop) {
-        state = normalStop ? DisplayState.NORMAL_STOP : DisplayState.EARLY_STOP;
+    public void stopExecutor() {
         if (executorHandler != null && !executorHandler.isCancelled())
-        executorHandler.cancel(true);
+            executorHandler.cancel(true);
     }
     public void shutDownExecutor() {
         executor.shutdown();
@@ -121,12 +136,12 @@ public class DisplayStateManager {
                 .sum() + (experiments.size() - 1) * inBetweenExperimentsRestTime - experiments.getLast().getRestTime();
     }
     public double getTotalSecondsRunning() {
-        return totalSecondsRunning;
+        return 0;
     }
     public double getTestRunTime() {
-        return state == DisplayState.TESTING ? currentTrialSecondsRunning : 0;
+        return 0;
     }
     public double getRestRunTime() {
-        return state == DisplayState.RESTING ? currentTrialSecondsRunning - getCurExperiment().getTestTime() : 0;
+        return 0;
     }
 }
