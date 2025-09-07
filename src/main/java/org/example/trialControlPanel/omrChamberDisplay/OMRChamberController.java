@@ -83,7 +83,6 @@ public class OMRChamberController extends CustomController {
 
 			getCameraImageTrialFolder(experimentName, experimentIndex, trialNum).mkdir();
 			getVisualizedImageTrialFolder(experimentName, experimentIndex, trialNum).mkdir();
-			getCore().getCameraManager().setImageSavePath(getCameraImageTrialFolder(experimentName, experimentIndex, trialNum).getPath());
 		});
 
 		displaySM.setTransitionFunction(DisplayState.IN_BETWEEN_EXPERIMENTS, DisplayState.TESTING, () -> {
@@ -104,7 +103,6 @@ public class OMRChamberController extends CustomController {
 
 			getCameraImageTrialFolder(experimentName, experimentIndex, trialNum).mkdir();
 			getVisualizedImageTrialFolder(experimentName, experimentIndex, trialNum).mkdir();
-			getCore().getCameraManager().setImageSavePath(getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), 0).getPath());
 		});
 	}
 	private void checkToFillImages() {
@@ -159,7 +157,6 @@ public class OMRChamberController extends CustomController {
 		cm.clearOldImageData();
 		cm.setSaveImage(false);
 		cm.setImageIndexCap(-1); // no image cap
-		cm.setImageSavePath(setupImagesFolder.getPath());
 
 		// show blank display
 		patternDrawer = new PatternDrawer(monitorFormat, experiments.getFirst().getInitialPattern(), canvas, SimulatedSurface.CIRCULAR);
@@ -216,7 +213,6 @@ public class OMRChamberController extends CustomController {
 		CameraManager cm = getCore().getCameraManager();
 		cm.clearOldImageData();
 		cm.setImageIndexCap(displaySM.getCurExperiment().getTestTime() * getCore().fps - 1);
-		cm.setImageSavePath((getCameraImageTrialFolder(experiments.getFirst().getName(), 0, 0).getPath()));
 		cm.setSaveImage(true);
 
 		// start executors for reading raw images, sending raw images, and receiving visualized images

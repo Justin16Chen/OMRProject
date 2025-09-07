@@ -43,7 +43,6 @@ public class CameraManager {
         PERMANENTLY_STOPPED
     }
     private VideoCapture cap;
-    private String imageSavePath;
     private final Mat latestImage;
     private final ArrayList<Mat> images;
     private volatile int cameraIndex, sendIndex;
@@ -159,9 +158,6 @@ public class CameraManager {
             else
                 failedAttempts++;
         }
-    }
-    public void setImageSavePath(String path) {
-        this.imageSavePath = path;
     }
     public void trySetDevicePort(int index) {
         cap = new VideoCapture(index);
