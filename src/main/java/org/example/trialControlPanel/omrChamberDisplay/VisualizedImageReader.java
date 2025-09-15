@@ -18,23 +18,30 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class VisualizedImageReader {
+    public enum State {
+        WAITING_TO_RECEIVE,
+        RECEIVING,
+        WAITING_TO_SAVE,
+        SAVING
+    }
     private final Core core;
     private final ScheduledExecutorService executor;
     private ScheduledFuture<?> executorHandler;
+    private final ExecutorService saveExecutor;
     private DataInputStream visualizedImageDataIn;
     private boolean connected;
     private final ArrayList<WritableImage> receivedImages;
+    private volatile State state;
     public VisualizedImageReader(Core core) {
         this.core = core;
         executor = Executors.newSingleThreadScheduledExecutor();
+        saveExecutor = Executors.newSingleThreadScheduledExecutor();
         connected = false;
         receivedImages = new ArrayList<>();
+        state = State.WAITING_TO_RECEIVE;
     }
 
     public void connectInputStream() {
@@ -54,6 +61,7 @@ public class VisualizedImageReader {
             throw new IllegalStateException("data input stream is not connected in VisualizedImageReader.java");
 
         receivedImages.clear();
+        state = State.RECEIVING;
 
         executorHandler = executor.scheduleAtFixedRate(() -> {
             try {
@@ -86,36 +94,50 @@ public class VisualizedImageReader {
                 receivedImages.add(wimg);
 
                 Platform.runLater(() -> core.getRunTrialController().updateCameraImageView(wimg));
+
+                // stop when all images have been received
+                if (receivedImages.size() >= core.getCameraManager().getImageIndexCap() + 1
+                    || (receivedImages.size() >= core.getCameraManager().getSendIndex() && !core.getCameraManager().isSavingImages())) {
+                    state = State.WAITING_TO_SAVE;
+                    executorHandler.cancel(true);
+                }
             } catch (IOException e) {
                 System.out.println("failed to read image from input stream");
             }
         }, 0, intervalNanos, TimeUnit.NANOSECONDS);
     }
 
-    public void clearStoredImages() {
-        receivedImages.clear();
+    public State getState() {
+        return state;
     }
     public void saveAndClearStoredImages(String folderPath) {
-        for (int i=0; i<receivedImages.size(); i++) {
-            RenderedImage renderedImage = SwingFXUtils.fromFXImage(receivedImages.get(i), null);
+        if (state != State.WAITING_TO_SAVE)
+            throw new IllegalStateException("cannot call saveAndClearStoredImages in VisualizedImageReader when it is in state " + state);
+        state = State.SAVING;
+        saveExecutor.submit(() -> {
+            for (int i=0; i<receivedImages.size(); i++) {
+                RenderedImage renderedImage = SwingFXUtils.fromFXImage(receivedImages.get(i), null);
 
-            // Write to file
-            File file = Paths.get(folderPath, 0 + ".png").toFile();
-            try {
-                ImageIO.write(renderedImage, "png", file);
-                System.out.println("Image saved to: " + file.getAbsolutePath());
-            } catch (IOException e) {
-                e.printStackTrace();
+                // Write to file
+                File file = Paths.get(folderPath, i + ".png").toFile();
+                try {
+                    ImageIO.write(renderedImage, "png", file);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
-        }
-        receivedImages.clear();
+            System.out.println("finished saving " + receivedImages.size() + " images");
+            receivedImages.clear();
+            state = State.WAITING_TO_RECEIVE;
+        });
     }
 
     public void stopRunning() {
         if (executorHandler != null && !executorHandler.isCancelled())
-        executorHandler.cancel(true);
+            executorHandler.cancel(true);
     }
     public void shutDownExecutor() {
         executor.shutdown();
+        saveExecutor.shutdown();
     }
 }

@@ -78,7 +78,6 @@ public class DisplayStateManager {
                 case TESTING:
                     if (getCurStateTime() >= getCurExperiment().getTestTime()) {
                         if (getCurTrial() + 1 >= getCurExperiment().getMaxTests() && getCurExperimentIndex() + 1 >= experiments.size()) {
-                            stopExecutor();
                             setNewState(DisplayState.NORMAL_STOP);
                         } else
                             setNewState(DisplayState.RESTING);

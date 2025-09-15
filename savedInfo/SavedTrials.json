@@ -1,10 +1,10 @@
 {"trials": [
     {
         "restTime": 1,
-        "cycleTime": 9,
-        "totalTime": 9,
+        "cycleTime": 4,
+        "totalTime": 4,
         "name": "shortLight",
-        "testTime": 8,
+        "testTime": 3,
         "initialPattern": {
             "bandWidth": 1,
             "lightBrightness": 255,
@@ -17,10 +17,10 @@
     },
     {
         "restTime": 1,
-        "cycleTime": 6,
-        "totalTime": 12,
+        "cycleTime": 5,
+        "totalTime": 10,
         "name": "longDark",
-        "testTime": 5,
+        "testTime": 4,
         "initialPattern": {
             "bandWidth": 1,
             "lightBrightness": 84,

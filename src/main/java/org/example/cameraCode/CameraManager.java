@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelFormat;
@@ -45,7 +46,7 @@ public class CameraManager {
     private VideoCapture cap;
     private final Mat latestImage;
     private final ArrayList<Mat> images;
-    private volatile int cameraIndex, sendIndex;
+    private AtomicInteger cameraIndex, sendIndex;
     private int imageIndexCap;
     private final ScheduledExecutorService imageSendExecutor;
     private final ExecutorService imageSaveExecutor;
@@ -63,8 +64,8 @@ public class CameraManager {
         latestImage = new Mat();
         images = new ArrayList<>();
         saveImage = true;
-        cameraIndex = 0;
-        sendIndex = 0;
+        cameraIndex = new AtomicInteger(0);
+        sendIndex = new AtomicInteger(0);
         recording = false;
         sendState = State.READY;
         saveState = State.WAITING;
@@ -96,11 +97,11 @@ public class CameraManager {
     public void stopSendingImages() {
         if (imageSendHandler != null && !imageSendHandler.isCancelled())
             imageSendHandler.cancel(true);
-        if (sendIndex <= imageIndexCap)
+        if (sendIndex.get() <= imageIndexCap)
             sendState = State.STOPPED_EARLY;
         else
             sendState = State.READY;
-        sendIndex = 0;
+        sendIndex.set(0);
     }
     public void shutDownExecutors() {
         sendState = State.PERMANENTLY_STOPPED;
@@ -111,9 +112,9 @@ public class CameraManager {
 
     // other stuff
     public int getImageIndex() {
-        return cameraIndex;
+        return cameraIndex.get();
     }
-    public int getSendIndex() { return sendIndex; }
+    public int getSendIndex() { return sendIndex.get(); }
     public State getSendState() {
         return sendState;
     }
@@ -140,8 +141,8 @@ public class CameraManager {
         if (saveState == State.IN_PROCESS)
             throw new IllegalStateException("cannot reset image index in CameraManager when it has not finished SAVING old images");
 
-        cameraIndex = 0;
-        sendIndex = 0;
+        cameraIndex.set(0);
+        sendIndex.set(0);
         images.clear();
     }
     public int getImageIndexCap() {
@@ -152,9 +153,9 @@ public class CameraManager {
     }
     public void fillImagesToCap() {
         int failedAttempts = 0;
-        while (cameraIndex <= imageIndexCap && failedAttempts < 10) {
+        while (cameraIndex.get() <= imageIndexCap && failedAttempts < 10) {
             if (trySendImage())
-                cameraIndex++;
+                cameraIndex.set(cameraIndex.get() + 1);
             else
                 failedAttempts++;
         }
@@ -169,22 +170,23 @@ public class CameraManager {
             return;
 
         cap.read(latestImage);
-        cameraIndex++;
+        cameraIndex.set(cameraIndex.get() + 1);
 
         // turning off camera once enough images are saved
         if(saveImage) {
             images.add(latestImage);
-            if (cameraIndex > imageIndexCap && imageIndexCap > 0)
+            if (cameraIndex.get() > imageIndexCap && imageIndexCap > 0)
                 saveImage = false;
         }
     }
     private void updateImageSending() {
-        if(sendIndex < images.size()) {
+        if(sendIndex.get() < images.size()) {
             if (trySendImage()) {
-                sendIndex++;
+                sendIndex.set(sendIndex.get() + 1);
             }
         }
-        if (sendIndex > imageIndexCap) {
+        if (sendIndex.get() > imageIndexCap // finished sending all
+            || (sendIndex.get() >= images.size() && !saveImage)) { // also finished sending, but images is incomplete
             sendState = State.READY;
             imageSendHandler.cancel(true);
         }
@@ -202,18 +204,21 @@ public class CameraManager {
     public void stopRecording() {
         recording = false;
     }
+    public boolean isSavingImages() {
+        return saveImage;
+    }
     public void setSaveImage(boolean saveImage) {
         this.saveImage = saveImage;
     }
 
     private boolean trySendImage() {
-        Mat img = images.get(sendIndex);
+        Mat img = images.get(sendIndex.get());
         if(img.empty())
             return false;
         try {
 //            double before = System.currentTimeMillis();
 
-            byte[] indexBytes = ByteBuffer.allocate(4).putInt(cameraIndex).array();
+            byte[] indexBytes = ByteBuffer.allocate(4).putInt(cameraIndex.get()).array();
 
             byte[] imgBytes = new byte[getFrameWidth() * getFrameHeight() * 3];
             img.get(0, 0, imgBytes);
