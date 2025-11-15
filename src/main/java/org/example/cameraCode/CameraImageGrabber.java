@@ -3,18 +3,23 @@ package org.example.cameraCode;
 import org.opencv.core.Mat;
 import org.opencv.videoio.VideoCapture;
 
+import java.util.ArrayList;
+
 // grabs the images from the camera and stores them in a list AS SOON as they are available
 public class CameraImageGrabber {
+    private static final int stableDtThreshold = 50, numStableFrames = 5;
     public VideoCapture cap;
     private volatile boolean running = false;
     private volatile Mat latestFrame = null;
     private Thread grabThread;
     private boolean connected;
     private int numFramesGrabbed;
+    private final ArrayList<Double> previousDts;
 
     public CameraImageGrabber(int devicePort) {
         cap = new VideoCapture(devicePort);
         connected = cap.isOpened();
+        previousDts = new ArrayList<>();
     }
 
     public boolean isConnected() {
@@ -36,7 +41,7 @@ public class CameraImageGrabber {
         grabThread.start();
     }
 
-    public void stop() {
+    public void stopGrabbing() {
         numFramesGrabbed = 0;
         running = false;
         if (grabThread != null) {
@@ -47,7 +52,15 @@ public class CameraImageGrabber {
     }
 
     private void grabLoop() {
+        double lastUpdateTime = System.nanoTime() * 1e-6;
         while (running) {
+            double currentTime = System.nanoTime() * 1e-6;
+            double dt = currentTime - lastUpdateTime;
+            previousDts.add(dt);
+            lastUpdateTime = currentTime;
+            if (previousDts.size() > numStableFrames)
+                previousDts.removeFirst();
+
             Mat frame = new Mat();
             if (cap.read(frame)) {
                 latestFrame = frame;  // Overwrite previous
@@ -57,6 +70,15 @@ public class CameraImageGrabber {
                 try { Thread.sleep(1); } catch (InterruptedException ignored) {}
             }
         }
+    }
+
+    public boolean reachedStableFPS() {
+        if (previousDts.size() < numStableFrames)
+            return false;
+        for (Double previousDt : previousDts)
+            if (previousDt > stableDtThreshold)
+                return false;
+        return true;
     }
 
     /**

@@ -14,7 +14,6 @@ import javafx.scene.image.PixelFormat;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import org.example.trialControlPanel.parentClasses.Core;
-import org.example.utils.MathUtils;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
@@ -65,8 +64,9 @@ public class CameraManager {
     private boolean saveImage;
     private int devicePort;
     private final Core core;
-    private double totalTimeToReadImageFromCamera = 0, totalTimeSleepingBetweenCameraReads;
-    private int numTimesSleptBetweenCameraReads;
+    private double totalTimeToReadImageFromCamera = 0;
+    private double totalTimeSleepingBetweenCameraReads, maxSleepTime;
+    private int numTimesSleptBetweenCameraReads, numTimesUpdatedCameraRead, numTimesActuallyAddedImage;
 
     public CameraManager(int devicePort, Core core) {
         this.devicePort = devicePort;
@@ -185,12 +185,18 @@ public class CameraManager {
             numTimesSleptBetweenCameraReads = 0;
             totalTimeSleepingBetweenCameraReads = 0;
             totalTimeToReadImageFromCamera = 0;
+            numTimesUpdatedCameraRead = 0;
+            numTimesActuallyAddedImage = 0;
+            maxSleepTime = 0;
             while (saveImage) {
                 double curTime = System.currentTimeMillis();
-                totalTimeSleepingBetweenCameraReads += curTime - lastFrameTime;
+                double sleepTime = curTime - lastFrameTime;
+                maxSleepTime = Math.max(sleepTime, maxSleepTime);
+                totalTimeSleepingBetweenCameraReads += sleepTime;
                 lastFrameTime = curTime;
 
                 updateImageReadingFromCamera();
+                numTimesUpdatedCameraRead++;
 
                 nextFrameTime += updateTimeNano;
                 long sleepNanos = nextFrameTime - System.nanoTime();
@@ -204,8 +210,6 @@ public class CameraManager {
             }
         });
         updateThread.setDaemon(true);
-
-        cameraImageGrabber.startGrabbing();
         updateThread.start();
     }
 
@@ -214,21 +218,24 @@ public class CameraManager {
         if (!recording || !connected)
             return;
 
-        double startTime = System.currentTimeMillis();
-
+        System.out.println("updating image reading from camera");
         Mat latestFrame = cameraImageGrabber.getLatestFrame();
-        if (latestFrame != null) // should only happen at the beginning
-            numCameraImagesSaved.set(numCameraImagesSaved.get() + 1);
+        if (!saveImage)
+            System.out.println("SAVE IMAGE = FALSE");
+        if (latestFrame == null)
+            System.out.println("LATEST FRAME IS NULL");
 
         // saving images
         if(saveImage && latestFrame != null) {
+            numCameraImagesSaved.set(numCameraImagesSaved.get() + 1);
+            numTimesActuallyAddedImage++;
             images.add(latestFrame.clone());
-            if (numCameraImagesSaved.get() > imageIndexCap && imageIndexCap > 0)
-                saveImage = false; // turning off camera once enough images are saved
+            if (numCameraImagesSaved.get() > imageIndexCap && imageIndexCap > 0) {
+                // turn off camera once enough images are saved
+                saveImage = false;
+                cameraImageGrabber.stopGrabbing();
+            }
         }
-        double timeToReadImage = (System.currentTimeMillis() - startTime) * 0.001;
-        totalTimeToReadImageFromCamera += timeToReadImage;
-        System.out.println("time to read image from camera: " + MathUtils.format2(timeToReadImage));
     }
     // sends the currently stored images in the images list to the SSD for it to analyze
     private void updateImageSending() {
@@ -244,9 +251,13 @@ public class CameraManager {
             imageSendHandler.cancel(true);
         }
         if (finishedSendingImagesToSSD()) {
-            System.out.println("average time sleeping between camera reads: " + totalTimeSleepingBetweenCameraReads / numTimesSleptBetweenCameraReads);
+            System.out.println("number of times called updateImageReadingFromCamera: " + numTimesUpdatedCameraRead);
+            System.out.println("number of times actually added image: " + numTimesActuallyAddedImage);
+            System.out.println("average ms sleeping between camera reads: " + totalTimeSleepingBetweenCameraReads / numTimesSleptBetweenCameraReads);
+            System.out.println("total ms sleeping between camera reads: " + totalTimeSleepingBetweenCameraReads);
+            System.out.println("max ms sleeping between camera reads: " + maxSleepTime);
             System.out.println("average time to read " + getNumImagesSentToSSD() + " images from camera: " + totalTimeToReadImageFromCamera / getNumImagesSentToSSD());
-            System.out.println("total time to read" + getNumImagesSentToSSD() + " image from camera: " + totalTimeToReadImageFromCamera);
+            System.out.println("total time to read " + getNumImagesSentToSSD() + " image from camera: " + totalTimeToReadImageFromCamera);
         }
     }
 
@@ -261,6 +272,7 @@ public class CameraManager {
     }
     public void stopRecording() {
         recording = false;
+        cameraImageGrabber.stopGrabbing();
     }
     public boolean isSavingImages() {
         return saveImage;

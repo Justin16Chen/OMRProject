@@ -165,14 +165,22 @@ public class OMRChamberController extends CustomController {
 		for (ChildOMRController child : getCore().getChildOMRControllers())
 			child.getPatternDrawer().stopAndBlackOutScreen();
 
-		// calculate desired update interval
-		long updateIntervalNanos = 1_000_000_000L / getCore().fps;
-		startExperiments(experiments, updateIntervalNanos, restTime);
-//		setupExperiments(updateIntervalNanos, () -> startExperiments(experiments, updateIntervalNanos, restTime));
-//		cm.startSendingImages(updateIntervalNanos);
-//		visualizedImageReader.startReadingVisualizedImages(updateIntervalNanos);
+		// first wait for camera grabber to grab at a steady FPS
+		getCore().getCameraManager().getImageGrabber().startGrabbing();
+		Thread waitForStableFPSThread = new Thread(() -> {
+			long unstableFPSSleepTimeMs = 1000 / 30;
+			while (!getCore().getCameraManager().getImageGrabber().reachedStableFPS()) {
+				try {
+					Thread.sleep(unstableFPSSleepTimeMs);
+				} catch (InterruptedException ignored) {
+				}
+			}
 
-
+			// once stable FPS is reached, start experiments
+			long updateIntervalNanos = 1_000_000_000L / getCore().fps;
+			Platform.runLater(() -> startExperiments(experiments, updateIntervalNanos, restTime) );
+		});
+		waitForStableFPSThread.start();
 	}
 //	private void setupExperiments(long updateIntervalNanos, Runnable startExperimentsFunc) {
 //		// setup period - finishes once camera reaches stable FPS or when 5 seconds have past
@@ -202,8 +210,6 @@ public class OMRChamberController extends CustomController {
 //		}).start();
 //	}
 	private void startExperiments(ArrayList<Experiment> experiments, long updateIntervalNanos, int restTime) {
-
-		// start experiments
 		patternDrawer.start();
 		for (ChildOMRController child : getCore().getChildOMRControllers())
 			child.getPatternDrawer().start();
