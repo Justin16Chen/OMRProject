@@ -14,10 +14,10 @@ import javafx.scene.image.PixelFormat;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import org.example.trialControlPanel.parentClasses.Core;
+import org.example.utils.MathUtils;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.Videoio;
 
 public class CameraManager {
@@ -36,59 +36,69 @@ public class CameraManager {
         System.out.println("successfully loaded opencv dll");
     }
 
-    public enum State {
+    public enum SaveState {
         READY,
         WAITING,
-        IN_PROCESS,
+        IN_PROGRESS,
         STOPPED_EARLY,
         PERMANENTLY_STOPPED
     }
-    private VideoCapture cap;
-    private final Mat latestImage;
+    public enum SendState {
+        READY,
+        READY_IMPERFECTLY, // send all possible images on camera, but still haven't met imageIndexCap requirement b/c camera simply did not record enough images
+        WAITING,
+        IN_PROGRESS,
+        STOPPED_EARLY,
+        PERMANENTLY_STOPPED
+    }
+
+    private final CameraImageGrabber cameraImageGrabber;
     private final ArrayList<Mat> images;
-    private AtomicInteger cameraIndex, sendIndex;
+    private final AtomicInteger numCameraImagesSaved, sendIndex;
     private int imageIndexCap;
     private final ScheduledExecutorService imageSendExecutor;
     private final ExecutorService imageSaveExecutor;
     private ScheduledFuture<?> imageSendHandler;
-    private volatile State sendState, saveState;
+    private volatile SaveState saveState;
+    private volatile SendState sendState;
     private boolean connected, recording;
     private boolean saveImage;
     private int devicePort;
     private final Core core;
+    private double totalTimeToReadImageFromCamera = 0, totalTimeSleepingBetweenCameraReads;
+    private int numTimesSleptBetweenCameraReads;
 
     public CameraManager(int devicePort, Core core) {
         this.devicePort = devicePort;
         this.core = core;
 
-        latestImage = new Mat();
         images = new ArrayList<>();
         saveImage = true;
-        cameraIndex = new AtomicInteger(0);
+        numCameraImagesSaved = new AtomicInteger(0);
         sendIndex = new AtomicInteger(0);
         recording = false;
-        sendState = State.READY;
-        saveState = State.WAITING;
+        sendState = SendState.READY;
+        saveState = SaveState.WAITING;
 
-        cap = new VideoCapture(devicePort);
-        connected = cap.isOpened();
+        cameraImageGrabber = new CameraImageGrabber(devicePort);
+        connected = cameraImageGrabber.isConnected();
 
         imageSendExecutor = Executors.newSingleThreadScheduledExecutor();
         imageSaveExecutor = Executors.newSingleThreadScheduledExecutor();
     }
 
     public int getFrameWidth() {
-        return (int)cap.get(Videoio.CAP_PROP_FRAME_WIDTH);
+        return (int) cameraImageGrabber.cap.get(Videoio.CAP_PROP_FRAME_WIDTH);
     }
     public int getFrameHeight() {
-        return (int)cap.get(Videoio.CAP_PROP_FRAME_HEIGHT);
+        return (int) cameraImageGrabber.cap.get(Videoio.CAP_PROP_FRAME_HEIGHT);
     }
 
-    // sending images
-    public void startSendingImages(long interval) {
+    // sending images to python program to be analyzed as trial is running
+    public void startSendingImagesToSSD(long interval) {
         if (imageSendHandler == null || imageSendHandler.isCancelled()) {
-            sendState = State.IN_PROCESS;
-            saveState = State.WAITING;
+            sendState = SendState.IN_PROGRESS;
+            saveState = SaveState.WAITING;
             imageSendHandler = imageSendExecutor.scheduleAtFixedRate(this::updateImageSending, 0, interval, TimeUnit.NANOSECONDS);
         }
         else
@@ -98,50 +108,51 @@ public class CameraManager {
         if (imageSendHandler != null && !imageSendHandler.isCancelled())
             imageSendHandler.cancel(true);
         if (sendIndex.get() <= imageIndexCap)
-            sendState = State.STOPPED_EARLY;
+            sendState = SendState.STOPPED_EARLY;
         else
-            sendState = State.READY;
+            sendState = SendState.READY;
         sendIndex.set(0);
     }
     public void shutDownExecutors() {
-        sendState = State.PERMANENTLY_STOPPED;
-        saveState = State.PERMANENTLY_STOPPED;
+        sendState = SendState.PERMANENTLY_STOPPED;
+        saveState = SaveState.PERMANENTLY_STOPPED;
         imageSendExecutor.shutdown();
         imageSaveExecutor.shutdown();
     }
 
     // other stuff
-    public int getImageIndex() {
-        return cameraIndex.get();
+    public int getNumCameraImagesSaved() {
+        return numCameraImagesSaved.get();
     }
     public int getSendIndex() { return sendIndex.get(); }
-    public State getSendState() {
+    public SendState getSendState() {
         return sendState;
     }
-    public State getSaveState() {
+    public SaveState getSaveState() {
         return saveState;
     }
     public void saveImageData(String folder) {
-        saveState = State.IN_PROCESS;
+        saveState = SaveState.IN_PROGRESS;
         imageSaveExecutor.submit(() -> {
             System.out.println("starting image save executor");
             long startTime = System.nanoTime();
             for (int i = 0; i < images.size(); i++) {
                 Imgcodecs.imwrite(Path.of(folder, i + ".png").toString(), images.get(i));
             }
-            saveState = State.READY;
+            saveState = SaveState.READY;
+            System.out.println("number of raw frames grabbed: " + cameraImageGrabber.getNumFramesGrabbed());
             System.out.println("saved images to folder: " + folder);
             System.out.println("time to save " + images.size() + " images: " + (System.nanoTime() - startTime) / 1_000_000L);
             System.out.println("image index cap: " + imageIndexCap);
         });
     }
     public void clearOldImageData() {
-        if (sendState == State.IN_PROCESS)
+        if (sendState == SendState.IN_PROGRESS)
             throw new IllegalStateException("cannot reset image index in CameraManager when it has not finished SENDING old images");
-        if (saveState == State.IN_PROCESS)
+        if (saveState == SaveState.IN_PROGRESS)
             throw new IllegalStateException("cannot reset image index in CameraManager when it has not finished SAVING old images");
 
-        cameraIndex.set(0);
+        numCameraImagesSaved.set(0);
         sendIndex.set(0);
         images.clear();
     }
@@ -151,44 +162,91 @@ public class CameraManager {
     public void setImageIndexCap(int maxIndex) {
         this.imageIndexCap = maxIndex;
     }
-    public void fillImagesToCap() {
-        int failedAttempts = 0;
-        while (cameraIndex.get() <= imageIndexCap && failedAttempts < 10) {
-            if (trySendImage())
-                cameraIndex.set(cameraIndex.get() + 1);
-            else
-                failedAttempts++;
-        }
+    //    public void fillImagesToCap() {
+//        int failedAttempts = 0;
+//        while (numCameraImagesSaved.get() <= imageIndexCap && failedAttempts < 10) {
+//            if (trySendImage())
+//                numCameraImagesSaved.set(numCameraImagesSaved.get() + 1);
+//            else
+//                failedAttempts++;
+//        }
+//    }
+    public void trySetDevicePort(int devicePort) {
+        this.devicePort = devicePort;
+        cameraImageGrabber.attemptReconnect(devicePort);
+        connected = cameraImageGrabber.isConnected();
     }
-    public void trySetDevicePort(int index) {
-        cap = new VideoCapture(index);
-        devicePort = index;
-        connected = cap.isOpened();
+
+    // start grabbing images on a separate thread and read and store the images at a fixed interval
+    public void startReadingImagesFromCamera(long updateTimeNano) {
+        Thread updateThread = new Thread(() -> {
+            long nextFrameTime = System.nanoTime();
+            double lastFrameTime = System.currentTimeMillis();
+            numTimesSleptBetweenCameraReads = 0;
+            totalTimeSleepingBetweenCameraReads = 0;
+            totalTimeToReadImageFromCamera = 0;
+            while (saveImage) {
+                double curTime = System.currentTimeMillis();
+                totalTimeSleepingBetweenCameraReads += curTime - lastFrameTime;
+                lastFrameTime = curTime;
+
+                updateImageReadingFromCamera();
+
+                nextFrameTime += updateTimeNano;
+                long sleepNanos = nextFrameTime - System.nanoTime();
+
+                if (sleepNanos > 0) {
+                    try {
+                        TimeUnit.NANOSECONDS.sleep(sleepNanos);
+                        numTimesSleptBetweenCameraReads++;
+                    } catch (InterruptedException ignored) {}
+                }
+            }
+        });
+        updateThread.setDaemon(true);
+
+        cameraImageGrabber.startGrabbing();
+        updateThread.start();
     }
-    public void updateImageReading() {
+
+    // loads the images from the camera to the images list once
+    public void updateImageReadingFromCamera() {
         if (!recording || !connected)
             return;
 
-        cap.read(latestImage);
-        cameraIndex.set(cameraIndex.get() + 1);
+        double startTime = System.currentTimeMillis();
 
-        // turning off camera once enough images are saved
-        if(saveImage) {
-            images.add(latestImage);
-            if (cameraIndex.get() > imageIndexCap && imageIndexCap > 0)
-                saveImage = false;
+        Mat latestFrame = cameraImageGrabber.getLatestFrame();
+        if (latestFrame != null) // should only happen at the beginning
+            numCameraImagesSaved.set(numCameraImagesSaved.get() + 1);
+
+        // saving images
+        if(saveImage && latestFrame != null) {
+            images.add(latestFrame.clone());
+            if (numCameraImagesSaved.get() > imageIndexCap && imageIndexCap > 0)
+                saveImage = false; // turning off camera once enough images are saved
         }
+        double timeToReadImage = (System.currentTimeMillis() - startTime) * 0.001;
+        totalTimeToReadImageFromCamera += timeToReadImage;
+        System.out.println("time to read image from camera: " + MathUtils.format2(timeToReadImage));
     }
+    // sends the currently stored images in the images list to the SSD for it to analyze
     private void updateImageSending() {
         if(sendIndex.get() < images.size()) {
             if (trySendImage()) {
                 sendIndex.set(sendIndex.get() + 1);
             }
         }
-        if (sendIndex.get() > imageIndexCap // finished sending all
-            || (sendIndex.get() >= images.size() && !saveImage)) { // also finished sending, but images is incomplete
-            sendState = State.READY;
+        if (sendIndex.get() > imageIndexCap) // finished sending all
+            sendState = SendState.READY;
+        else if (sendIndex.get() >= images.size() && !saveImage) { // also finished sending, but images are incomplete
+            sendState = SendState.READY_IMPERFECTLY;
             imageSendHandler.cancel(true);
+        }
+        if (finishedSendingImagesToSSD()) {
+            System.out.println("average time sleeping between camera reads: " + totalTimeSleepingBetweenCameraReads / numTimesSleptBetweenCameraReads);
+            System.out.println("average time to read " + getNumImagesSentToSSD() + " images from camera: " + totalTimeToReadImageFromCamera / getNumImagesSentToSSD());
+            System.out.println("total time to read" + getNumImagesSentToSSD() + " image from camera: " + totalTimeToReadImageFromCamera);
         }
     }
 
@@ -211,6 +269,7 @@ public class CameraManager {
         this.saveImage = saveImage;
     }
 
+    // sends the current image to the SSD through sockets
     private boolean trySendImage() {
         Mat img = images.get(sendIndex.get());
         if(img.empty())
@@ -218,7 +277,7 @@ public class CameraManager {
         try {
 //            double before = System.currentTimeMillis();
 
-            byte[] indexBytes = ByteBuffer.allocate(4).putInt(cameraIndex.get()).array();
+            byte[] indexBytes = ByteBuffer.allocate(4).putInt(numCameraImagesSaved.get()).array();
 
             byte[] imgBytes = new byte[getFrameWidth() * getFrameHeight() * 3];
             img.get(0, 0, imgBytes);
@@ -235,9 +294,9 @@ public class CameraManager {
     }
 
     public Image getLatestImage() {
-        if (latestImage.empty())
+        if (cameraImageGrabber.getLatestFrame().empty())
             return null;
-        return matToImage(latestImage);
+        return matToImage(cameraImageGrabber.getLatestFrame());
     }
 
     private Image matToImage(Mat mat) {
@@ -278,5 +337,16 @@ public class CameraManager {
             bgra[j + 3] = (byte)255;  // A (opaque)
         }
         return bgra;
+    }
+
+    // if this is true, the program can start saving the analyzed images from the SSD to the file system
+    public boolean finishedSendingImagesToSSD() {
+        return sendState == SendState.READY || sendState == SendState.READY_IMPERFECTLY;
+    }
+    public int getNumImagesSentToSSD() {
+        return sendIndex.get() - 1;
+    }
+    public CameraImageGrabber getImageGrabber() {
+        return cameraImageGrabber;
     }
 }

@@ -126,7 +126,7 @@ public class VisualizedImageReader {
                     e.printStackTrace();
                 }
             }
-            System.out.println("finished saving " + receivedImages.size() + " images");
+            System.out.println("finished saving " + receivedImages.size() + " annotated images");
             receivedImages.clear();
             state = State.WAITING_TO_RECEIVE;
         });

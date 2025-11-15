@@ -89,8 +89,8 @@ public class DisplayStateManager {
                             setNewState(DisplayState.IN_BETWEEN_EXPERIMENTS);
                         }
                         else {
-                            boolean canMoveOn = core.getCameraManager().getSendState() == CameraManager.State.READY
-                                    && core.getCameraManager().getSaveState() == CameraManager.State.READY;
+                            boolean canMoveOn = core.getCameraManager().getSendState() == CameraManager.SendState.READY
+                                    && core.getCameraManager().getSaveState() == CameraManager.SaveState.READY;
                             System.out.println("can go from resting to testing: " + canMoveOn);
                             if (canMoveOn) {
                                 currentTrial++;
@@ -101,8 +101,8 @@ public class DisplayStateManager {
                     break;
                 case IN_BETWEEN_EXPERIMENTS:
                     if (getCurStateTime() > inBetweenExperimentsRestTime
-                            && core.getCameraManager().getSendState() == CameraManager.State.READY
-                            && core.getCameraManager().getSaveState() == CameraManager.State.READY) {
+                            && core.getCameraManager().getSendState() == CameraManager.SendState.READY
+                            && core.getCameraManager().getSaveState() == CameraManager.SaveState.READY) {
                         currentExperimentIndex++;
                         currentTrial = 0;
                         setNewState(DisplayState.TESTING);
