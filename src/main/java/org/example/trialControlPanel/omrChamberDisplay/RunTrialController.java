@@ -1,6 +1,7 @@
 package org.example.trialControlPanel.omrChamberDisplay;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.image.Image;
@@ -28,12 +29,21 @@ public class RunTrialController extends CustomController {
             System.out.println("closing run trial controller");
             getCore().getOmrChamberController().stopTrial(true);
         });
+        showRawImages = true;
     }
     @FXML
     private void handleStopEarlyClick() {
         System.out.println("early stop click");
         getCore().getOmrChamberController().stopTrial(true);
         getStage().close();
+    }
+    private boolean showRawImages;
+    @FXML
+    private Button toggleImageViewButton;
+    @FXML
+    private void handleToggleImageView() {
+        showRawImages = !showRawImages;
+        toggleImageViewButton.setText(showRawImages ? "Show Raw Images" : "Show Annotated Images");
     }
 
     public void updateUILabels() {
@@ -56,9 +66,12 @@ public class RunTrialController extends CustomController {
 
         restTimeLabel.setText(formatSeconds((int) displaySM.getRestRunTime()) + "/" + formatSeconds(experiment.getRestTime()));
         restTimeProgress.setProgress(Math.min(displaySM.getRestRunTime() / experiment.getRestTime(), 1) % 1);
+
+        updateCameraImageView();
     }
 
-    public void updateCameraImageView(Image image) {
+    public void updateCameraImageView() {
+        Image image = showRawImages ? getCore().getCameraManager().getLatestImage() : getCore().getOmrChamberController().visualizedImageReader.getLatestImage();
         cameraDataLabel.setText(image == null ? "Camera Data (None available)" : "Camera Data");
         cameraDataImageView.setImage(image);
     }

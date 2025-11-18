@@ -1,5 +1,10 @@
 package org.example.utils;
 
+import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritableImage;
+import org.opencv.core.Mat;
+import javafx.scene.image.Image;
+
 import java.text.DecimalFormat;
 
 // helps for concise, easy printing to telemetry
@@ -45,4 +50,53 @@ public class MathUtils {
     public static double lerp(double a, double b, double t) {
         return a + (b - a) * t;
     }
+
+    public static Image matToImage(Mat frame) {
+        try {
+            return matToWritableImage(frame);
+        } catch (Exception e) {
+            System.err.println("Cannot convert Mat to Image: " + e);
+            return null;
+        }
+    }
+
+    private static WritableImage matToWritableImage(Mat mat) {
+        int width = mat.width();
+        int height = mat.height();
+        int channels = mat.channels();
+
+        byte[] sourcePixels = new byte[width * height * channels];
+        mat.get(0, 0, sourcePixels);
+
+        WritableImage image = new WritableImage(width, height);
+        PixelWriter pw = image.getPixelWriter();
+
+        if (mat.channels() == 3) {
+            // OpenCV uses BGR, JavaFX uses RGB → convert
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    int index = (y * width + x) * 3;
+
+                    int b = sourcePixels[index] & 0xFF;
+                    int g = sourcePixels[index + 1] & 0xFF;
+                    int r = sourcePixels[index + 2] & 0xFF;
+
+                    int argb = 0xFF000000 | (r << 16) | (g << 8) | b;
+                    pw.setArgb(x, y, argb);
+                }
+            }
+        } else if (mat.channels() == 1) {
+            // Grayscale Mat
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    int gray = sourcePixels[y * width + x] & 0xFF;
+                    int argb = 0xFF000000 | (gray << 16) | (gray << 8) | gray;
+                    pw.setArgb(x, y, argb);
+                }
+            }
+        }
+
+        return image;
+    }
+
 }

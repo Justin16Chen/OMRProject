@@ -1,6 +1,5 @@
 package org.example.trialControlPanel.omrChamberDisplay;
 
-import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
@@ -93,8 +92,6 @@ public class VisualizedImageReader {
 //                System.out.println("time to receive visualized img: " + (System.currentTimeMillis() - time));
                 receivedImages.add(wimg);
 
-                Platform.runLater(() -> core.getRunTrialController().updateCameraImageView(wimg));
-
                 // stop when all images have been received
                 if (receivedImages.size() >= core.getCameraManager().getMaxImageIndex() + 1
                     || (receivedImages.size() >= core.getCameraManager().getSendIndex() && !core.getCameraManager().isReadingImagesFromCamera())) {
@@ -140,5 +137,10 @@ public class VisualizedImageReader {
     public void shutDownExecutor() {
         executor.shutdown();
         saveExecutor.shutdown();
+    }
+    public WritableImage getLatestImage() {
+        if (!receivedImages.isEmpty())
+            return receivedImages.getFirst();
+        return null;
     }
 }

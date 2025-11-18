@@ -22,7 +22,7 @@ public class OMRChamberController extends CustomController {
 	private int lastActualImageIndex;
 
 	private DisplayStateManager displaySM;
-	private VisualizedImageReader visualizedImageReader;
+	public VisualizedImageReader visualizedImageReader;
 
 	@Override
 	public void setup() {
