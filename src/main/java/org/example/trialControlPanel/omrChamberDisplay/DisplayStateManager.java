@@ -7,28 +7,25 @@ import org.example.trialControlPanel.trialConfig.Experiment;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 public class DisplayStateManager {
 
+    private long updateIntervalMs;
+    private boolean keepUpdating;
     private final Core core;
-    private final ScheduledExecutorService executor;
-    private ScheduledFuture<?> executorHandler;
     private ArrayList<Experiment> experiments;
     private int currentExperimentIndex;
     private int inBetweenExperimentsRestTime;
-    private double rumExperimentsStartTime, currentStateStartTime;
+    private double currentStateStartTime;
     private int currentTrial;
     private DisplayState state;
     private final HashMap<Transition, Runnable> transitionFunctions;
     private final HashMap<DisplayState, Runnable> updateFunctions;
+    private VisualizedImageReader visualizedImageReader;
 
-    public DisplayStateManager(Core core) {
+    public DisplayStateManager(Core core, VisualizedImageReader visualizedImageReader) {
         this.core = core;
-        executor = Executors.newSingleThreadScheduledExecutor();
+        this.visualizedImageReader = visualizedImageReader;
         transitionFunctions = new HashMap<>();
         updateFunctions = new HashMap<>();
         experiments = new ArrayList<>();
@@ -65,61 +62,74 @@ public class DisplayStateManager {
     }
     public void runExperiments(ArrayList<Experiment> experiments, long intervalNanos, int inBetweenExperimentsRestTime) {
         this.experiments = experiments;
+        this.updateIntervalMs = intervalNanos / 1_000_000;
         this.inBetweenExperimentsRestTime = inBetweenExperimentsRestTime;
         currentExperimentIndex = 0;
         currentTrial = 0;
         state = DisplayState.TESTING;
-        currentStateStartTime = (double) System.currentTimeMillis();
+        currentStateStartTime = System.currentTimeMillis();
 
-
-        executorHandler = executor.scheduleAtFixedRate(() -> {
-            updateState();
-            switch (state) {
-                case TESTING:
-                    if (getCurStateTime() >= getCurExperiment().getTestTime()) {
-                        if (getCurTrial() + 1 >= getCurExperiment().getMaxTests() && getCurExperimentIndex() + 1 >= experiments.size()) {
-                            setNewState(DisplayState.NORMAL_STOP);
-                        } else
-                            setNewState(DisplayState.RESTING);
-                    }
-                    break;
-                case RESTING:
-                    if (getCurStateTime() >= getCurExperiment().getRestTime()) {
-                        if (getCurTrial() + 1 >= getCurExperiment().getMaxTests()) {
-                            setNewState(DisplayState.IN_BETWEEN_EXPERIMENTS);
-                        }
-                        else {
-                            boolean canMoveOn = core.getCameraManager().getSendState() == CameraManager.SendState.READY
-                                    && core.getCameraManager().getSaveState() == CameraManager.SaveState.READY;
-                            System.out.println("can go from resting to testing: " + canMoveOn);
-                            if (canMoveOn) {
-                                currentTrial++;
-                                setNewState(DisplayState.TESTING);
-                            }
-                        }
-                    }
-                    break;
-                case IN_BETWEEN_EXPERIMENTS:
-                    if (getCurStateTime() > inBetweenExperimentsRestTime
-                            && core.getCameraManager().getSendState() == CameraManager.SendState.READY
-                            && core.getCameraManager().getSaveState() == CameraManager.SaveState.READY) {
-                        currentExperimentIndex++;
-                        currentTrial = 0;
-                        setNewState(DisplayState.TESTING);
-                    }
-                    break;
+        keepUpdating = true;
+        Thread updateThread = new Thread(() -> {
+            while (keepUpdating) {
+                update();
+                try {
+                    Thread.sleep(updateIntervalMs);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
-            Platform.runLater(core.getRunTrialController()::updateUILabels);
+        });
+        updateThread.start();
 
-        }, 0, intervalNanos, TimeUnit.NANOSECONDS);
+    }
+    private void update() {
+        updateState(); // update any logic that the OMR Chamber Controller wants to update during the current DisplayState
+
+        switch (state) {
+            case TESTING:
+                if (getCurStateTime() >= getCurExperiment().getTestTime()) {
+                    if (getCurTrial() + 1 >= getCurExperiment().getMaxTests() && getCurExperimentIndex() + 1 >= experiments.size()) {
+                        setNewState(DisplayState.NORMAL_STOP);
+                    } else
+                        setNewState(DisplayState.RESTING);
+                }
+                break;
+            case RESTING:
+                if (getCurStateTime() >= getCurExperiment().getRestTime()) {
+                    boolean canMoveOn = core.getCameraManager().getSendState() == CameraManager.SendState.READY
+                            && core.getCameraManager().getSaveState() == CameraManager.SaveState.FINISHED
+                            && visualizedImageReader.getState() == VisualizedImageReader.State.WAITING_TO_RECEIVE;
+                    if (canMoveOn) {
+                        if (getCurTrial() + 1 >= getCurExperiment().getMaxTests())
+                            setNewState(DisplayState.IN_BETWEEN_EXPERIMENTS);
+                        else {
+                            waitForCameraToReachStableFPS();
+
+                            currentTrial++;
+                            setNewState(DisplayState.TESTING);
+                        }
+                    }
+                }
+                break;
+            case IN_BETWEEN_EXPERIMENTS:
+                if (getCurStateTime() > inBetweenExperimentsRestTime
+                        && core.getCameraManager().getSendState() == CameraManager.SendState.READY
+                        && core.getCameraManager().getSaveState() == CameraManager.SaveState.FINISHED) {
+                    waitForCameraToReachStableFPS();
+
+                    currentExperimentIndex++;
+                    currentTrial = 0;
+                    setNewState(DisplayState.TESTING);
+                }
+                break;
+        }
+        Platform.runLater(core.getRunTrialController()::updateUILabels);
+
     }
 
-    public void stopExecutor() {
-        if (executorHandler != null && !executorHandler.isCancelled())
-            executorHandler.cancel(true);
-    }
-    public void shutDownExecutor() {
-        executor.shutdown();
+    public void stopUpdating() {
+        keepUpdating = false;
     }
 
     // run trial controller getters
@@ -142,5 +152,21 @@ public class DisplayStateManager {
     }
     public double getRestRunTime() {
         return 0;
+    }
+    private void waitForCameraToReachStableFPS() {
+        System.out.println("STARTING DISPLAY SM WAIT FOR STABLE FPS THREAD");
+        // block displaySM thread until stable FPS is reached
+        core.getCameraManager().getImageGrabber().startGrabbing();
+        Thread waitForStableFPSThread = new Thread(() -> {
+            long unstableFPSSleepTimeMs = 1000 / 30;
+            while (!core.getCameraManager().getImageGrabber().reachedStableFPS()) {
+                try {
+                    Thread.sleep(unstableFPSSleepTimeMs);
+                } catch (InterruptedException ignored) {
+                }
+                System.out.println("RUNNING DISPLAY SM WAIT FOR STABLE FPS THREAD");
+            }
+        });
+        waitForStableFPSThread.start();
     }
 }

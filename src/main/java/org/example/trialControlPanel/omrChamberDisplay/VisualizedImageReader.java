@@ -96,8 +96,8 @@ public class VisualizedImageReader {
                 Platform.runLater(() -> core.getRunTrialController().updateCameraImageView(wimg));
 
                 // stop when all images have been received
-                if (receivedImages.size() >= core.getCameraManager().getImageIndexCap() + 1
-                    || (receivedImages.size() >= core.getCameraManager().getSendIndex() && !core.getCameraManager().isSavingImages())) {
+                if (receivedImages.size() >= core.getCameraManager().getMaxImageIndex() + 1
+                    || (receivedImages.size() >= core.getCameraManager().getSendIndex() && !core.getCameraManager().isReadingImagesFromCamera())) {
                     state = State.WAITING_TO_SAVE;
                     executorHandler.cancel(true);
                 }
@@ -115,6 +115,7 @@ public class VisualizedImageReader {
             throw new IllegalStateException("cannot call saveAndClearStoredImages in VisualizedImageReader when it is in state " + state);
         state = State.SAVING;
         saveExecutor.submit(() -> {
+            System.out.println("SAVING VISUALIZED IMAGES");
             for (int i=0; i<receivedImages.size(); i++) {
                 RenderedImage renderedImage = SwingFXUtils.fromFXImage(receivedImages.get(i), null);
 

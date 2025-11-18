@@ -89,7 +89,7 @@ public class Core {
         for (Stage stage : stagesToClose)
             stage.close();
         omrChamberController.shutDownExecutors();
-        cameraManager.shutDownExecutors();
+        cameraManager.stopEverything();
     }
 
     public void init(Stage primaryStage) {

@@ -14,12 +14,16 @@ import org.example.trialControlPanel.monitorInfo.MonitorFormat;
 import org.example.trialControlPanel.trialConfig.TrialSaver;
 import org.example.trialControlPanel.utils.FilteredTextField;
 import org.example.trialControlPanel.utils.TimeTextField;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 public class StartMenuController extends CustomController {
-
     private ArrayList<String> queuedTrialNames;
     public ArrayList<String> getQueuedTrialNames() {
         return queuedTrialNames;
@@ -59,6 +63,7 @@ public class StartMenuController extends CustomController {
         chamberMonitorNumberLabel.setText("");
         chamberMonitorResolutionLabel.setText("");
         chamberMonitorSizeLabel.setText("");
+
 
     }
 
