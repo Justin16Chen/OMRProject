@@ -61,14 +61,7 @@ public class Core {
         cameraManager = new CameraManager(0, this);
         pythonRunner = new PythonRunner();
 
-        Thread pythonThread = new Thread(() -> {
-            try {
-                pythonRunner.start();
-            } catch (IOException | InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }, "python runner thread");
-        pythonThread.start();
+        pythonRunner.start();
     }
 
     // any stages in the stagesToClose list will be closed when the primary stage closes
@@ -86,9 +79,11 @@ public class Core {
     }
 
     private void closeApplication() {
+        System.out.println("CLOSING APPLICATION");
         for (Stage stage : stagesToClose)
             stage.close();
         cameraManager.stopEverything();
+        pythonRunner.stopRunning();
     }
 
     public void init(Stage primaryStage) {

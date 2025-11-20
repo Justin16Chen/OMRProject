@@ -5,20 +5,44 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.Properties;
 
 public class PythonRunner {
 
-    public void start() throws IOException, InterruptedException {
-        Process p = getProcess();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        String line;
-        while ((line = reader.readLine()) != null && !line.isEmpty()) {
-            System.out.println("py:" + line);
+    private final Process process;
+    public PythonRunner() {
+        try {
+            this.process = getProcess();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        int exitCode = p.waitFor(); // thread blocking function call; java will not continue until python script finishes
-        System.out.println("Exited with " + exitCode);
+    }
+    public void start() {
+        if (process == null)
+            throw new IllegalStateException("PROCESS IS NULL IN PYTHON RUNNER");
+
+         new Thread(() -> {
+            try {
+                run();
+            } catch (IOException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            System.out.println("python thread finished");
+        }, "python runner thread").start();
+    }
+    private void run() throws IOException, InterruptedException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line;
+        while (process.isAlive()) {
+            line = reader.readLine();
+            if (line != null && !line.isEmpty())
+                System.out.println("python line: " + line);
+        }
+    }
+
+    public void stopRunning() {
+        if (process != null)
+            process.destroy();
     }
 
     private Process getProcess() throws IOException {
@@ -47,7 +71,7 @@ public class PythonRunner {
         PythonRunner pythonRunner = new PythonRunner();
         Thread pythonThread = new Thread(() -> {
             try {
-                pythonRunner.start();
+                pythonRunner.run();
             } catch (IOException | InterruptedException e) {
                 throw new RuntimeException(e);
             }

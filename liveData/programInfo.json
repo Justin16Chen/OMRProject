@@ -10,7 +10,7 @@
     "HOST": "127.0.0.1",
     "PYTHON_SEND_PORT": 65432,
     "trialPrefix": "trial",
-    "cameraOutputBase": "C:\\Users\\justi\\Documents\\omr images\\more camera images",
+    "cameraOutputBase": "C:\\Users\\justi\\Documents\\omr images\\camera images",
     "programRunning": false,
-    "visualizedOutputBase": "C:\\Users\\justi\\Documents\\omr images\\more visualized images"
+    "visualizedOutputBase": "C:\\Users\\justi\\Documents\\omr images\\visualized images"
 }

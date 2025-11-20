@@ -20,6 +20,8 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Set;
@@ -195,7 +197,7 @@ public class StartMenuController extends CustomController {
     private String promptUserForEmptyFolderPath(String startingPath) {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("Select an Empty Folder");
-        if (startingPath != null)
+        if (startingPath != null && Files.exists(Path.of(startingPath)))
             directoryChooser.setInitialDirectory(new File(startingPath));
         File file;
         do {
