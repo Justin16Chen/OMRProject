@@ -67,7 +67,7 @@ public class Core {
             } catch (IOException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
-        });
+        }, "python runner thread");
         pythonThread.start();
     }
 
@@ -88,7 +88,6 @@ public class Core {
     private void closeApplication() {
         for (Stage stage : stagesToClose)
             stage.close();
-        omrChamberController.shutDownExecutors();
         cameraManager.stopEverything();
     }
 

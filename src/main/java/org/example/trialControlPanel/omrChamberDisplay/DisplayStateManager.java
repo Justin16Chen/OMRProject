@@ -7,6 +7,7 @@ import org.example.trialControlPanel.trialConfig.Experiment;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
 
 public class DisplayStateManager {
 
@@ -79,7 +80,7 @@ public class DisplayStateManager {
                     throw new RuntimeException(e);
                 }
             }
-        });
+        }, "update display SM thread");
         updateThread.start();
 
     }
@@ -125,7 +126,6 @@ public class DisplayStateManager {
                 break;
         }
         Platform.runLater(core.getRunTrialController()::updateUILabels);
-
     }
 
     public void stopUpdating() {
@@ -166,7 +166,7 @@ public class DisplayStateManager {
                 }
                 System.out.println("RUNNING DISPLAY SM WAIT FOR STABLE FPS THREAD");
             }
-        });
+        }, "wait for stable FPS thread");
         waitForStableFPSThread.start();
     }
 }

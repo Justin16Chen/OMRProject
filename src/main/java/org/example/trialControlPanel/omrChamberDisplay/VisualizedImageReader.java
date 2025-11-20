@@ -17,7 +17,6 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.concurrent.*;
 
 public class VisualizedImageReader {
     public enum State {
@@ -27,17 +26,12 @@ public class VisualizedImageReader {
         SAVING
     }
     private final Core core;
-    private final ScheduledExecutorService executor;
-    private ScheduledFuture<?> executorHandler;
-    private final ExecutorService saveExecutor;
     private DataInputStream visualizedImageDataIn;
     private boolean connected;
     private final ArrayList<WritableImage> receivedImages;
     private volatile State state;
     public VisualizedImageReader(Core core) {
         this.core = core;
-        executor = Executors.newSingleThreadScheduledExecutor();
-        saveExecutor = Executors.newSingleThreadScheduledExecutor();
         connected = false;
         receivedImages = new ArrayList<>();
         state = State.WAITING_TO_RECEIVE;
@@ -55,53 +49,63 @@ public class VisualizedImageReader {
         }
     }
 
-    public void startReadingVisualizedImages(long intervalNanos) {
+    public void startReadingVisualizedImages() {
         if (!connected)
             throw new IllegalStateException("data input stream is not connected in VisualizedImageReader.java");
 
         receivedImages.clear();
         state = State.RECEIVING;
 
-        executorHandler = executor.scheduleAtFixedRate(() -> {
-            try {
+        new Thread(() -> {
+            while (state == State.RECEIVING) {
+                readVisualizedImages();
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }, "receive visualized images thread").start();
+    }
+
+    private void readVisualizedImages() {
+        try {
 //                double time = System.currentTimeMillis();
-                byte[] header = visualizedImageDataIn.readNBytes(4);
+            byte[] header = visualizedImageDataIn.readNBytes(4);
 //                System.out.println("time to read header: " + (System.currentTimeMillis() - time));
-                ByteBuffer bb = ByteBuffer.wrap(header);
+            ByteBuffer bb = ByteBuffer.wrap(header);
 //                System.out.println("time to create buffer: " + (System.currentTimeMillis() - time));
-                int omr = bb.getInt();
+            int omr = bb.getInt();
 
 //                System.out.println("time to read w&h bytes: " + (System.currentTimeMillis() - time));
 
-                int byteCount = core.getCameraManager().getFrameWidth() * core.getCameraManager().getFrameHeight() * 3;
-                byte[] imgBytes = visualizedImageDataIn.readNBytes(byteCount);
+            int byteCount = core.getCameraManager().getFrameWidth() * core.getCameraManager().getFrameHeight() * 3;
+            byte[] imgBytes = visualizedImageDataIn.readNBytes(byteCount);
 
 //                System.out.println("time to read imgBytes: " + (System.currentTimeMillis() - time));
 
-                WritableImage wimg = new WritableImage(core.getCameraManager().getFrameWidth(), core.getCameraManager().getFrameHeight());
-                PixelWriter pw = wimg.getPixelWriter();
-                int idx = 0;
-                for(int y = 0; y < core.getCameraManager().getFrameHeight(); y++)
-                    for(int x = 0; x < core.getCameraManager().getFrameWidth(); x++) {
-                        int r = imgBytes[idx++] & 0xFF;
-                        int g = imgBytes[idx++] & 0xFF;
-                        int b = imgBytes[idx++] & 0xFF;
-                        pw.setColor(x, y, Color.rgb(r, g, b));
-                    }
+            WritableImage wimg = new WritableImage(core.getCameraManager().getFrameWidth(), core.getCameraManager().getFrameHeight());
+            PixelWriter pw = wimg.getPixelWriter();
+            int idx = 0;
+            for(int y = 0; y < core.getCameraManager().getFrameHeight(); y++)
+                for(int x = 0; x < core.getCameraManager().getFrameWidth(); x++) {
+                    int r = imgBytes[idx++] & 0xFF;
+                    int g = imgBytes[idx++] & 0xFF;
+                    int b = imgBytes[idx++] & 0xFF;
+                    pw.setColor(x, y, Color.rgb(r, g, b));
+                }
 
 //                System.out.println("time to receive visualized img: " + (System.currentTimeMillis() - time));
-                receivedImages.add(wimg);
+            receivedImages.add(wimg);
 
-                // stop when all images have been received
-                if (receivedImages.size() >= core.getCameraManager().getMaxImageIndex() + 1
+            // stop when all images have been received
+            if (receivedImages.size() >= core.getCameraManager().getMaxImageIndex() + 1
                     || (receivedImages.size() >= core.getCameraManager().getSendIndex() && !core.getCameraManager().isReadingImagesFromCamera())) {
-                    state = State.WAITING_TO_SAVE;
-                    executorHandler.cancel(true);
-                }
-            } catch (IOException e) {
-                System.out.println("failed to read image from input stream");
+                state = State.WAITING_TO_SAVE;
             }
-        }, 0, intervalNanos, TimeUnit.NANOSECONDS);
+        } catch (IOException e) {
+            System.out.println("failed to read image from input stream");
+        }
     }
 
     public State getState() {
@@ -111,7 +115,7 @@ public class VisualizedImageReader {
         if (state != State.WAITING_TO_SAVE)
             throw new IllegalStateException("cannot call saveAndClearStoredImages in VisualizedImageReader when it is in state " + state);
         state = State.SAVING;
-        saveExecutor.submit(() -> {
+        new Thread(() -> {
             System.out.println("SAVING VISUALIZED IMAGES");
             for (int i=0; i<receivedImages.size(); i++) {
                 RenderedImage renderedImage = SwingFXUtils.fromFXImage(receivedImages.get(i), null);
@@ -127,16 +131,11 @@ public class VisualizedImageReader {
             System.out.println("finished saving " + receivedImages.size() + " annotated images");
             receivedImages.clear();
             state = State.WAITING_TO_RECEIVE;
-        });
+        }, "save visualized images thread").start();
     }
 
     public void stopRunning() {
-        if (executorHandler != null && !executorHandler.isCancelled())
-            executorHandler.cancel(true);
-    }
-    public void shutDownExecutor() {
-        executor.shutdown();
-        saveExecutor.shutdown();
+        state = State.WAITING_TO_RECEIVE;
     }
     public WritableImage getLatestImage() {
         if (!receivedImages.isEmpty())

@@ -109,7 +109,7 @@ public class CameraManager {
             System.out.println("saved images to folder: " + folder);
             System.out.println("time to save " + images.size() + " images: " + (System.nanoTime() - startTime) / 1_000_000L + "ms");
             System.out.println("image index cap: " + maxImageIndex);
-        }).start();
+        }, "save image thread").start();
     }
     public void clearOldImageData() {
         if (sendState == SendState.IN_PROGRESS)
@@ -225,7 +225,7 @@ public class CameraManager {
                     throw new RuntimeException(e);
                 }
             }
-        }).start();
+        }, "send images to SSD thread").start();
     }
     public void stopSendingImages() {
         if (sendIndex.get() <= maxImageIndex)

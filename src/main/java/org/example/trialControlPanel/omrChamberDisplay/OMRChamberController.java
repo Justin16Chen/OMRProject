@@ -13,6 +13,7 @@ import org.example.trialControlPanel.trialConfig.Experiment;
 import java.io.*;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Set;
 
 public class OMRChamberController extends CustomController {
 
@@ -83,7 +84,7 @@ public class OMRChamberController extends CustomController {
 			getCore().getCameraManager().clearOldImageData();
 			getCore().getCameraManager().startReadingImagesFromCamera(updateIntervalNanos);
 			getCore().getCameraManager().startSendingImagesToSSD();
-			visualizedImageReader.startReadingVisualizedImages(updateIntervalNanos);
+			visualizedImageReader.startReadingVisualizedImages();
 
 			String experimentName = displaySM.getCurExperiment().getName();
 			int experimentIndex = displaySM.getCurExperimentIndex();
@@ -104,7 +105,7 @@ public class OMRChamberController extends CustomController {
 			getCore().getCameraManager().clearOldImageData();
 			getCore().getCameraManager().startReadingImagesFromCamera(updateIntervalNanos);
 			getCore().getCameraManager().startSendingImagesToSSD();
-			visualizedImageReader.startReadingVisualizedImages(updateIntervalNanos);
+			visualizedImageReader.startReadingVisualizedImages();
 
 			;
 			getCore().getCameraManager().setMaxImageIndex(displaySM.getCurExperiment().getTestTime() * getCore().fps - 1);
@@ -134,6 +135,7 @@ public class OMRChamberController extends CustomController {
 		if (earlyStop) {
 			getCore().getCameraManager().stopSendingImages();
 			visualizedImageReader.stopRunning();
+            displaySM.stopUpdating();
 		}
 
 		getCore().getRunTrialController().getStage().close();
@@ -198,7 +200,7 @@ public class OMRChamberController extends CustomController {
 		// start thread to send images to SSD for visualizing
 		cm.startSendingImagesToSSD();
 		// start thread to receive visualized images from SSD
-		visualizedImageReader.startReadingVisualizedImages(updateIntervalNanos);
+		visualizedImageReader.startReadingVisualizedImages();
 	}
 
 	// folder structure/file helper functions
@@ -235,9 +237,5 @@ public class OMRChamberController extends CustomController {
 	}
 	public DisplayStateManager getDisplaySM() {
 		return displaySM;
-	}
-
-	public void shutDownExecutors() {
-		visualizedImageReader.shutDownExecutor();
 	}
 }
