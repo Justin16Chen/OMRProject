@@ -144,28 +144,6 @@ public class TrialConfigController extends CustomController {
 		if (trialNameTextField.hasValidInput())
 			currentTrial.setName(trialNameTextField.getText());
 	}
-
-//
-//	// window that opens the saved patterns
-//	@FXML
-//	public void openSavedPatternsWindow() {
-//		FXMLLoader loader = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/SavedTrials.fxml"));
-//
-//	    Parent secondaryRoot;
-//		try {
-//			secondaryRoot = loader.load();
-//
-//			SavedTrialsController controller = loader.getController();
-//			controller.setControlPanelController(this);
-//
-//		    Stage secondaryStage = new Stage();
-//		    secondaryStage.setTitle("Pattern Variables");
-//		    secondaryStage.setScene(new Scene(secondaryRoot, 300, 200));
-//		    secondaryStage.show();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-//	}
 	
 	@FXML
 	private void handlePlayPatternPreviewClick() {

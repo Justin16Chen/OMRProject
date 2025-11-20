@@ -6,10 +6,10 @@
 <?import javafx.scene.text.*?>
 <?import org.example.trialControlPanel.utils.*?>
 
-<AnchorPane prefHeight="514.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.startMenu.StartMenuController">
-   <HBox layoutX="45.0" layoutY="16.0" prefHeight="465.0" prefWidth="504.0">
+<AnchorPane prefHeight="532.0" prefWidth="614.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.startMenu.StartMenuController">
+   <HBox layoutX="45.0" layoutY="16.0" prefHeight="504.0" prefWidth="539.0">
       <VBox prefHeight="401.0" prefWidth="264.0">
-         <Label prefHeight="30.0" prefWidth="216.0" text="Create new experiment">
+         <Label prefHeight="30.0" prefWidth="216.0" text="Create New Experiment">
             <font>
                <Font size="18.0" />
             </font>
@@ -64,20 +64,20 @@
             <VBox.margin>
                <Insets top="5.0" />
             </VBox.margin></TextArea>
-         <HBox prefHeight="6.0" prefWidth="264.0" spacing="10.0">
+         <HBox prefHeight="6.0" prefWidth="264.0">
             <children>
                <Label prefHeight="20.0" prefWidth="210.0" text="Rest time between experiments">
-                  <font>
-                     <Font size="14.0" />
-                  </font>
                   <HBox.margin>
                      <Insets top="19.0" />
                   </HBox.margin>
                </Label>
-               <TimeTextField fx:id="restTimeTextField" />
+               <TimeTextField fx:id="restTimeTextField">
+                  <HBox.margin>
+                     <Insets left="-30.0" />
+                  </HBox.margin></TimeTextField>
             </children>
             <VBox.margin>
-               <Insets top="-5.0" />
+               <Insets top="-10.0" />
             </VBox.margin>
          </HBox>
          <GridPane prefHeight="76.0" prefWidth="264.0">
@@ -96,7 +96,7 @@
                <TextArea fx:id="visualizedOutputTextArea" editable="false" minHeight="10.0" prefHeight="10.0" prefWidth="145.0" text="not specified" GridPane.columnIndex="1" GridPane.rowIndex="1" />
             </children>
             <VBox.margin>
-               <Insets top="10.0" />
+               <Insets top="30.0" />
             </VBox.margin>
          </GridPane>
          <HBox prefHeight="1.0" prefWidth="264.0" spacing="10.0" VBox.vgrow="NEVER">
@@ -111,27 +111,30 @@
             <Insets top="60.0" />
          </padding>
       </VBox>
-      <VBox prefHeight="441.0" prefWidth="240.0" HBox.hgrow="ALWAYS">
+      <VBox prefHeight="504.0" prefWidth="268.0" HBox.hgrow="ALWAYS">
          <padding>
-            <Insets left="40.0" />
+            <Insets left="40.0" top="10.0" />
          </padding>
-         <Label text="AUTO">
+         <Label graphicTextGap="30.0" prefHeight="45.0" prefWidth="216.0" text="AUTONOMOUS">
             <font>
-               <Font size="54.0" />
+               <Font name="Calibri" size="30.0" />
             </font>
             <VBox.margin>
-               <Insets top="20.0" />
+               <Insets left="6.0" top="45.0" />
             </VBox.margin>
          </Label>
-         <Label text="OMR">
+         <Label prefHeight="118.0" prefWidth="209.0" text="OMR">
             <font>
-               <Font size="30.0" />
+               <Font size="80.0" />
             </font>
             <VBox.margin>
-               <Insets top="-10.0" />
+               <Insets top="-30.0" />
             </VBox.margin>
+            <padding>
+               <Insets left="8.0" />
+            </padding>
          </Label>
-         <VBox prefHeight="326.0" prefWidth="200.0">
+         <VBox alignment="BOTTOM_LEFT" prefHeight="244.0" prefWidth="235.0">
             <children>
                <Label text="Current Monitor Info">
                   <font>
@@ -188,9 +191,9 @@
                   </VBox.margin>
                </GridPane>
             </children>
-            <padding>
-               <Insets top="40.0" />
-            </padding>
+            <VBox.margin>
+               <Insets />
+            </VBox.margin>
          </VBox>
       </VBox>
    </HBox>

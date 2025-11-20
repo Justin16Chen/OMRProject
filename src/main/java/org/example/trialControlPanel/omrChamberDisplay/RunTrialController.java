@@ -71,7 +71,7 @@ public class RunTrialController extends CustomController {
     }
 
     public void updateCameraImageView() {
-        Image image = showRawImages ? getCore().getCameraManager().getLatestImage() : getCore().getOmrChamberController().visualizedImageReader.getLatestImage();
+        Image image = showRawImages ? getCore().getCameraManager().getLatestImageFromGrabber() : getCore().getOmrChamberController().visualizedImageReader.getLatestImage();
         cameraDataLabel.setText(image == null ? "Camera Data (None available)" : "Camera Data");
         cameraDataImageView.setImage(image);
     }

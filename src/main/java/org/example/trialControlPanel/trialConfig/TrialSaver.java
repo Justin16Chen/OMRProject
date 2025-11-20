@@ -98,7 +98,7 @@ public class TrialSaver {
 		for (Experiment trial : trials)
 			if (trial.getName().equals(name))
 				return trial.deepCopy();
-		throw new IllegalArgumentException(name + " is not a name of a trial");
+		return null;
 	}
 	public static boolean hasTrial(String trialName) {
 		for (Experiment trial : trials) {

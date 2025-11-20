@@ -15,7 +15,6 @@ import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import org.example.trialControlPanel.omrChamberDisplay.VisualizedImageReader;
 import org.example.trialControlPanel.parentClasses.Core;
-import org.example.utils.MathUtils;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
@@ -277,8 +276,8 @@ public class CameraManager {
         }
     }
 
-    public Image getLatestImage() {
-        if (cameraImageGrabber.getLatestFrame().empty())
+    public Image getLatestImageFromGrabber() {
+        if (cameraImageGrabber.getLatestFrame() == null || cameraImageGrabber.getLatestFrame().empty())
             return null;
         return matToImage(cameraImageGrabber.getLatestFrame());
     }

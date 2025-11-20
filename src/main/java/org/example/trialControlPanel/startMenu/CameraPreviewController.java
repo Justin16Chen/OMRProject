@@ -11,20 +11,25 @@ public class CameraPreviewController extends CustomController {
     @FXML
     private ImageView cameraImageView;
 
-
+    private AnimationTimer updateCameraTimer;
     @Override
     public void setup() {
-        AnimationTimer updateCameraTimer = new AnimationTimer() {
+        getCore().getCameraManager().getImageGrabber().startGrabbing();
+        updateCameraTimer = new AnimationTimer() {
             @Override
             public void handle(long l) {
-                getCore().getCameraManager().updateImageReadingFromCamera();
-                Image image = getCore().getCameraManager().getLatestImage();
+                Image image = getCore().getCameraManager().getLatestImageFromGrabber();
                 if (image != null)
                     cameraImageView.setImage(image);
             }
         };
         updateCameraTimer.start();
 
-        getStage().setOnCloseRequest(e -> updateCameraTimer.stop());
+        getStage().setOnCloseRequest(e -> stop());
+    }
+    private void stop() {
+        if (updateCameraTimer != null)
+            updateCameraTimer.stop();
+        getCore().getCameraManager().getImageGrabber().stopGrabbing();
     }
 }

@@ -78,12 +78,23 @@ public class StartMenuController extends CustomController {
 
         cameraOutputTextArea.setText(getCore().getJsonManager().getLastCameraOutputPath());
         visualizedOutputTextArea.setText(getCore().getJsonManager().getLastVisualizedOutputPath());
+        removeOutdatedQueuedTrials();
+        updateButtonsEnabled();
+
     }
 
     private void updateDefaultQueuedTrials() {
         queuedTrialNames.clear();
         if (TrialSaver.getAllTrialNames().length > 0)
             queuedTrialNames.add(TrialSaver.getAllTrialNames()[0]);
+        updateQueuedTrialsTextArea();
+    }
+    private void removeOutdatedQueuedTrials() {
+        for (int i=0; i<queuedTrialNames.size(); i++)
+            if (TrialSaver.getTrial(queuedTrialNames.get(i)) == null) {
+                queuedTrialNames.remove(i);
+                i--;
+            }
         updateQueuedTrialsTextArea();
     }
 
