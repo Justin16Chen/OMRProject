@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="398.0" prefWidth="474.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.example.trialControlPanel.omrResults.ExperimentResultsController">
+   <children>
+      <Label layoutX="14.0" layoutY="14.0" text="Experiment Results">
+         <font>
+            <Font size="30.0" />
+         </font>
+      </Label>
+      <HBox layoutX="14.0" layoutY="72.0" prefHeight="148.0" prefWidth="447.0" spacing="30.0">
+         <children>
+            <VBox prefHeight="166.0" prefWidth="200.0" spacing="5.0">
+               <children>
+                  <Label fx:id="curExperimentNameLabel" text="Current Experiment Name">
+                     <font>
+                        <Font size="16.0" />
+                     </font>
+                  </Label>
+                  <TextArea fx:id="curExperimentResultsTextArea" prefHeight="78.0" prefWidth="200.0">
+                     <VBox.margin>
+                        <Insets />
+                     </VBox.margin>
+                  </TextArea>
+                  <Label fx:id="numTrialsUntilFailLabel" text="Trials Until Failure">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                     <VBox.margin>
+                        <Insets top="5.0" />
+                     </VBox.margin>
+                  </Label>
+               </children>
+            </VBox>
+            <VBox prefHeight="136.0" prefWidth="216.0" spacing="5.0">
+               <children>
+                  <Label text="Last Successful Trial">
+                     <font>
+                        <Font size="16.0" />
+                     </font>
+                  </Label>
+                  <GridPane>
+                    <columnConstraints>
+                      <ColumnConstraints hgrow="SOMETIMES" maxWidth="136.5" minWidth="10.0" prefWidth="136.5" />
+                      <ColumnConstraints hgrow="SOMETIMES" maxWidth="103.5" minWidth="10.0" prefWidth="79.5" />
+                    </columnConstraints>
+                    <rowConstraints>
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    </rowConstraints>
+                     <children>
+                        <Label text="Speed" />
+                        <Label text="Light Band Brightness" GridPane.rowIndex="1" />
+                        <Label text="Dark Band Brightness" GridPane.rowIndex="2" />
+                        <Label text="Band Width" GridPane.rowIndex="3" />
+                        <Label fx:id="speedLabel" text="Label" GridPane.columnIndex="1" />
+                        <Label fx:id="lightBandBrightnessLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                        <Label fx:id="bandWidthLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                        <Label fx:id="darkBandBrightnessLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                     </children>
+                  </GridPane>
+               </children>
+            </VBox>
+         </children>
+      </HBox>
+      <HBox layoutX="20.0" layoutY="334.0" prefHeight="25.0" prefWidth="441.0" spacing="205.0">
+         <children>
+            <Button mnemonicParsing="false" onAction="#handlePrevExperimentClick" text="Previous Experiment" />
+            <Button mnemonicParsing="false" onAction="#handleNextExperimentClick" text="Next Experiment" />
+         </children>
+      </HBox>
+      <VBox layoutX="20.0" layoutY="234.0" prefHeight="54.0" prefWidth="317.0" spacing="5.0">
+         <children>
+            <Label text="File Path to Save Results">
+               <font>
+                  <Font size="16.0" />
+               </font>
+            </Label>
+            <TextField fx:id="saveFilePathTextField" prefHeight="25.0" prefWidth="359.0" />
+         </children>
+      </VBox>
+   </children>
+   <padding>
+      <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+   </padding>
+</AnchorPane>

@@ -18,7 +18,7 @@ public class Main extends Application {
             throw new RuntimeException(e);
         }
 
-        System.out.println("RUNNING THREADS: ");
+        System.out.println("JAVAFX DONE: RUNNING THREADS: ");
         for (Thread thread : Thread.getAllStackTraces().keySet())
             System.out.println(thread.getName());
     }

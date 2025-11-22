@@ -6,20 +6,26 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 
 public class SocketManager {
-    private final Core core;
     private DataOutputStream outputStream;
+    private ServerSocket serverSocket;
+    private Socket clientSocket;
 
-    public SocketManager(Core core) {
-        this.core = core;
+    public SocketManager() {
     }
+
     public void connectOutputStream() throws IOException {
-        ServerSocket serverSocket = new ServerSocket(JsonManager.RAW_IMAGES_SENDER_PORT);
-        Socket clientSocket = serverSocket.accept();
-        outputStream = new DataOutputStream(clientSocket.getOutputStream());
-        System.out.println("camera connected to python client");
+        serverSocket = new ServerSocket(JsonManager.RAW_IMAGES_SENDER_PORT);
+        try {
+            clientSocket = serverSocket.accept();   // <— will break if serverSocket.close() is called
+            outputStream = new DataOutputStream(clientSocket.getOutputStream());
+            System.out.println("camera connected to python client");
+        } catch (SocketException e) {
+            System.out.println("error connecting socket - probably closed");
+        }
     }
 
     public void writeHeaderData(int width, int height, int fps) throws IOException {
@@ -35,7 +41,16 @@ public class SocketManager {
     public void writeData(byte[] bytes) throws IOException {
         outputStream.write(bytes);
     }
+
     public void flush() throws IOException {
         outputStream.flush();
     }
+
+    public void stop() {
+        // safely close everything
+        try { if (outputStream != null) outputStream.close(); } catch (IOException ignored) {}
+        try { if (clientSocket != null) clientSocket.close(); } catch (IOException ignored) {}
+        try { if (serverSocket != null) serverSocket.close(); } catch (IOException ignored) {}
+    }
 }
+

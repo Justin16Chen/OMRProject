@@ -1,5 +1,6 @@
 package org.example.trialControlPanel.parentClasses;
 
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
@@ -14,6 +15,7 @@ import org.example.trialControlPanel.omrChamberDisplay.OMRChamberController;
 import org.example.trialControlPanel.monitorInfo.MonitorFormat;
 import org.example.trialControlPanel.omrChamberDisplay.RunTrialController;
 import org.example.trialControlPanel.omrChamberDisplay.ChildOMRController;
+import org.example.trialControlPanel.startMenu.LoadingController;
 import org.example.trialControlPanel.startMenu.StartMenuController;
 import org.example.trialControlPanel.trialConfig.Experiment;
 import org.example.trialControlPanel.trialConfig.TrialConfigController;
@@ -29,12 +31,15 @@ public class Core {
 
     public static final int NUM_OMR_CHAMBER_CHILDREN = 1;
 
-    private ArrayList<Stage> stagesToClose;
+    private Thread loadBgThread;
+    private final ArrayList<Stage> stagesToClose;
     private Stage primaryStage;
     private Stage omrChamberStage;
     private Stage[] childOMRChamberStages;
     private Stage runTrialStage;
 
+    private Scene loadingScene;
+    private LoadingController loadingController;
     private Scene startMenuScene;
     private StartMenuController startMenuController;
     private ApplicationMonitorManager startMenuMonitorManager;
@@ -56,7 +61,7 @@ public class Core {
     public Core() {
         stagesToClose = new ArrayList<>();
 
-        socketManager = new SocketManager(this);
+        socketManager = new SocketManager();
         jsonManager = new JsonManager();
         cameraManager = new CameraManager(0, this);
         pythonRunner = new PythonRunner();
@@ -80,54 +85,92 @@ public class Core {
 
     private void closeApplication() {
         System.out.println("CLOSING APPLICATION");
+        socketManager.stop();
+        loadBgThread.interrupt();
         for (Stage stage : stagesToClose)
             stage.close();
         cameraManager.stopEverything();
         pythonRunner.stopRunning();
+
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        System.out.println("RUNNING THREADS: ");
+        for (Thread thread : Thread.getAllStackTraces().keySet())
+            System.out.println(thread.getName());
     }
 
     public void init(Stage primaryStage) {
+        // load only the necessities
         try {
             // setup stages first so controllers don't get null pointers when calling getters
             this.primaryStage = primaryStage; // control panel stage
             primaryStage.setTitle("AutoOMR");
+            primaryStage.setResizable(false);
 
             primaryStage.setOnCloseRequest(e -> {
                 closeApplication();
             });
 
             // load FXML and controllers
+            loadLoadingScreen();
+            loadingController.setup();
+            primaryStage.setScene(loadingScene);
+            primaryStage.show();
+
+            // load heavy stuff in background thread to not block JavaFX thread
+            loadBgThread = new Thread(() -> {
+                finishInitializingBackgroundWork();
+
+                // setup controllers last (to avoid null pointer exceptions)
+                Platform.runLater(() -> {
+                    startMenuController.setup();
+                    trialConfigController.setup();
+                    omrChamberController.setup();
+                    primaryStage.setScene(startMenuScene);
+
+                    // connect input socket
+                    omrChamberController.connectVisualizedImageInputSocket();
+                });
+            }, "load bg work on start");
+            loadBgThread.start();
+        } catch(Exception e) {
+            System.out.println("FAILED TO LOAD STAGES/SCENES/CONTROLLERS IN CORE");
+            e.printStackTrace();
+        }
+    }
+
+    // want to first load loading scene, then load everything else
+    private void finishInitializingBackgroundWork() {
+        try {
+            // load FXML and controllers
             loadStartMenu();
             loadTrialConfig();
             loadOMRChamberScenesAndControllers();
 
-            // setup stages
-            primaryStage.setScene(startMenuScene);
-
-            primaryStage.setResizable(false);
-            primaryStage.show();
-
             // setup primary stage monitor format
             startMenuMonitorManager = new ApplicationMonitorManager(primaryStage, mf -> startMenuController.setStartMenuMonitorFormat(mf));
 
-            // setup controllers last (to avoid null pointer exceptions)
-            startMenuController.setup();
-            trialConfigController.setup();
-            omrChamberController.setup();
+            if (Thread.currentThread().isInterrupted())
+                return;
 
             // connect output socket
             try {
                 System.out.println("before connecting socket");
                 socketManager.connectOutputStream();
+
+                if (Thread.currentThread().isInterrupted())
+                    return;
+
                 socketManager.writeHeaderData(cameraManager.getFrameWidth(), cameraManager.getFrameHeight(), fps);
                 System.out.println("after connecting socket");
             } catch (IOException e) {
                 System.out.println("failed to connect socketManager.outputStream/failed to write header data");
                 throw new RuntimeException(e);
             }
-            // connect input socket
-            omrChamberController.connectVisualizedImageInputSocket();
-
         } catch(Exception e) {
             System.out.println("FAILED TO LOAD STAGES/SCENES/CONTROLLERS IN CORE");
             e.printStackTrace();
@@ -152,6 +195,14 @@ public class Core {
         }
 
         omrChamberController.setupAndStartExperiments(chamberMonitorFormats[0], experiments, restTime);
+    }
+    public void loadLoadingScreen() throws IOException {
+        FXMLLoader loader = getLoaderFromResources("/patternControlPanelFXML/Loading.fxml");
+        loadingScene = new Scene(loader.load());
+        loadingController = loader.getController();
+        loadingController.setCore(this);
+        loadingController.setStage(primaryStage);
+
     }
     public void loadStartMenu() throws IOException {
         FXMLLoader loader = getLoaderFromResources("/patternControlPanelFXML/StartMenu.fxml");
@@ -196,9 +247,10 @@ public class Core {
         omrChamberStage.initStyle(StageStyle.UNDECORATED);
         stagesToClose.add(omrChamberStage);
 
+        for (int i=0; i<NUM_OMR_CHAMBER_CHILDREN; i++)
+            removeStageFromCloseList(childOMRChamberStages[i]);
         childOMRChamberStages = new Stage[NUM_OMR_CHAMBER_CHILDREN];
         for (int i=0; i<NUM_OMR_CHAMBER_CHILDREN; i++) {
-            removeStageFromCloseList(childOMRChamberStages[i]);
             childOMRChamberStages[i] = new Stage();
             childOMRChamberStages[i].setTitle("OMR Chamber");
             childOMRChamberStages[i].initStyle(StageStyle.UNDECORATED);
