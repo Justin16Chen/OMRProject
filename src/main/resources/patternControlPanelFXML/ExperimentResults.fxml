@@ -15,7 +15,7 @@
 
 
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="398.0" prefWidth="474.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="org.example.trialControlPanel.omrResults.ExperimentResultsController">
+            fx:controller="org.example.trialControlPanel.omrResults.ResultsController">
    <children>
       <Label layoutX="14.0" layoutY="14.0" text="Experiment Results">
          <font>
@@ -26,12 +26,12 @@
          <children>
             <VBox prefHeight="166.0" prefWidth="200.0" spacing="5.0">
                <children>
-                  <Label fx:id="curExperimentNameLabel" text="Current Experiment Name">
+                  <Label fx:id="experimentNameLabel" text="Current Experiment Name">
                      <font>
                         <Font size="16.0" />
                      </font>
                   </Label>
-                  <TextArea fx:id="curExperimentResultsTextArea" prefHeight="78.0" prefWidth="200.0">
+                  <TextArea fx:id="experimentResultsTextArea" prefHeight="78.0" prefWidth="200.0">
                      <VBox.margin>
                         <Insets />
                      </VBox.margin>

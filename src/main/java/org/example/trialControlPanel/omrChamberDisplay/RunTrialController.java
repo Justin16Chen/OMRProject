@@ -26,7 +26,6 @@ public class RunTrialController extends CustomController {
     @Override
     public void setup() {
         getStage().setOnCloseRequest(e -> {
-            System.out.println("closing run trial controller");
             getCore().getOmrChamberController().stopTrial(true);
         });
         showRawImages = true;
@@ -35,7 +34,6 @@ public class RunTrialController extends CustomController {
     private void handleStopEarlyClick() {
         System.out.println("early stop click");
         getCore().getOmrChamberController().stopTrial(true);
-        getStage().close();
     }
     private boolean showRawImages;
     @FXML
@@ -54,8 +52,8 @@ public class RunTrialController extends CustomController {
         trialLabel.setText(displaySM.getCurExperimentIndex() + 1 + "/" + displaySM.getNumExperiments());
         trialProgress.setProgress((displaySM.getCurExperimentIndex() + 1.) / displaySM.getNumExperiments());
 
-        cycleLabel.setText((displaySM.getCurTrial() + 1) + "/" + experiment.getMaxTests());
-        cycleProgress.setProgress((displaySM.getCurTrial() + 1.) / experiment.getMaxTests());
+        cycleLabel.setText((displaySM.getCurTrialIndex() + 1) + "/" + experiment.getMaxTests());
+        cycleProgress.setProgress((displaySM.getCurTrialIndex() + 1.) / experiment.getMaxTests());
 
         int totalTime = (int) displaySM.getTotalTime();
         totalTimeLabel.setText(formatSeconds((int) displaySM.getTotalSecondsRunning()) + "/" + formatSeconds(totalTime));

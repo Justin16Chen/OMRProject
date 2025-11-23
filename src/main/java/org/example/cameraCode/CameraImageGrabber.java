@@ -1,6 +1,8 @@
 package org.example.cameraCode;
 
 import org.opencv.core.Mat;
+import org.opencv.imgcodecs.Imgcodecs;
+import org.opencv.imgproc.Imgproc;
 import org.opencv.videoio.VideoCapture;
 
 import java.util.ArrayList;
@@ -36,7 +38,7 @@ public class CameraImageGrabber {
 
         numFramesGrabbed = 0;
         running = true;
-        grabThread = new Thread(this::grabLoop, "frame grabber thread");
+        grabThread = new Thread(this::grabLoopTesting, "frame grabber thread");
         grabThread.setDaemon(true);
         grabThread.start();
     }
@@ -69,6 +71,33 @@ public class CameraImageGrabber {
                 // If read fails, sleep to avoid burning CPU
                 try { Thread.sleep(1); } catch (InterruptedException ignored) {}
             }
+        }
+    }
+
+    public static String testTrialPath = "C:/Users/justi/Documents/omr images/raw images/wt1_cw_highw_lowspeed";
+    private int testGrabImageNum = 1;
+    private void grabLoopTesting() {
+        double lastUpdateTime = System.nanoTime() * 1e-6;
+        while (running) {
+            double currentTime = System.nanoTime() * 1e-6;
+            double dt = currentTime - lastUpdateTime;
+            previousDts.add(dt);
+            lastUpdateTime = currentTime;
+            if (previousDts.size() > numStableFrames)
+                previousDts.removeFirst();
+
+            Mat bgra = Imgcodecs.imread(testTrialPath + "/" + testGrabImageNum + ".png", Imgcodecs.IMREAD_UNCHANGED);
+
+            // Convert BGRA → BGR if needed
+            Mat bgr = new Mat();
+            if (bgra.channels() == 4)
+                Imgproc.cvtColor(bgra, bgr, Imgproc.COLOR_BGRA2BGR);
+            else
+                bgr = bgra;
+
+            latestFrame = bgr;
+            numFramesGrabbed++;
+            testGrabImageNum++;
         }
     }
 

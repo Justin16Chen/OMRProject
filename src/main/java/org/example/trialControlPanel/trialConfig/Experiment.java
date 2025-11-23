@@ -44,10 +44,6 @@ public class Experiment {
     public void setRestTime(int time) {
         this.restTime = time;
     }
-    public int getCycleTime() {
-        return restTime + testTime;
-    }
-
     public int getDimAmount() {
         return dimAmount;
     }
@@ -71,7 +67,7 @@ public class Experiment {
         return name;
     }
 
-    public Experiment deepCopy() {
+    public Experiment copy() {
         return new Experiment(
                 name,
                 initialPattern,

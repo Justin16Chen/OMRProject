@@ -60,4 +60,8 @@ public class Pattern {
 			throw new IllegalArgumentException("bandwidth has to be positive");
 		this.bandWidth = bandWidth;
 	}
+
+	public Pattern copy() {
+		return new Pattern(direction, speed, lightBrightness, darkBrightness, bandWidth);
+	}
 }

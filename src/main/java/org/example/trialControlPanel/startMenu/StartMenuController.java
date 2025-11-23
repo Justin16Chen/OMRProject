@@ -7,6 +7,7 @@ import javafx.scene.control.TextArea;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import org.example.cameraCode.CameraManager;
+import org.example.cameraCode.VisualizedImageReader;
 import org.example.localProperties.LocalPropsReader;
 import org.example.trialControlPanel.parentClasses.Core;
 import org.example.trialControlPanel.parentClasses.CustomController;
@@ -236,9 +237,10 @@ public class StartMenuController extends CustomController {
         }
         clearQueuedTrialsButton.setDisable(false);
 
-        if (cameraOutputTextArea.getText().equals("not specified") || visualizedOutputTextArea.getText().equals("not specified") || !cameraPortTextField.hasValidInput())
-            runQueueButton.setDisable(true);
-        else
-            runQueueButton.setDisable(false);
+        boolean invalidFilePath = cameraOutputTextArea.getText().equals("not specified") || visualizedOutputTextArea.getText().equals("not specified") || !cameraPortTextField.hasValidInput();
+        boolean savingLastRunQueue = getCore().getCameraManager().getSendState() == CameraManager.SendState.IN_PROGRESS ||
+                getCore().getCameraManager().getSaveState() == CameraManager.SaveState.IN_PROGRESS ||
+                (getCore().getOmrChamberController().visualizedImageReader != null && getCore().getOmrChamberController().visualizedImageReader.getState() != VisualizedImageReader.State.WAITING_TO_RECEIVE);
+        runQueueButton.setDisable(invalidFilePath || savingLastRunQueue);
     }
 }

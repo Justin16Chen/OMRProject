@@ -97,7 +97,7 @@ public class TrialSaver {
 	public static Experiment getTrial(String name) {
 		for (Experiment trial : trials)
 			if (trial.getName().equals(name))
-				return trial.deepCopy();
+				return trial.copy();
 		return null;
 	}
 	public static boolean hasTrial(String trialName) {
@@ -116,7 +116,7 @@ public class TrialSaver {
 				break;
 			}
 		}
-		trials.add(newTrial.deepCopy());
+		trials.add(newTrial.copy());
 		writeToJSONFile();
 	}
 

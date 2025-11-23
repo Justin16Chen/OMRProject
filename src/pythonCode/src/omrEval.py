@@ -344,6 +344,7 @@ if __name__ == "__main__":
                 analysis_results = torch.zeros((3, lstm_window_size))
 
             img = analyze_camera_img(image_i, img, ssd_model, ssd_transform, category_index, lstm_model, lstm_transform, analysis_results, lstm_window_size, angle_offset_data, camera_fps, model_device)
+            img.show()
 
             # print("time to analyze camera img: " + str(time.time() - timeA))
 

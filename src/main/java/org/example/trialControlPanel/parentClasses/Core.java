@@ -15,6 +15,7 @@ import org.example.trialControlPanel.omrChamberDisplay.OMRChamberController;
 import org.example.trialControlPanel.monitorInfo.MonitorFormat;
 import org.example.trialControlPanel.omrChamberDisplay.RunTrialController;
 import org.example.trialControlPanel.omrChamberDisplay.ChildOMRController;
+import org.example.trialControlPanel.omrResults.ResultsController;
 import org.example.trialControlPanel.startMenu.LoadingController;
 import org.example.trialControlPanel.startMenu.StartMenuController;
 import org.example.trialControlPanel.trialConfig.Experiment;
@@ -36,8 +37,7 @@ public class Core {
     private Stage primaryStage;
     private Stage omrChamberStage;
     private Stage[] childOMRChamberStages;
-    private Stage runTrialStage;
-
+    private Stage trialMetadataStage;
     private Scene loadingScene;
     private LoadingController loadingController;
     private Scene startMenuScene;
@@ -49,8 +49,9 @@ public class Core {
     private Scene[] childOMRChamberScenes;
     private OMRChamberController omrChamberController;
     private ChildOMRController[] childOMRChamberControllers;
-    private Scene runTrialScene;
     private RunTrialController runTrialController;
+    private Scene loadingResultsScene, resultsScene;
+    private ResultsController resultsController;
 
     private final CameraManager cameraManager;
     private final SocketManager socketManager;
@@ -190,6 +191,7 @@ public class Core {
         try {
             loadOMRChamberEverything(chamberMonitorFormats, experiments);
             loadRunTrialEverything();
+            loadExperimentResultsEverything();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -247,8 +249,10 @@ public class Core {
         omrChamberStage.initStyle(StageStyle.UNDECORATED);
         stagesToClose.add(omrChamberStage);
 
-        for (int i=0; i<NUM_OMR_CHAMBER_CHILDREN; i++)
-            removeStageFromCloseList(childOMRChamberStages[i]);
+        if (childOMRChamberStages != null)
+            for (int i=0; i<NUM_OMR_CHAMBER_CHILDREN; i++)
+                removeStageFromCloseList(childOMRChamberStages[i]);
+
         childOMRChamberStages = new Stage[NUM_OMR_CHAMBER_CHILDREN];
         for (int i=0; i<NUM_OMR_CHAMBER_CHILDREN; i++) {
             childOMRChamberStages[i] = new Stage();
@@ -289,33 +293,42 @@ public class Core {
     public void loadRunTrialEverything() throws IOException {
         // remove previous runTrialStage
         for (Stage stage : stagesToClose)
-            if (stage == runTrialStage) {
-                stagesToClose.remove(runTrialStage);
+            if (stage == trialMetadataStage) {
+                stagesToClose.remove(trialMetadataStage);
                 break;
             }
 
-        runTrialStage = new Stage();
-        runTrialStage.setTitle("Current Trial Info");
-        runTrialStage.show();
-        stagesToClose.add(runTrialStage);
+        trialMetadataStage = new Stage();
+        trialMetadataStage.setTitle("Current Trial Info");
+        trialMetadataStage.show();
+        stagesToClose.add(trialMetadataStage);
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/RunningTrialInfo.fxml"));
-        runTrialScene = new Scene(loader.load());
+        Scene runTrialScene = new Scene(loader.load());
         runTrialController = loader.getController();
         runTrialController.setCore(this);
-        runTrialController.setStage(runTrialStage);
-        runTrialStage.setScene(runTrialScene);
+        runTrialController.setStage(trialMetadataStage);
+        trialMetadataStage.setScene(runTrialScene);
         runTrialController.setup();
 
         runTrialController.setDisplaySM(omrChamberController.getDisplaySM());
-        runTrialStage.setX(primaryStage.getX());
-        runTrialStage.setY(primaryStage.getY());
+        trialMetadataStage.setX(primaryStage.getX());
+        trialMetadataStage.setY(primaryStage.getY());
+    }
+    public void loadExperimentResultsEverything() throws IOException {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/ExperimentResults.fxml"));
+        resultsScene = new Scene(loader.load());
+        resultsController = loader.getController();
+        resultsController.setCore(this);
+
+        loader = new FXMLLoader(getClass().getResource("/patternControlPanelFXML/LoadingExperimentResults.fxml"));
+        loadingResultsScene = new Scene(loader.load());
     }
 
     public Stage getPrimaryStage() {
         return primaryStage;
     }
-
+    public Stage getTrialMetadataStage() { return trialMetadataStage; }
     public Scene getStartMenuScene() {
         return startMenuScene;
     }
@@ -329,9 +342,6 @@ public class Core {
     public TrialConfigController getTrialConfigController() {
         return trialConfigController;
     }
-    public Scene getOmrChamberScene() {
-        return omrChamberScene;
-    }
     public OMRChamberController getOmrChamberController() {
         return omrChamberController;
     }
@@ -341,4 +351,7 @@ public class Core {
     public RunTrialController getRunTrialController() {
         return runTrialController;
     }
+    public ResultsController getResultsController() { return resultsController; }
+    public Scene getResultsScene() { return resultsScene; }
+    public Scene getLoadingResultsScene() { return loadingResultsScene; }
 }

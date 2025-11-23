@@ -1,5 +1,6 @@
-package org.example.trialControlPanel.omrChamberDisplay;
+package org.example.cameraCode;
 
+import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
@@ -76,6 +77,8 @@ public class VisualizedImageReader {
             ByteBuffer bb = ByteBuffer.wrap(header);
 //                System.out.println("time to create buffer: " + (System.currentTimeMillis() - time));
             int omr = bb.getInt();
+            boolean omrDetected = omr == 1;
+            System.out.println("OMR detected: " + omrDetected);
 
 //                System.out.println("time to read w&h bytes: " + (System.currentTimeMillis() - time));
 
@@ -131,6 +134,7 @@ public class VisualizedImageReader {
             System.out.println("finished saving " + receivedImages.size() + " annotated images");
             receivedImages.clear();
             state = State.WAITING_TO_RECEIVE;
+            Platform.runLater(core.getStartMenuController()::updateButtonsEnabled);
         }, "save visualized images thread").start();
     }
 

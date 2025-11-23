@@ -2,12 +2,12 @@ package org.example.trialControlPanel.omrChamberDisplay;
 
 import javafx.application.Platform;
 import org.example.cameraCode.CameraManager;
+import org.example.cameraCode.VisualizedImageReader;
 import org.example.trialControlPanel.parentClasses.Core;
 import org.example.trialControlPanel.trialConfig.Experiment;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Set;
 
 public class DisplayStateManager {
 
@@ -38,7 +38,10 @@ public class DisplayStateManager {
     public Experiment getCurExperiment() {
         return experiments.get(currentExperimentIndex);
     }
-    public int getCurTrial() {
+    public ArrayList<Experiment> getExperiments() {
+        return experiments;
+    }
+    public int getCurTrialIndex() {
         return currentTrial;
     }
     public double getCurStateTime() {
@@ -82,27 +85,27 @@ public class DisplayStateManager {
             }
         }, "update display SM thread");
         updateThread.start();
-
     }
+
     private void update() {
         updateState(); // update any logic that the OMR Chamber Controller wants to update during the current DisplayState
 
         switch (state) {
             case TESTING:
                 if (getCurStateTime() >= getCurExperiment().getTestTime()) {
-                    if (getCurTrial() + 1 >= getCurExperiment().getMaxTests() && getCurExperimentIndex() + 1 >= experiments.size()) {
+                    if (getCurTrialIndex() + 1 >= getCurExperiment().getMaxTests() && getCurExperimentIndex() + 1 >= experiments.size())
                         setNewState(DisplayState.NORMAL_STOP);
-                    } else
+                    else
                         setNewState(DisplayState.RESTING);
                 }
                 break;
             case RESTING:
                 if (getCurStateTime() >= getCurExperiment().getRestTime()) {
                     boolean canMoveOn = core.getCameraManager().getSendState() == CameraManager.SendState.READY
-                            && core.getCameraManager().getSaveState() == CameraManager.SaveState.FINISHED
+                            && core.getCameraManager().getSaveState() == CameraManager.SaveState.READY
                             && visualizedImageReader.getState() == VisualizedImageReader.State.WAITING_TO_RECEIVE;
                     if (canMoveOn) {
-                        if (getCurTrial() + 1 >= getCurExperiment().getMaxTests())
+                        if (getCurTrialIndex() + 1 >= getCurExperiment().getMaxTests())
                             setNewState(DisplayState.IN_BETWEEN_EXPERIMENTS);
                         else {
                             waitForCameraToReachStableFPS();
@@ -116,7 +119,7 @@ public class DisplayStateManager {
             case IN_BETWEEN_EXPERIMENTS:
                 if (getCurStateTime() > inBetweenExperimentsRestTime
                         && core.getCameraManager().getSendState() == CameraManager.SendState.READY
-                        && core.getCameraManager().getSaveState() == CameraManager.SaveState.FINISHED) {
+                        && core.getCameraManager().getSaveState() == CameraManager.SaveState.READY) {
                     waitForCameraToReachStableFPS();
 
                     currentExperimentIndex++;
