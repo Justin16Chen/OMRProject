@@ -33,11 +33,6 @@ public class OMRChamberController extends CustomController {
 		visualizedImageReader.connectInputStream();
 	}
 	private void declareDisplaySMStateLogic() {
-		displaySM.setTransitionFunction(DisplayState.TESTING, DisplayState.NORMAL_STOP, () -> {
-//			checkToFillImages();
-			Platform.runLater(() -> stopTrial(false));
-			System.out.println("testing -> normal stop transition function called");
-		});
 		// this happens after stopTrial is called, so it runs in the background after the OMR chamber windows have been closed
 		displaySM.setUpdateFunction(DisplayState.NORMAL_STOP, () -> {
 			CameraManager cm = getCore().getCameraManager();
@@ -45,7 +40,6 @@ public class OMRChamberController extends CustomController {
 			if (cm.finishedSendingImagesToSSD() && cm.getSaveState() == CameraManager.SaveState.WAITING && visualizedImageReader.getState() == VisualizedImageReader.State.WAITING_TO_SAVE) {
 				cm.saveImageData(getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrialIndex()).toString());
 				visualizedImageReader.saveAndClearStoredImages(getVisualizedImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrialIndex()).toString());
-				displaySM.stopUpdating();
 				System.out.println("finished saving everything after experiments ended");
 			}
 		});
@@ -113,7 +107,7 @@ public class OMRChamberController extends CustomController {
 		});
 	}
 
-	public void stopTrial(boolean earlyStop) {
+	public void stopShowingExperiments(boolean earlyStop) {
 		patternDrawer.stop();
 		Platform.runLater(getStage()::close);
 		for (ChildOMRController child : getCore().getChildOMRControllers()) {
@@ -150,8 +144,12 @@ public class OMRChamberController extends CustomController {
 						&& getCore().getCameraManager().getSaveState() == CameraManager.SaveState.READY
 						&& visualizedImageReader.getState() == VisualizedImageReader.State.WAITING_TO_RECEIVE;
             }
-			getCore().getTrialMetadataStage().setScene(getCore().getResultsScene());
-		}, "wait for finished results to open results scene");
+			Platform.runLater(() -> {
+				getCore().getTrialMetadataStage().setScene(getCore().getResultsScene());
+				getCore().getResultsController().setup();
+				System.out.println("SETTING RESULTS SCENE TO NORMAL");
+			});
+		}, "wait for finished results to open results scene").start();
 	}
 
 	@FXML

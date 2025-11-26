@@ -52,6 +52,7 @@ public class CameraManager {
 
     private final CameraImageGrabber cameraImageGrabber;
     private final ArrayList<Mat> images;
+    public final ArrayList<Double> timeStampsMs;
     private final AtomicInteger numCameraImagesSaved, sendIndex;
     private int maxImageIndex; // index of last saved image - num images to save - maxImageIndex + 1
     private volatile SaveState saveState;
@@ -67,6 +68,7 @@ public class CameraManager {
         this.core = core;
 
         images = new ArrayList<>();
+        timeStampsMs = new ArrayList<>();
         readImagesFromCamera = true;
         numCameraImagesSaved = new AtomicInteger(0);
         sendIndex = new AtomicInteger(0);
@@ -115,6 +117,7 @@ public class CameraManager {
         numCameraImagesSaved.set(0);
         sendIndex.set(0);
         images.clear();
+        timeStampsMs.clear();
     }
     public int getMaxImageIndex() {
         return maxImageIndex;
@@ -185,6 +188,7 @@ public class CameraManager {
         if(readImagesFromCamera && latestFrame != null) {
             numCameraImagesSaved.set(numCameraImagesSaved.get() + 1);
             images.add(latestFrame.clone());
+            timeStampsMs.add(System.nanoTime() * 1.e-6);
             if (numCameraImagesSaved.get() > maxImageIndex + 1 && maxImageIndex > 0) {
                 // turn off camera once enough images are saved
                 readImagesFromCamera = false;

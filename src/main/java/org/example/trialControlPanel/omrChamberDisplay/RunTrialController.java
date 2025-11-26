@@ -26,14 +26,14 @@ public class RunTrialController extends CustomController {
     @Override
     public void setup() {
         getStage().setOnCloseRequest(e -> {
-            getCore().getOmrChamberController().stopTrial(true);
+            getCore().getOmrChamberController().stopShowingExperiments(true);
         });
         showRawImages = true;
     }
     @FXML
     private void handleStopEarlyClick() {
         System.out.println("early stop click");
-        getCore().getOmrChamberController().stopTrial(true);
+        getCore().getOmrChamberController().stopShowingExperiments(true);
     }
     private boolean showRawImages;
     @FXML

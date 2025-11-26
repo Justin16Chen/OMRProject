@@ -91,22 +91,36 @@ public class DisplayStateManager {
         updateState(); // update any logic that the OMR Chamber Controller wants to update during the current DisplayState
 
         switch (state) {
+            case NORMAL_STOP:
+                if (imagesAreCompletelySaved()) {
+                    System.out.println("adding last experiment to results controller");
+                    double[] result = VisualizedImageReader.getOMRInfo(visualizedImageReader.omrDetected, core.getCameraManager().timeStampsMs);
+                    core.getResultsController().addTrialResult(result);
+                    core.getResultsController().finishExperiment(getCurExperiment(), core.getOmrChamberController().patternDrawer.getPatternData());
+                    stopUpdating();
+                }
+                break;
             case TESTING:
                 if (getCurStateTime() >= getCurExperiment().getTestTime()) {
-                    if (getCurTrialIndex() + 1 >= getCurExperiment().getMaxTests() && getCurExperimentIndex() + 1 >= experiments.size())
+                    if (getCurTrialIndex() + 1 >= getCurExperiment().getMaxTests() && getCurExperimentIndex() + 1 >= experiments.size()) {
                         setNewState(DisplayState.NORMAL_STOP);
+
+                        Platform.runLater(() -> core.getOmrChamberController().stopShowingExperiments(false));
+                        System.out.println("testing -> normal stop transition function called");
+                    }
                     else
                         setNewState(DisplayState.RESTING);
                 }
                 break;
             case RESTING:
                 if (getCurStateTime() >= getCurExperiment().getRestTime()) {
-                    boolean canMoveOn = core.getCameraManager().getSendState() == CameraManager.SendState.READY
-                            && core.getCameraManager().getSaveState() == CameraManager.SaveState.READY
-                            && visualizedImageReader.getState() == VisualizedImageReader.State.WAITING_TO_RECEIVE;
-                    if (canMoveOn) {
-                        if (getCurTrialIndex() + 1 >= getCurExperiment().getMaxTests())
+                    if (imagesAreCompletelySaved()) {
+                        double[] result = VisualizedImageReader.getOMRInfo(visualizedImageReader.omrDetected, core.getCameraManager().timeStampsMs);
+                        core.getResultsController().addTrialResult(result);
+                        if (getCurTrialIndex() + 1 >= getCurExperiment().getMaxTests()) {
+                            core.getResultsController().finishExperiment(getCurExperiment(), core.getOmrChamberController().patternDrawer.getPatternData());
                             setNewState(DisplayState.IN_BETWEEN_EXPERIMENTS);
+                        }
                         else {
                             waitForCameraToReachStableFPS();
 
@@ -129,6 +143,12 @@ public class DisplayStateManager {
                 break;
         }
         Platform.runLater(core.getRunTrialController()::updateUILabels);
+    }
+
+    private boolean imagesAreCompletelySaved() {
+        return core.getCameraManager().getSendState() == CameraManager.SendState.READY
+                && core.getCameraManager().getSaveState() == CameraManager.SaveState.READY
+                && visualizedImageReader.getState() == VisualizedImageReader.State.WAITING_TO_RECEIVE;
     }
 
     public void stopUpdating() {

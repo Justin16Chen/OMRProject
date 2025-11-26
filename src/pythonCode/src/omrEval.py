@@ -221,7 +221,7 @@ def analyze_camera_img(img_i, original_img, model, ssd_input_transform, ci, lstm
 
     # drawing head and tail angle
     draw.text(xy=(text_left, top+text_inc*3), text="Head Angle (deg): " + str(math.floor(results[0, cur_i].item()*100)/100), font=fnt, fill="black")
-    draw.text(xy=(text_left, top+text_inc*4), text="Tail Angle (deg): " + str(math.floor(results[1, cur_i].item())*100/100), font=fnt, fill="black")
+    draw.text(xy=(text_left, top+text_inc*4), text="Tail Angle (deg): " + str(math.floor(results[1, cur_i].item()*100)/100), font=fnt, fill="black")
 
     # print("starting sliding window")
     # sliding window approach
@@ -306,7 +306,7 @@ if __name__ == "__main__":
 
     # lstm preprocessing settings
     lstm_window_size = 48
-    analysis_results = torch.zeros((3, lstm_window_size)) # stores head and tail angles and whether omr is detected at specific frame
+    analysis_results = torch.zeros((3, lstm_window_size)) # stores head and tail angles and whether omr is detected at specific frame BUT: FOR OMR DETECTION I JUST OVERWRITE VALUES AND ONLY STORE CURRENT PREDICTION AT [2,0]
     angle_offset_data = torch.tensor([0, 0, 5 * 180 / math.pi]) # 0 is head offsets, 1 is tail offsets, 2 is threshold to offset
 
     # initializing socket connections
@@ -343,8 +343,8 @@ if __name__ == "__main__":
             if image_i == 0:
                 analysis_results = torch.zeros((3, lstm_window_size))
 
-            img = analyze_camera_img(image_i, img, ssd_model, ssd_transform, category_index, lstm_model, lstm_transform, analysis_results, lstm_window_size, angle_offset_data, camera_fps, model_device)
-            img.show()
+            # img = analyze_camera_img(image_i, img, ssd_model, ssd_transform, category_index, lstm_model, lstm_transform, analysis_results, lstm_window_size, angle_offset_data, camera_fps, model_device)
+            # img.show()
 
             # print("time to analyze camera img: " + str(time.time() - timeA))
 

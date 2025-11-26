@@ -18,6 +18,9 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class VisualizedImageReader {
     public enum State {
@@ -30,11 +33,13 @@ public class VisualizedImageReader {
     private DataInputStream visualizedImageDataIn;
     private boolean connected;
     private final ArrayList<WritableImage> receivedImages;
+    public final ArrayList<Boolean> omrDetected;
     private volatile State state;
     public VisualizedImageReader(Core core) {
         this.core = core;
         connected = false;
         receivedImages = new ArrayList<>();
+        omrDetected = new ArrayList<>();
         state = State.WAITING_TO_RECEIVE;
     }
 
@@ -55,6 +60,7 @@ public class VisualizedImageReader {
             throw new IllegalStateException("data input stream is not connected in VisualizedImageReader.java");
 
         receivedImages.clear();
+        omrDetected.clear();
         state = State.RECEIVING;
 
         new Thread(() -> {
@@ -76,10 +82,11 @@ public class VisualizedImageReader {
 //                System.out.println("time to read header: " + (System.currentTimeMillis() - time));
             ByteBuffer bb = ByteBuffer.wrap(header);
 //                System.out.println("time to create buffer: " + (System.currentTimeMillis() - time));
-            int omr = bb.getInt();
-            boolean omrDetected = omr == 1;
-            System.out.println("OMR detected: " + omrDetected);
 
+            int omr = bb.getInt();
+            boolean omrDetectedThisFrame = omr == 1;
+            omrDetected.add(omrDetectedThisFrame);
+            System.out.println("OMR detected: " + omrDetectedThisFrame);
 //                System.out.println("time to read w&h bytes: " + (System.currentTimeMillis() - time));
 
             int byteCount = core.getCameraManager().getFrameWidth() * core.getCameraManager().getFrameHeight() * 3;
@@ -145,5 +152,72 @@ public class VisualizedImageReader {
         if (!receivedImages.isEmpty())
             return receivedImages.getFirst();
         return null;
+    }
+
+    /*
+    returns [numInstances, average duration millis, median millis]
+    assumes that the reflex started AS early as possible
+    (before the first frame it is detected but after the last frame it is not detected). should i assume this?
+    */
+    public static double[] getOMRInfo(ArrayList<Boolean> omrDetected, ArrayList<Double> timeStampsMs) {
+        if (omrDetected.size() != timeStampsMs.size())
+            throw new IllegalArgumentException("omr size of " + omrDetected.size() + " does not equal time stamp size of " + timeStampsMs.size());
+        int numInstances = 0;
+        ArrayList<Double> durationsMs = new ArrayList<>();
+        durationsMs.add(0.);
+
+        boolean cur = omrDetected.getFirst();
+        boolean next;
+        for (int i=0; i<omrDetected.size(); i++) {
+            next = i < omrDetected.size() - 1 && omrDetected.get(i + 1);
+
+            // update # instances
+            if (cur && !next)
+                numInstances++;
+
+            // update duration
+            if (cur) {
+                if (i > 0) {
+                    double timeDiffMs = timeStampsMs.get(i) - timeStampsMs.get(i - 1);
+                    durationsMs.set(durationsMs.size() - 1, durationsMs.getLast() + timeDiffMs);
+                }
+                if (!next)
+                    durationsMs.add(0.);
+            }
+
+            cur = next;
+        }
+        durationsMs.removeLast();
+
+        System.out.println("durations: " + durationsMs);
+        if (durationsMs.isEmpty())
+            return new double[]{ 0, 0, 0 };
+
+        List<Double> sortedDurationsMs = durationsMs.stream().sorted().toList();
+
+        // calculate stats
+        double totalDurationMs = durationsMs.stream().reduce(0., Double::sum);
+        double avgDurationMs = totalDurationMs / numInstances;
+        double medianIndex = durationsMs.size() * 0.5 - 0.5;
+        System.out.println("median index: " + medianIndex);
+        double median;
+        if (durationsMs.size() % 2 == 1) {
+            median = sortedDurationsMs.get((int) medianIndex);
+            System.out.println("median normal: " + median);
+        }
+        else {
+            double lowerVal = sortedDurationsMs.get((int) medianIndex);
+            double upperVal = sortedDurationsMs.get((int) (medianIndex + 1));
+            median = (lowerVal + upperVal) * 0.5;
+            System.out.println("median average: " + median);
+        }
+        return new double[]{ numInstances, avgDurationMs, median };
+    }
+
+    public static void main(String[] args) {
+        ArrayList<Boolean> omrDetected = new ArrayList<>(List.of(true, false, true, true, false, true, false, false, false, true, true, true, false));
+        ArrayList<Double> timestampsMs = new ArrayList<>(List.of(1.,   40.,  62.,   86.,  110.,  130., 145.,  162.,  190.,  214., 240., 265., 291.));
+        double[] results = getOMRInfo(omrDetected, timestampsMs);
+        System.out.println(Arrays.toString(results));
     }
 }

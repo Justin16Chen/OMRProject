@@ -4,14 +4,14 @@
         "totalTime": 4,
         "name": "doubleDark",
         "testTime": 1,
-        "maxTests": 2,
         "initialPattern": {
-            "bandWidth": 1,
+            "bandWidth": 2,
             "lightBrightness": 84,
             "darkBrightness": 0,
             "speed": 1,
             "direction": "COUNTER_CLOCKWISE"
         },
+        "maxTests": 2,
         "dimAmount": 0
     },
     {
@@ -19,14 +19,14 @@
         "totalTime": 2,
         "name": "shortLight",
         "testTime": 1,
-        "maxTests": 1,
         "initialPattern": {
             "bandWidth": 1,
             "lightBrightness": 255,
             "darkBrightness": 0,
-            "speed": 1,
-            "direction": "CLOCKWISE"
+            "speed": 2,
+            "direction": "COUNTER_CLOCKWISE"
         },
+        "maxTests": 1,
         "dimAmount": 30
     },
     {
@@ -34,7 +34,6 @@
         "totalTime": 16,
         "name": "longLight15sec",
         "testTime": 15,
-        "maxTests": 1,
         "initialPattern": {
             "bandWidth": 1,
             "lightBrightness": 255,
@@ -42,6 +41,37 @@
             "speed": 1,
             "direction": "CLOCKWISE"
         },
+        "maxTests": 1,
         "dimAmount": 30
+    },
+    {
+        "restTime": 1,
+        "totalTime": 4,
+        "name": "light3Sec",
+        "testTime": 3,
+        "initialPattern": {
+            "bandWidth": 1,
+            "lightBrightness": 255,
+            "darkBrightness": 0,
+            "speed": 2,
+            "direction": "COUNTER_CLOCKWISE"
+        },
+        "maxTests": 1,
+        "dimAmount": 30
+    },
+    {
+        "restTime": 4,
+        "totalTime": 16,
+        "name": "longDoubleDark",
+        "testTime": 4,
+        "initialPattern": {
+            "bandWidth": 2,
+            "lightBrightness": 84,
+            "darkBrightness": 0,
+            "speed": 1,
+            "direction": "COUNTER_CLOCKWISE"
+        },
+        "maxTests": 2,
+        "dimAmount": 0
     }
 ]}
