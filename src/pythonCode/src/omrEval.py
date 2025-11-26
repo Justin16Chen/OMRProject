@@ -16,14 +16,11 @@ import socket
 import io
 import struct
 
-
-
 def find_box_center(box):
     return [0.5 *(box[0] + box[2]), 0.5 * (box[1] + box[3])]
 
 def dot(v1, v2):
     return v1[0] * v2[0] + v1[1] * v2[1]
-
 
 def get_head_and_tail_data(numpy_predict_boxes, predict_classes, predict_scores, category_indices, img_size):
     # converting from numpy data type to regular python float
@@ -260,7 +257,6 @@ def connect_to_server(host, port):
             print("java server not ready yet, waiting 0.1s")
             time.sleep(0.1)
 
-
 if __name__ == "__main__":
     # necessary file paths and variables
     program_json_path = "../../liveData/programInfo.json"
@@ -333,6 +329,9 @@ if __name__ == "__main__":
 
             byte_data = b''
             while len(byte_data) < num_img_bytes:
+                # print("Expected bytes:", num_img_bytes)
+                # print("Received bytes:", len(byte_data))
+
                 packet = receive_socket.recv(num_img_bytes - len(byte_data))
                 byte_data += packet
             arr = np.frombuffer(byte_data, dtype=np.uint8).reshape((img_height, img_width, 3))
@@ -343,7 +342,7 @@ if __name__ == "__main__":
             if image_i == 0:
                 analysis_results = torch.zeros((3, lstm_window_size))
 
-            # img = analyze_camera_img(image_i, img, ssd_model, ssd_transform, category_index, lstm_model, lstm_transform, analysis_results, lstm_window_size, angle_offset_data, camera_fps, model_device)
+            img = analyze_camera_img(image_i, img, ssd_model, ssd_transform, category_index, lstm_model, lstm_transform, analysis_results, lstm_window_size, angle_offset_data, camera_fps, model_device)
             # img.show()
 
             # print("time to analyze camera img: " + str(time.time() - timeA))

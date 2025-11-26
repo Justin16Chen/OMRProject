@@ -80,7 +80,7 @@
       <HBox alignment="TOP_CENTER" layoutX="24.0" layoutY="238.0" prefHeight="25.0" prefWidth="441.0" spacing="30.0">
          <children>
             <Button fx:id="prevButton" mnemonicParsing="false" onAction="#handlePrevExperimentClick" text="Previous Experiment" />
-            <Label text="Viewing experiment 1/x" />
+            <Label fx:id="curExperimentShownLabel" text="Viewing experiment 1/x" />
             <Button fx:id="nextButton" mnemonicParsing="false" onAction="#handleNextExperimentClick" text="Next Experiment" />
          </children>
       </HBox>

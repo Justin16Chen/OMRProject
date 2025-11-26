@@ -1,6 +1,7 @@
 package org.example.cameraCode;
 
 import org.opencv.core.Mat;
+import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.videoio.VideoCapture;
@@ -38,7 +39,7 @@ public class CameraImageGrabber {
 
         numFramesGrabbed = 0;
         running = true;
-        grabThread = new Thread(this::grabLoop, "frame grabber thread");
+        grabThread = new Thread(this::grabLoopTesting, "frame grabber thread");
         grabThread.setDaemon(true);
         grabThread.start();
     }
@@ -94,6 +95,7 @@ public class CameraImageGrabber {
                 Imgproc.cvtColor(bgra, bgr, Imgproc.COLOR_BGRA2BGR);
             else
                 bgr = bgra;
+            Imgproc.resize(bgr, bgr, new Size(640, 480));
 
             latestFrame = bgr;
             numFramesGrabbed++;

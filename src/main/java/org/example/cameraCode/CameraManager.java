@@ -236,26 +236,40 @@ public class CameraManager {
     // sends the current image to the SSD through sockets
     private boolean trySendImage() {
         Mat img = images.get(sendIndex.get());
-        if(img.empty())
+
+        if (img.empty())
             return false;
+
+        if (img.channels() != 3)
+            throw new RuntimeException("Expected BGR image");
+
+        if (!img.isContinuous())
+            img = img.clone();
+
         try {
-//            double before = System.currentTimeMillis();
+            byte[] indexBytes = ByteBuffer.allocate(4)
+                    .putInt(numCameraImagesSaved.get())
+                    .array();
 
-            byte[] indexBytes = ByteBuffer.allocate(4).putInt(numCameraImagesSaved.get()).array();
+            byte[] imgBytes = new byte[(int)(img.total() * img.channels())];
+//            System.out.println("Sending bytes: " + (img.total() * img.channels())
+//                    + "  (" + img.width() + " x " + img.height()
+//                    + " x " + img.channels() + ")");
 
-            byte[] imgBytes = new byte[getFrameWidth() * getFrameHeight() * 3];
             img.get(0, 0, imgBytes);
+
             core.getSocketManager().writeData(indexBytes);
             core.getSocketManager().writeData(imgBytes);
             core.getSocketManager().flush();
-            //System.out.println("camera data sent in " + (System.currentTimeMillis() - before) +"ms");
+
             return true;
-        }
-        catch (IOException e) {
+
+        } catch (IOException e) {
             System.out.println("failed to send images");
             return false;
         }
     }
+
 
     public Image getLatestImageFromGrabber() {
         if (cameraImageGrabber.getLatestFrame() == null || cameraImageGrabber.getLatestFrame().empty())

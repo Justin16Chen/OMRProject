@@ -160,14 +160,12 @@ public class Core {
 
             // connect output socket
             try {
-                System.out.println("before connecting socket");
                 socketManager.connectOutputStream();
 
                 if (Thread.currentThread().isInterrupted())
                     return;
 
                 socketManager.writeHeaderData(cameraManager.getFrameWidth(), cameraManager.getFrameHeight(), fps);
-                System.out.println("after connecting socket");
             } catch (IOException e) {
                 System.out.println("failed to connect socketManager.outputStream/failed to write header data");
                 throw new RuntimeException(e);
