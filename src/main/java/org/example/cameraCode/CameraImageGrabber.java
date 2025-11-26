@@ -75,7 +75,7 @@ public class CameraImageGrabber {
         }
     }
 
-    public static String testTrialPath = "C:/Users/justi/Documents/omr images/raw images/wt1_cw_highw_lowspeed";
+    public static String testTrialPath = "D:/wt1_cw_highw_lowspeed";
     private int testGrabImageNum = 1;
     private void grabLoopTesting() {
         double lastUpdateTime = System.nanoTime() * 1e-6;
@@ -100,6 +100,12 @@ public class CameraImageGrabber {
             latestFrame = bgr;
             numFramesGrabbed++;
             testGrabImageNum++;
+
+            try {
+                Thread.sleep(1000 / 24);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

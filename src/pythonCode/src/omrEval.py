@@ -47,19 +47,25 @@ def get_head_and_tail_data(numpy_predict_boxes, predict_classes, predict_scores,
 
     # thresholding ear and tail values if confidence below 40%
     for i in range(len(ear_poses)):
+        if i >= len(ear_poses) or i < 0:
+            break
         if ear_confs[i] < 0.4:
             ear_poses.pop(i)
+            i -= 1
     for i in range(len(tail_poses)):
+        if i >= len(tail_poses) or i < 0:
+            break
         if tail_confs[i] < 0.4:
             tail_poses.pop(i)
+            i -= 1
 
-    ssd_dict = {
+    failed_ssd_dict = {
         "ssd_successful": len(ear_poses) >= 2 and len(tail_poses) > 0,
         "head_angle": 0,
         "tail_angle": 0
     }
-    if not ssd_dict["ssd_successful"]:
-        return ssd_dict
+    if not failed_ssd_dict["ssd_successful"]:
+        return failed_ssd_dict
     # print("success: " + str(dict["ssd_successful"]) + ", num ears: " + str(len(ear_poses)) + ", num tails: " + str(len(tail_poses)))
 
     # selecting the top ear positions with the highest confidence if more than two is recognized by ssd
@@ -68,11 +74,17 @@ def get_head_and_tail_data(numpy_predict_boxes, predict_classes, predict_scores,
         ear_confs.pop(i1)
         conf2, i2 = select_highest(ear_confs)
         ear_confs = [conf1, conf2]
+        if ear_confs[1] < 0.4:
+            failed_ssd_dict["ssd_successful"] = False
+            return failed_ssd_dict
         ear_poses = [ear_poses[i1], ear_poses[i2]]
     # selecting top tail position
     if len(tail_poses) > 1:
         conf, i = select_highest(tail_confs)
         tail_confs = [conf]
+        if tail_confs[0] < 0.4:
+            failed_ssd_dict["ssd_successful"] = False
+            return failed_ssd_dict
         tail_poses = [tail_poses[i]]
 
 
@@ -211,7 +223,7 @@ def analyze_camera_img(img_i, original_img, model, ssd_input_transform, ci, lstm
 
             dif = data["tail_angle_rad"] - results[1, cur_i - 1]
             if abs(dif) > angle_offsets_rad[2]:
-                offset = -sign(dif) * 360
+                offset = -sign(dif) * 2 * math.pi
                 angle_offsets_rad[1] += offset
                 data["tail_angle_rad"] += offset
 
@@ -235,11 +247,15 @@ def analyze_camera_img(img_i, original_img, model, ssd_input_transform, ci, lstm
     head_window = (head_results_deg - head_mean)
 
     head_std = torch.std(head_window)
+    if head_std == 0:
+        head_std = 1
     head_window = (head_window-torch.mean(head_window)) / head_std
 
     tail_mean = torch.mean(tail_results_deg)
     tail_window = (tail_results_deg - tail_mean)
     tail_std = torch.std(tail_window)
+    if tail_std == 0:
+        tail_std = 1
     tail_window = (tail_window - torch.mean(tail_window)) / tail_std
 
     print("img_i" + str(img_i))
@@ -276,8 +292,10 @@ def analyze_camera_img(img_i, original_img, model, ssd_input_transform, ci, lstm
     if pred > 0.5:
         red = (250, 20, 5)
         draw.text(xy=(text_left, top+text_inc*5), text="OMR DETECTED", font=fnt, fill=red)
+        results[2, 0] = 1
+    else:
+        results[2, 0] = 0
 
-    results[2, 0] = pred
     print("------LSTM: " + str(pred))
     # print("total time to process img " + str(img_i) + ": " + str(time.time() - a))
 
@@ -296,9 +314,9 @@ def connect_to_server(host, port):
 
 if __name__ == "__main__":
     # necessary file paths and variables
-    pascal_voc_path = r"C:\Users\justi\Documents\GitHub\OMRProject\src\pythonCode\model\pascal_voc_classes.json"
-    ssd_model_path = r"C:\Users\justi\Documents\GitHub\OMRProject\src\pythonCode\model\ssd.pth"
-    lstm_model_path = r"C:\Users\justi\Documents\GitHub\OMRProject\src\pythonCode\model\best.pkl"
+    pascal_voc_path = r"C:\Users\czhao\Documents\omrProject\src\pythonCode\model\pascal_voc_classes.json"
+    ssd_model_path = r"C:\Users\czhao\Documents\omrProject\src\pythonCode\model\ssd.pth"
+    lstm_model_path = r"C:\Users\czhao\Documents\omrProject\src\pythonCode\model\best.pkl"
 
     HOST = "127.0.0.1"
     RECEIVE_PORT = 65433
@@ -340,28 +358,28 @@ if __name__ == "__main__":
     # lstm preprocessing settings
     lstm_window_size = 48
     analysis_results = torch.zeros((3, lstm_window_size)) # stores head and tail angles and whether omr is detected at specific frame BUT: FOR OMR DETECTION I JUST OVERWRITE VALUES AND ONLY STORE CURRENT PREDICTION AT [2,0]
-    angle_offset_data_rad = torch.tensor([0, 0, 5]) # 0 is head offsets, 1 is tail offsets, 2 is threshold to offset
+    angle_offset_data_rad = torch.tensor([0, 0, 5], dtype=torch.float32) # 0 is head offsets, 1 is tail offsets, 2 is threshold to offset
 
-    use_sockets = False
+    use_sockets = True
     no_socket_img_path = r"C:\Users\justi\Documents\omr images\raw images\wt1_cw_highw_lowspeed" # file path that program resorts to in order to get images when no sockets are supposed to be used
     no_socket_output_img_path = r"C:\Users\justi\Documents\omr images\raw images\testingOutput"
     no_socket_img_num = 60
 
-    if use_sockets:
-        # initializing socket connections
-        receive_socket = connect_to_server(HOST, RECEIVE_PORT)
-        send_socket = connect_to_server(HOST, SEND_PORT)
+    # if use_sockets:
+    # initializing socket connections
+    receive_socket = connect_to_server(HOST, RECEIVE_PORT)
+    send_socket = connect_to_server(HOST, SEND_PORT)
 
-        # system variables
-        header = receive_socket.recv(12)
-        img_width = int.from_bytes(header[0:4], "big")
-        img_height = int.from_bytes(header[4:8], "big")
-        num_img_bytes = img_width * img_height * 3
-        camera_fps = int.from_bytes(header[8:12], "big")
-        print(f"SOCKET camera data received width: {img_width} height: {img_height}")
-    else:
-        camera_fps = 24
-        print("not using sockets; default fps=24, getting images from " + no_socket_img_path)
+    # system variables
+    header = receive_socket.recv(12)
+    img_width = int.from_bytes(header[0:4], "big")
+    img_height = int.from_bytes(header[4:8], "big")
+    num_img_bytes = img_width * img_height * 3
+    camera_fps = int.from_bytes(header[8:12], "big")
+    print(f"SOCKET camera data received width: {img_width} height: {img_height}")
+    # else:
+    #     camera_fps = 24
+    #     print("not using sockets; default fps=24, getting images from " + no_socket_img_path)
 
 
     with torch.no_grad():
@@ -370,25 +388,25 @@ if __name__ == "__main__":
         ssd_model(init_img)
 
         while True:
-            if use_sockets:
-                image_num_byte = receive_socket.recv(4)
-                timeA = time.time()
-                image_i = int.from_bytes(image_num_byte, "big") - 1
+            # if use_sockets:
+            image_num_byte = receive_socket.recv(4)
+            timeA = time.time()
+            image_i = int.from_bytes(image_num_byte, "big") - 1
 
-                byte_data = b''
-                while len(byte_data) < num_img_bytes:
-                    # print("Expected bytes:", num_img_bytes)
-                    # print("Received bytes:", len(byte_data))
-                    packet = receive_socket.recv(num_img_bytes - len(byte_data))
-                    byte_data += packet
-                receiveArr = np.frombuffer(byte_data, dtype=np.uint8).reshape((img_height, img_width, 3))
-                receiveArr = receiveArr[:, :, ::-1]
-                img = Image.fromarray(receiveArr)
-            else:
-                image_i = no_socket_img_num - 1
-                img_path = os.path.join(no_socket_img_path, str(no_socket_img_num) + ".png")
-                print("img_path: " + img_path)
-                img = Image.open(img_path)
+            byte_data = b''
+            while len(byte_data) < num_img_bytes:
+                # print("Expected bytes:", num_img_bytes)
+                # print("Received bytes:", len(byte_data))
+                packet = receive_socket.recv(num_img_bytes - len(byte_data))
+                byte_data += packet
+            receiveArr = np.frombuffer(byte_data, dtype=np.uint8).reshape((img_height, img_width, 3))
+            receiveArr = receiveArr[:, :, ::-1]
+            img = Image.fromarray(receiveArr)
+            # else:
+            #     image_i = no_socket_img_num - 1
+            #     img_path = os.path.join(no_socket_img_path, str(no_socket_img_num) + ".png")
+            #     print("img_path: " + img_path)
+            #     img = Image.open(img_path)
 
 
 
@@ -398,24 +416,16 @@ if __name__ == "__main__":
             img = analyze_camera_img(image_i, img, ssd_model, ssd_transform, category_index, lstm_model, lstm_transform, analysis_results, lstm_window_size, angle_offset_data_rad, camera_fps, model_device)
 
             # i send back the annotated image and whether it shows omr or not
-            if use_sockets:
-                sendArr = np.array(img, dtype=np.uint8)
-                send_socket.sendall(round(analysis_results[2, 0].item()).to_bytes(4, "big"))
-                send_socket.sendall(sendArr.tobytes())
+            # if use_sockets:
+            sendArr = np.array(img, dtype=np.uint8)
+            send_socket.sendall(round(analysis_results[2, 0].item()).to_bytes(4, "big"))
+            send_socket.sendall(sendArr.tobytes())
 
             # updating no socket logic
-            else:
-                img_str = str(no_socket_img_num)
-                while len(img_str) < 5:
-                    img_str = "0" + img_str
-                img.save(os.path.join(no_socket_output_img_path, "vis" + img_str + ".png"))
-                no_socket_img_num += 1
+            # else:
+            #     img_str = str(no_socket_img_num)
+            #     while len(img_str) < 5:
+            #         img_str = "0" + img_str
+            #     img.save(os.path.join(no_socket_output_img_path, "vis" + img_str + ".png"))
+            #     no_socket_img_num += 1
 
-
-
-            # print("imgI: " + str(image_i) + " | lstm: " + str(analysis_results[2, 0]) + " | angle Offs: " + str(angle_offset_data_rad))
-
-
-            # window frame updating is correct
-            # units is correct
-            # mean and standard deviation i assume are correct?
