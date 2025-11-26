@@ -73,5 +73,20 @@
         },
         "maxTests": 2,
         "dimAmount": 0
+    },
+    {
+        "restTime": 1,
+        "totalTime": 181,
+        "name": "longLight3min",
+        "testTime": 180,
+        "initialPattern": {
+            "bandWidth": 1,
+            "lightBrightness": 255,
+            "darkBrightness": 0,
+            "speed": 1,
+            "direction": "CLOCKWISE"
+        },
+        "maxTests": 1,
+        "dimAmount": 30
     }
 ]}

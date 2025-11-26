@@ -11,68 +11,66 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="445.0" prefWidth="509.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.omrChamberDisplay.RunTrialController">
+<AnchorPane prefHeight="674.0" prefWidth="823.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.omrChamberDisplay.RunTrialController">
    <children>
-      <GridPane layoutX="40.0" layoutY="100.0" prefHeight="150.0" prefWidth="218.0">
+      <GridPane layoutX="33.0" layoutY="59.0" prefHeight="95.0" prefWidth="737.0">
         <columnConstraints>
-          <ColumnConstraints hgrow="SOMETIMES" maxWidth="118.5" minWidth="10.0" prefWidth="107.5" />
-          <ColumnConstraints hgrow="SOMETIMES" maxWidth="122.0" minWidth="10.0" prefWidth="59.5" />
+          <ColumnConstraints hgrow="SOMETIMES" maxWidth="118.5" minWidth="10.0" prefWidth="106.0" />
+          <ColumnConstraints hgrow="SOMETIMES" maxWidth="146.0" minWidth="10.0" prefWidth="128.0" />
+            <ColumnConstraints hgrow="SOMETIMES" maxWidth="122.0" minWidth="10.0" prefWidth="88.0" />
+            <ColumnConstraints hgrow="SOMETIMES" maxWidth="122.0" minWidth="10.0" prefWidth="78.0" />
+            <ColumnConstraints hgrow="SOMETIMES" maxWidth="122.0" minWidth="10.0" prefWidth="100.0" />
+            <ColumnConstraints hgrow="SOMETIMES" maxWidth="122.0" minWidth="10.0" prefWidth="100.0" />
+            <ColumnConstraints hgrow="SOMETIMES" maxWidth="122.0" minWidth="10.0" prefWidth="100.0" />
         </columnConstraints>
         <rowConstraints>
           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
         </rowConstraints>
          <children>
             <Label text="Experiment Name" />
-            <Label text="Trial Number" GridPane.rowIndex="2" />
-            <Label text="Trial State" GridPane.rowIndex="3" />
-            <Label fx:id="stateLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-            <Label fx:id="nameLabel" text="Label" GridPane.columnIndex="1" />
-            <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
+            <Label text="Trial Number" GridPane.columnIndex="2" />
+            <Label text="Trial State" GridPane.columnIndex="3" />
+            <Label fx:id="stateLabel" text="Label" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+            <Label fx:id="nameLabel" text="Label" GridPane.rowIndex="1" />
+            <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
                <children>
                   <Label fx:id="cycleLabel" text="Label" />
                   <ProgressBar fx:id="cycleProgress" prefWidth="200.0" progress="0.0" />
                </children>
             </VBox>
-            <Label text="Experiment Number" GridPane.rowIndex="1" />
-            <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
-               <children>
-                  <Label fx:id="trialLabel" text="Label" />
-                  <ProgressBar fx:id="trialProgress" prefWidth="200.0" progress="0.0" />
-               </children>
-            </VBox>
-            <Label text="Test Time" GridPane.rowIndex="4" />
-            <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="4">
+            <Label text="Test Time" GridPane.columnIndex="4" />
+            <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="4" GridPane.rowIndex="1">
                <children>
                   <Label fx:id="testTimeLabel" text="Label" />
                   <ProgressBar fx:id="testTimeProgress" prefWidth="200.0" progress="0.0" />
                </children>
             </VBox>
-            <Label text="Rest Time" GridPane.rowIndex="5" />
-            <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="5">
+            <Label text="Rest Time" GridPane.columnIndex="5" />
+            <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="5" GridPane.rowIndex="1">
                <children>
                   <Label fx:id="restTimeLabel" text="Label" />
                   <ProgressBar fx:id="restTimeProgress" prefWidth="200.0" progress="0.0" />
                </children>
             </VBox>
+            <Label text="Experiment Number" GridPane.columnIndex="1" />
+            <VBox prefHeight="48.0" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+               <children>
+                  <Label fx:id="trialLabel" text="Label" />
+                  <ProgressBar fx:id="trialProgress" prefWidth="200.0" progress="0.0" />
+               </children>
+            </VBox>
+            <Label text="Total Time Running" GridPane.columnIndex="6" />
+            <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="6" GridPane.rowIndex="1">
+               <children>
+                  <Label fx:id="totalTimeLabel" text="Label" />
+                  <ProgressBar fx:id="totalTimeProgress" prefWidth="200.0" progress="0.0" />
+               </children>
+            </VBox>
          </children>
       </GridPane>
-      <Label layoutX="42.0" layoutY="67.0" text="Experiment Data">
-         <font>
-            <Font size="16.0" />
-         </font>
-      </Label>
-      <ImageView fx:id="cameraDataImageView" fitHeight="150.0" fitWidth="200.0" layoutX="284.0" layoutY="100.0" pickOnBounds="true" preserveRatio="true" />
-      <Label fx:id="cameraDataLabel" layoutX="284.0" layoutY="67.0" text="Camera Data">
-         <font>
-            <Font size="16.0" />
-         </font>
-      </Label>
-      <Button layoutX="52.0" layoutY="351.0" mnemonicParsing="false" onAction="#handleStopEarlyClick" text="Stop Early">
+      <ImageView fx:id="cameraDataImageView" fitHeight="480.0" fitWidth="640.0" layoutX="73.0" layoutY="154.0" pickOnBounds="true" preserveRatio="true" />
+      <Button layoutX="677.0" layoutY="21.0" mnemonicParsing="false" onAction="#handleStopEarlyClick" text="Stop Early">
          <font>
             <Font size="15.0" />
          </font>
@@ -90,16 +88,7 @@
         <rowConstraints>
           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
         </rowConstraints>
-         <children>
-            <Label text="Total Time Running" />
-            <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="1">
-               <children>
-                  <Label fx:id="totalTimeLabel" text="Label" />
-                  <ProgressBar fx:id="totalTimeProgress" prefWidth="200.0" progress="0.0" />
-               </children>
-            </VBox>
-         </children>
       </GridPane>
-      <Button fx:id="toggleImageViewButton" layoutX="328.0" layoutY="257.0" mnemonicParsing="false" onAction="#handleToggleImageView" text="Show Raw Images" />
+      <Button fx:id="toggleImageViewButton" layoutX="508.0" layoutY="24.0" mnemonicParsing="false" onAction="#handleToggleImageView" text="Show Raw Images" />
    </children>
 </AnchorPane>

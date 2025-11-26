@@ -11,8 +11,6 @@ import org.example.trialControlPanel.pattern.PatternDrawer;
 import org.example.trialControlPanel.pattern.PatternDrawer.SimulatedSurface;
 import org.example.trialControlPanel.trialConfig.Experiment;
 
-import java.io.*;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 
 public class OMRChamberController extends CustomController {
@@ -33,16 +31,6 @@ public class OMRChamberController extends CustomController {
 		visualizedImageReader.connectInputStream();
 	}
 	private void declareDisplaySMStateLogic() {
-		// this happens after stopTrial is called, so it runs in the background after the OMR chamber windows have been closed
-		displaySM.setUpdateFunction(DisplayState.NORMAL_STOP, () -> {
-			CameraManager cm = getCore().getCameraManager();
-//			System.out.println("send state: " + cm.getSendState() + " | save state: " + cm.getSaveState() + " | send idx: " + cm.getSendIndex() + "/" + (cm.getMaxImageIndex() + 1));
-			if (cm.finishedSendingImagesToSSD() && cm.getSaveState() == CameraManager.SaveState.WAITING && visualizedImageReader.getState() == VisualizedImageReader.State.WAITING_TO_SAVE) {
-				cm.saveImageData(getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrialIndex()).toString());
-				visualizedImageReader.saveAndClearStoredImages(getVisualizedImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrialIndex()).toString());
-				System.out.println("finished saving everything after experiments ended");
-			}
-		});
 		// early stop is handled by javaFX event listeners
 		displaySM.setTransitionFunction(DisplayState.TESTING, DisplayState.RESTING, () -> {
 			patternDrawer.stopAndBlackOutScreen();
@@ -50,13 +38,6 @@ public class OMRChamberController extends CustomController {
 				child.getPatternDrawer().stopAndBlackOutScreen();
 
 			getCore().getCameraManager().getImageGrabber().stopGrabbing();
-		});
-		displaySM.setUpdateFunction(DisplayState.RESTING, () -> {
-			CameraManager cm = getCore().getCameraManager();
-			if (cm.finishedSendingImagesToSSD() && cm.getSaveState() == CameraManager.SaveState.WAITING && visualizedImageReader.getState() == VisualizedImageReader.State.WAITING_TO_SAVE) {
-				cm.saveImageData(getCameraImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrialIndex()).toString());
-				visualizedImageReader.saveAndClearStoredImages(getVisualizedImageTrialFolder(displaySM.getCurExperiment().getName(), displaySM.getCurExperimentIndex(), displaySM.getCurTrialIndex()).toString());
-			}
 		});
 
 		displaySM.setTransitionFunction(DisplayState.RESTING, DisplayState.TESTING, () -> {
@@ -72,13 +53,6 @@ public class OMRChamberController extends CustomController {
 			getCore().getCameraManager().startReadingImagesFromCamera(updateIntervalNanos);
 			getCore().getCameraManager().startSendingImagesToSSD();
 			visualizedImageReader.startReadingVisualizedImages();
-
-			String experimentName = displaySM.getCurExperiment().getName();
-			int experimentIndex = displaySM.getCurExperimentIndex();
-			int trialNum = displaySM.getCurTrialIndex();
-
-			getCameraImageTrialFolder(experimentName, experimentIndex, trialNum).mkdir();
-			getVisualizedImageTrialFolder(experimentName, experimentIndex, trialNum).mkdir();
 		});
 
 		displaySM.setTransitionFunction(DisplayState.IN_BETWEEN_EXPERIMENTS, DisplayState.TESTING, () -> {
@@ -95,15 +69,7 @@ public class OMRChamberController extends CustomController {
 			getCore().getCameraManager().startSendingImagesToSSD();
 			visualizedImageReader.startReadingVisualizedImages();
 
-			;
 			getCore().getCameraManager().setMaxImageIndex(displaySM.getCurExperiment().getTestTime() * getCore().fps - 1);
-
-			String experimentName = displaySM.getCurExperiment().getName();
-			int experimentIndex = displaySM.getCurExperimentIndex();
-			int trialNum = displaySM.getCurTrialIndex();
-
-			getCameraImageTrialFolder(experimentName, experimentIndex, trialNum).mkdir();
-			getVisualizedImageTrialFolder(experimentName, experimentIndex, trialNum).mkdir();
 		});
 	}
 
@@ -123,32 +89,32 @@ public class OMRChamberController extends CustomController {
 		if (earlyStop) {
 			getCore().getCameraManager().stopSendingImages();
 			visualizedImageReader.stopRunning();
-            displaySM.stopUpdating();
+			displaySM.stopUpdating();
 		}
 
 		// stuff that happens after chamber display ends
 		getCore().getStartMenuController().updateButtonsEnabled();
-		getCore().getTrialMetadataStage().setScene(getCore().getLoadingResultsScene());
-		getCore().getResultsController().earlyStop = earlyStop;
+		getCore().getTrialMetadataStage().close();
+		Platform.runLater(() -> getCore().getStartMenuController().exportingLabel.setText("Currently Exporting..."));
 		new Thread(() -> {
-			boolean canMoveOn = getCore().getCameraManager().getSendState() == CameraManager.SendState.READY
-					&& getCore().getCameraManager().getSaveState() == CameraManager.SaveState.READY
-					&& visualizedImageReader.getState() == VisualizedImageReader.State.WAITING_TO_RECEIVE;
-			while (!canMoveOn) {
-                try {
-                    Thread.sleep(50);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-				canMoveOn = getCore().getCameraManager().getSendState() == CameraManager.SendState.READY
-						&& getCore().getCameraManager().getSaveState() == CameraManager.SaveState.READY
-						&& visualizedImageReader.getState() == VisualizedImageReader.State.WAITING_TO_RECEIVE;
-            }
-			Platform.runLater(() -> {
-				getCore().getTrialMetadataStage().setScene(getCore().getResultsScene());
-				getCore().getResultsController().setup();
-				System.out.println("SETTING RESULTS SCENE TO NORMAL");
-			});
+			while (!displaySM.canSaveResults) {
+				try {
+					Thread.sleep(50);
+				} catch (InterruptedException e) {
+					throw new RuntimeException(e);
+				}
+			}
+			Platform.runLater(() -> getCore().getStartMenuController().saveAllResults());
+			Platform.runLater(() -> getCore().getStartMenuController().exportingLabel.setText("Finished!"));
+			new Thread(() -> {
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					throw new RuntimeException(e);
+				}
+				Platform.runLater(() -> getCore().getStartMenuController().exportingLabel.setText(""));
+			}).start();
+
 		}, "wait for finished results to open results scene").start();
 	}
 
@@ -156,15 +122,6 @@ public class OMRChamberController extends CustomController {
 	private Canvas canvas;
 
 	public void setupAndStartExperiments(MonitorFormat monitorFormat, ArrayList<Experiment> experiments, int restTime) {
-
-		// create starting file structure
-		for (int i=0; i<experiments.size(); i++) {
-			Experiment experiment = experiments.get(i);
-			boolean ec = getCameraImageExperimentFolder(experiment.getName(), i).mkdir();
-			boolean tc = getCameraImageTrialFolder(experiment.getName(), i, 0).mkdir();
-			boolean ev = getVisualizedImageExperimentFolder(experiment.getName(), i).mkdir();
-			boolean tv = getVisualizedImageTrialFolder(experiment.getName(), i, 0).mkdir();
-		}
 
 		// setup camera manager
 		CameraManager cm = getCore().getCameraManager();
@@ -212,20 +169,6 @@ public class OMRChamberController extends CustomController {
 		cm.startSendingImagesToSSD();
 		// start thread to receive visualized images from SSD
 		visualizedImageReader.startReadingVisualizedImages();
-	}
-
-	// folder structure/file helper functions
-	private File getCameraImageExperimentFolder(String experimentName, int experimentNum) {
-		return Paths.get(getCore().getStartMenuController().getCameraOutputPath(), experimentNum + " - " + experimentName).toFile();
-	}
-	private File getCameraImageTrialFolder(String experimentName, int experimentNum, int trialNum) {
-		return Paths.get(getCameraImageExperimentFolder(experimentName, experimentNum).getPath(), "trial" + trialNum).toFile();
-	}
-	private File getVisualizedImageExperimentFolder(String experimentName, int experimentNum) {
-		return Paths.get(getCore().getStartMenuController().getVisualizedOutputPath(), experimentNum + " - " + experimentName).toFile();
-	}
-	private File getVisualizedImageTrialFolder(String experimentName, int experimentNum, int trialNum) {
-		return Paths.get(getVisualizedImageExperimentFolder(experimentName, experimentNum).getPath(), "trial" + trialNum).toFile();
 	}
 
 	public void resizeCanvas(int width, int height) {

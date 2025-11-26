@@ -12,15 +12,15 @@ public class Main extends Application {
     public static void main(String[] args) {
         launch(args);
 
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        System.out.println("JAVAFX DONE: RUNNING THREADS: ");
-        for (Thread thread : Thread.getAllStackTraces().keySet())
-            System.out.println(thread.getName());
+//        try {
+//            Thread.sleep(100);
+//        } catch (InterruptedException e) {
+//            throw new RuntimeException(e);
+//        }
+//
+//        System.out.println("JAVAFX DONE: RUNNING THREADS: ");
+//        for (Thread thread : Thread.getAllStackTraces().keySet())
+//            System.out.println(thread.getName());
     }
 
     private final Core core;

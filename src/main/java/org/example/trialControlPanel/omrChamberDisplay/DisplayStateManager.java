@@ -5,7 +5,9 @@ import org.example.cameraCode.CameraManager;
 import org.example.cameraCode.VisualizedImageReader;
 import org.example.trialControlPanel.parentClasses.Core;
 import org.example.trialControlPanel.trialConfig.Experiment;
+import org.opencv.core.Mat;
 
+import java.awt.image.RenderedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -17,12 +19,14 @@ public class DisplayStateManager {
     private ArrayList<Experiment> experiments;
     private int currentExperimentIndex;
     private int inBetweenExperimentsRestTime;
-    private double currentStateStartTime;
+    private double experimentQueueStartTimeMs;
+    private double currentStateStartTimeMs;
     private int currentTrial;
     private DisplayState state;
     private final HashMap<Transition, Runnable> transitionFunctions;
     private final HashMap<DisplayState, Runnable> updateFunctions;
-    private VisualizedImageReader visualizedImageReader;
+    private final VisualizedImageReader visualizedImageReader;
+    public boolean canSaveResults = false;
 
     public DisplayStateManager(Core core, VisualizedImageReader visualizedImageReader) {
         this.core = core;
@@ -45,12 +49,12 @@ public class DisplayStateManager {
         return currentTrial;
     }
     public double getCurStateTime() {
-        return (System.currentTimeMillis() - currentStateStartTime) / 1000.;
+        return (System.currentTimeMillis() - currentStateStartTimeMs) / 1000.;
     }
     private void setNewState(DisplayState newState) {
         DisplayState oldState = this.state;
         this.state = newState;
-        currentStateStartTime = System.currentTimeMillis();
+        currentStateStartTimeMs = System.currentTimeMillis();
         transitionFunctions.getOrDefault(new Transition(oldState, newState), () -> {}).run();
         System.out.println("setNewState from " + oldState + " to " + newState);
     }
@@ -71,7 +75,8 @@ public class DisplayStateManager {
         currentExperimentIndex = 0;
         currentTrial = 0;
         state = DisplayState.TESTING;
-        currentStateStartTime = System.currentTimeMillis();
+        experimentQueueStartTimeMs = System.currentTimeMillis();
+        currentStateStartTimeMs = experimentQueueStartTimeMs;
 
         keepUpdating = true;
         Thread updateThread = new Thread(() -> {
@@ -93,11 +98,10 @@ public class DisplayStateManager {
         switch (state) {
             case NORMAL_STOP:
                 if (imagesAreCompletelySaved()) {
-                    System.out.println("adding last experiment to results controller");
-                    double[] result = VisualizedImageReader.getOMRInfo(visualizedImageReader.omrDetected, core.getCameraManager().timeStampsMs);
-                    core.getResultsController().addTrialResult(result);
-                    core.getResultsController().finishExperiment(getCurExperiment(), core.getOmrChamberController().patternDrawer.getPatternData());
+                    addDataFromMostRecentTrialToResultsController();
+                    core.getStartMenuController().finishExperiment(getCurExperiment(), core.getOmrChamberController().patternDrawer.getPatternData());
                     stopUpdating();
+                    canSaveResults = true;
                 }
                 break;
             case TESTING:
@@ -115,10 +119,10 @@ public class DisplayStateManager {
             case RESTING:
                 if (getCurStateTime() >= getCurExperiment().getRestTime()) {
                     if (imagesAreCompletelySaved()) {
-                        double[] result = VisualizedImageReader.getOMRInfo(visualizedImageReader.omrDetected, core.getCameraManager().timeStampsMs);
-                        core.getResultsController().addTrialResult(result);
+                        addDataFromMostRecentTrialToResultsController();
+
                         if (getCurTrialIndex() + 1 >= getCurExperiment().getMaxTests()) {
-                            core.getResultsController().finishExperiment(getCurExperiment(), core.getOmrChamberController().patternDrawer.getPatternData());
+                            core.getStartMenuController().finishExperiment(getCurExperiment(), core.getOmrChamberController().patternDrawer.getPatternData());
                             setNewState(DisplayState.IN_BETWEEN_EXPERIMENTS);
                         }
                         else {
@@ -132,8 +136,7 @@ public class DisplayStateManager {
                 break;
             case IN_BETWEEN_EXPERIMENTS:
                 if (getCurStateTime() > inBetweenExperimentsRestTime
-                        && core.getCameraManager().getSendState() == CameraManager.SendState.READY
-                        && core.getCameraManager().getSaveState() == CameraManager.SaveState.READY) {
+                        && core.getCameraManager().getSendState() == CameraManager.SendState.FINISHED_SENDING_IMAGES) {
                     waitForCameraToReachStableFPS();
 
                     currentExperimentIndex++;
@@ -146,9 +149,8 @@ public class DisplayStateManager {
     }
 
     private boolean imagesAreCompletelySaved() {
-        return core.getCameraManager().getSendState() == CameraManager.SendState.READY
-                && core.getCameraManager().getSaveState() == CameraManager.SaveState.READY
-                && visualizedImageReader.getState() == VisualizedImageReader.State.WAITING_TO_RECEIVE;
+        return core.getCameraManager().getSendState() == CameraManager.SendState.FINISHED_SENDING_IMAGES
+                && visualizedImageReader.getState() == VisualizedImageReader.State.FINISHED_RECEIVING_IMAGES;
     }
 
     public void stopUpdating() {
@@ -168,13 +170,13 @@ public class DisplayStateManager {
                 .sum() + (experiments.size() - 1) * inBetweenExperimentsRestTime - experiments.getLast().getRestTime();
     }
     public double getTotalSecondsRunning() {
-        return 0;
+        return (System.currentTimeMillis() - experimentQueueStartTimeMs) * 0.001;
     }
     public double getTestRunTime() {
-        return 0;
+        return state == DisplayState.TESTING ? (System.currentTimeMillis() - currentStateStartTimeMs) * 0.001 : 0;
     }
     public double getRestRunTime() {
-        return 0;
+        return state == DisplayState.RESTING ? (System.currentTimeMillis() - currentStateStartTimeMs) * 0.001 : 0;
     }
     private void waitForCameraToReachStableFPS() {
         System.out.println("STARTING DISPLAY SM WAIT FOR STABLE FPS THREAD");
@@ -191,5 +193,14 @@ public class DisplayStateManager {
             }
         }, "wait for stable FPS thread");
         waitForStableFPSThread.start();
+    }
+
+    private void addDataFromMostRecentTrialToResultsController() {
+        System.out.println("adding trial info to results controller");
+
+        ArrayList<Mat> rawImages = core.getCameraManager().getRawImagesSoFar();
+        ArrayList<RenderedImage> visualizeImages = visualizedImageReader.getRenderedImagesSoFar();
+        double[] result = VisualizedImageReader.getOMRInfo(visualizedImageReader.omrDetected, core.getCameraManager().timeStampsMs);
+        core.getStartMenuController().addTrialResult(rawImages, visualizeImages, result, core.getCameraManager().timeStampsMs, visualizedImageReader.headAngles, visualizedImageReader.tailAngles);
     }
 }

@@ -1,6 +1,5 @@
 package org.example.cameraCode;
 
-import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
@@ -8,39 +7,37 @@ import javafx.scene.paint.Color;
 import org.example.integration.JsonManager;
 import org.example.trialControlPanel.parentClasses.Core;
 
-import javax.imageio.ImageIO;
 import java.awt.image.RenderedImage;
 import java.io.DataInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class VisualizedImageReader {
     public enum State {
-        WAITING_TO_RECEIVE,
         RECEIVING,
-        WAITING_TO_SAVE,
-        SAVING
+        FINISHED_RECEIVING_IMAGES
     }
     private final Core core;
     private DataInputStream visualizedImageDataIn;
     private boolean connected;
     private final ArrayList<WritableImage> receivedImages;
     public final ArrayList<Boolean> omrDetected;
+    public final ArrayList<Double> headAngles;
+    public final ArrayList<Double> tailAngles;
     private volatile State state;
     public VisualizedImageReader(Core core) {
         this.core = core;
         connected = false;
         receivedImages = new ArrayList<>();
         omrDetected = new ArrayList<>();
-        state = State.WAITING_TO_RECEIVE;
+        headAngles = new ArrayList<>();
+        tailAngles = new ArrayList<>();
+        state = State.FINISHED_RECEIVING_IMAGES;
     }
 
     public void connectInputStream() {
@@ -61,6 +58,8 @@ public class VisualizedImageReader {
 
         receivedImages.clear();
         omrDetected.clear();
+        headAngles.clear();
+        tailAngles.clear();
         state = State.RECEIVING;
 
         new Thread(() -> {
@@ -77,22 +76,17 @@ public class VisualizedImageReader {
 
     private void readVisualizedImages() {
         try {
-//                double time = System.currentTimeMillis();
             byte[] header = visualizedImageDataIn.readNBytes(4);
-//                System.out.println("time to read header: " + (System.currentTimeMillis() - time));
             ByteBuffer bb = ByteBuffer.wrap(header);
-//                System.out.println("time to create buffer: " + (System.currentTimeMillis() - time));
 
             int omr = bb.getInt();
             boolean omrDetectedThisFrame = omr == 1;
             omrDetected.add(omrDetectedThisFrame);
-            System.out.println("OMR detected: " + omrDetectedThisFrame);
-//                System.out.println("time to read w&h bytes: " + (System.currentTimeMillis() - time));
+            headAngles.add(-1.);
+            tailAngles.add(-1.);
 
             int byteCount = core.getCameraManager().getFrameWidth() * core.getCameraManager().getFrameHeight() * 3;
             byte[] imgBytes = visualizedImageDataIn.readNBytes(byteCount);
-
-//                System.out.println("time to read imgBytes: " + (System.currentTimeMillis() - time));
 
             WritableImage wimg = new WritableImage(core.getCameraManager().getFrameWidth(), core.getCameraManager().getFrameHeight());
             PixelWriter pw = wimg.getPixelWriter();
@@ -105,13 +99,12 @@ public class VisualizedImageReader {
                     pw.setColor(x, y, Color.rgb(r, g, b));
                 }
 
-//                System.out.println("time to receive visualized img: " + (System.currentTimeMillis() - time));
             receivedImages.add(wimg);
 
             // stop when all images have been received
             if (receivedImages.size() >= core.getCameraManager().getMaxImageIndex() + 1
                     || (receivedImages.size() >= core.getCameraManager().getSendIndex() && !core.getCameraManager().isReadingImagesFromCamera())) {
-                state = State.WAITING_TO_SAVE;
+                state = State.FINISHED_RECEIVING_IMAGES;
             }
         } catch (IOException e) {
             System.out.println("failed to read image from input stream");
@@ -121,36 +114,21 @@ public class VisualizedImageReader {
     public State getState() {
         return state;
     }
-    public void saveAndClearStoredImages(String folderPath) {
-        if (state != State.WAITING_TO_SAVE)
-            throw new IllegalStateException("cannot call saveAndClearStoredImages in VisualizedImageReader when it is in state " + state);
-        state = State.SAVING;
-        new Thread(() -> {
-            System.out.println("SAVING VISUALIZED IMAGES");
-            for (int i=0; i<receivedImages.size(); i++) {
-                RenderedImage renderedImage = SwingFXUtils.fromFXImage(receivedImages.get(i), null);
 
-                // Write to file
-                File file = Paths.get(folderPath, i + ".png").toFile();
-                try {
-                    ImageIO.write(renderedImage, "png", file);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            System.out.println("finished saving " + receivedImages.size() + " annotated images");
-            receivedImages.clear();
-            state = State.WAITING_TO_RECEIVE;
-            Platform.runLater(core.getStartMenuController()::updateButtonsEnabled);
-        }, "save visualized images thread").start();
+    public ArrayList<RenderedImage> getRenderedImagesSoFar() {
+        System.out.println("formatting rendered images from last experiment");
+        ArrayList<RenderedImage> output = new ArrayList<>();
+        for (WritableImage img : receivedImages)
+            output.add(SwingFXUtils.fromFXImage(img, null));
+        return output;
     }
 
     public void stopRunning() {
-        state = State.WAITING_TO_RECEIVE;
+        state = State.FINISHED_RECEIVING_IMAGES;
     }
     public WritableImage getLatestImage() {
         if (!receivedImages.isEmpty())
-            return receivedImages.getFirst();
+            return receivedImages.getLast();
         return null;
     }
 

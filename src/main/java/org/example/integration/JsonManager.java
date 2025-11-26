@@ -21,22 +21,13 @@ public class JsonManager {
         }
     }
 
-    public String getLastCameraOutputPath() {
-        return readProgramInfoJSON().getString("cameraOutputBase");
+    public String getLastParentFolderPath() {
+        return readProgramInfoJSON().getString("parentFolderPath");
     }
-    public void setCameraOutputPath(String path) {
+    public void setParentFolderPath(String path) {
         JSONObject json = readProgramInfoJSON();
-        json.put("cameraOutputBase", path);
-        saveJSONToFile(json, "FAILED TO SET CAMERA OUTPUT BASE");
-    }
-
-    public String getLastVisualizedOutputPath() {
-        return readProgramInfoJSON().getString("visualizedOutputBase");
-    }
-    public void setVisualizedOutputPath(String path) {
-        JSONObject json = readProgramInfoJSON();
-        json.put("visualizedOutputBase", path);
-        saveJSONToFile(json, "FAILED TO SET VISUALIZED OUTPUT BASE");
+        json.put("parentFolderPath", path);
+        saveJSONToFile(json, "FAILED TO SET PARENT FOLDER FOR EXPORTING");
     }
 
     private void saveJSONToFile(JSONObject json, String errorMessage) {

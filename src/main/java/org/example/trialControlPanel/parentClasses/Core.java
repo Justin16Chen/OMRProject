@@ -93,15 +93,15 @@ public class Core {
         cameraManager.stopEverything();
         pythonRunner.stopRunning();
 
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        System.out.println("RUNNING THREADS: ");
-        for (Thread thread : Thread.getAllStackTraces().keySet())
-            System.out.println(thread.getName());
+//        try {
+//            Thread.sleep(100);
+//        } catch (InterruptedException e) {
+//            throw new RuntimeException(e);
+//        }
+//
+//        System.out.println("RUNNING THREADS: ");
+//        for (Thread thread : Thread.getAllStackTraces().keySet())
+//            System.out.println(thread.getName());
     }
 
     public void init(Stage primaryStage) {

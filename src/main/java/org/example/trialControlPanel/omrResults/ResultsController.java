@@ -1,5 +1,6 @@
 package org.example.trialControlPanel.omrResults;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -9,35 +10,27 @@ import javafx.stage.DirectoryChooser;
 import org.example.trialControlPanel.parentClasses.CustomController;
 import org.example.trialControlPanel.pattern.Pattern;
 import org.example.trialControlPanel.trialConfig.Experiment;
+import org.example.utils.VideoUtils;
+import org.opencv.core.Mat;
+import org.opencv.imgcodecs.Imgcodecs;
 
+import javax.imageio.ImageIO;
+import java.awt.image.RenderedImage;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 public class ResultsController extends CustomController {
     // for each experiment, a list of trial names and omr results
     // this list is automatically cleared everytime core.runOMRTrials() is called b/c it reloads the scene and controller from the FXML file
     private final ArrayList<ExperimentResult> experimentResults = new ArrayList<>();
-    private final ArrayList<double[]> curExperimentResults = new ArrayList<>();
+    private ExperimentResult curExperimentResult;
     public boolean earlyStop = false;
-    public void addTrialResult(double[] results) {
-        curExperimentResults.add(results);
-    }
-    public void finishExperiment(Experiment experiment, Pattern endingPattern) {
-        System.out.println("adding " + experiment);
-        System.out.println("ending pattern: " + endingPattern);
-        ArrayList<double[]> copiedExperimentResults = new ArrayList<>();
-        for (double[] data : curExperimentResults) {
-            double[] newData = new double[data.length];
-            System.arraycopy(data, 0, newData, 0, data.length);
-            copiedExperimentResults.add(newData);
-
-        }
-        ExperimentResult result = new ExperimentResult(experiment, copiedExperimentResults, endingPattern);
-        experimentResults.add(result);
-        curExperimentResults.clear();
-    }
     @Override
     public void setup() {
         experimentResultsTextArea.setEditable(false);
@@ -46,6 +39,10 @@ public class ResultsController extends CustomController {
 
         if (!earlyStop)
             updateUIToNewExperiment();
+
+//        experimentNameTextField.textProperty().addListener((o, n, obs) -> {
+//            rawVideoLabel.setText(experimentNameTextField.getText() + "_raw_");
+//        });
     }
 
     @FXML
@@ -64,19 +61,31 @@ public class ResultsController extends CustomController {
     @FXML
     private Label bandWidthLabel;
     @FXML
-    private TextField saveFilePathTextField;
-    private boolean hasInvalidFilePath;
+    private TextField experimentNameTextField, saveFilePathTextField;
+    @FXML
+    private Label rawVideoLabel, visualizedVideoLabel, resultsFileLabel;
 
     @FXML
     private void handleChooseFilePathClick() {
-        String path = promptUserForEmptyFolderPath(null);
+        String path = promptUserForFolderPath("D:/OMR");
         updateSavePath(path);
     }
     @FXML
     private Button saveImagesButton;
     @FXML
     private void handleSaveImagesClick() {
-        saveResults();
+        String folderPath = saveFilePathTextField.getText();
+        String dateStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        saveResultsTxtFile(folderPath, dateStr);
+        for (ExperimentResult expResult : experimentResults)
+            for (int i=0; i<expResult.trialResults.size(); i++) {
+                String rawPath = Path.of(folderPath, experimentNameTextField.getText() + "_" + expResult.experiment.getName() + "_raw_trial" + (i + 1) + "_" + dateStr + ".mp4").toString();
+                String visualizedPath = Path.of(folderPath, experimentNameTextField.getText() + "_" + expResult.experiment.getName() + "_visualized_trial" + (i + 1) + "_" + dateStr + ".mp4").toString();
+                TrialResult trialResult = expResult.trialResults.get(i);
+                VideoUtils.matsToVideo(trialResult.rawImages(), rawPath, getCore().fps);
+                VideoUtils.renderedImagesToVideo(trialResult.visualizedImages(), visualizedPath, getCore().fps);
+            }
     }
 
     private int currentExperimentIndex;
@@ -128,33 +137,27 @@ public class ResultsController extends CustomController {
         saveImagesButton.setDisable(!validPath);
         saveFilePathTextField.setText(validPath ? path : "Invalid File Path");
     }
-    private String promptUserForEmptyFolderPath(String startingPath) {
+    private String promptUserForFolderPath(String startingPath) {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("Select an Empty Folder");
         if (startingPath != null && Files.exists(Path.of(startingPath)))
             directoryChooser.setInitialDirectory(new File(startingPath));
         File file;
-        do {
             file = directoryChooser.showDialog(getStage());
             if (file == null)
                 return null;
-            File[] nonDirs = file.listFiles(f -> !f.isDirectory());
-            if (nonDirs == null)
-                return null;
-            if (nonDirs.length == 0)
-                return file.getAbsolutePath();
-        } while (true);
+            return file.getAbsolutePath();
     }
 
-    private void saveResults() {
+    private void saveResultsTxtFile(String folderPath, String dateStr) {
         try {
-            String folderPath = saveFilePathTextField.getText();
             if (folderPath == null || folderPath.equals("Invalid File Path")) {
                 System.out.println("Invalid save path when saving OMR results");
                 return;
             }
 
-            Path outputPath = Path.of(folderPath, "omrResults.txt");
+            String name = experimentNameTextField.getText() + "_" + dateStr + "_results.txt";
+                    Path outputPath = Path.of(folderPath, name);
 
             StringBuilder builder = new StringBuilder();
 
@@ -196,4 +199,30 @@ public class ResultsController extends CustomController {
         }
     }
 
+    public void saveRawImages(String folder, ArrayList<Mat> images) {
+        new Thread(() -> {
+            for (int i = 0; i < images.size(); i++) {
+                Imgcodecs.imwrite(Path.of(folder, i + ".png").toString(), images.get(i));
+            }
+            System.out.println("finished saving " + images.size() + " raw images");
+            Platform.runLater(getCore().getStartMenuController()::updateButtonsEnabled);
+        }, "save raw image thread").start();
+    }
+
+    public void saveVisualizedImages(String folderPath, ArrayList<RenderedImage> images) {
+        new Thread(() -> {
+            System.out.println("SAVING VISUALIZED IMAGES");
+            for (int i=0; i<images.size(); i++) {
+                // Write to file
+                File file = Paths.get(folderPath, i + ".png").toFile();
+                try {
+                    ImageIO.write(images.get(i), "png", file);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            System.out.println("finished saving " + images.size() + " annotated images");
+            Platform.runLater(getCore().getStartMenuController()::updateButtonsEnabled);
+        }, "save visualized images thread").start();
+    }
 }

@@ -6,25 +6,20 @@ import org.example.trialControlPanel.trialConfig.Experiment;
 import java.util.ArrayList;
 
 public class ExperimentResult {
-    public final Experiment experiment;
-    private final ArrayList<double[]> results;
-    public final Pattern endingPattern;
-    public ExperimentResult(Experiment experiment, ArrayList<double[]> results, Pattern endingPattern) {
-        this.experiment = experiment;
-        this.results = results;
-        this.endingPattern = endingPattern;
-    }
+    public Experiment experiment;
+    public ArrayList<TrialResult> trialResults = new ArrayList<>();
+    public Pattern endingPattern;
 
     public int getNumTrials() {
-        return results.size();
+        return trialResults.size();
     }
     public int getNumOMR(int trialIndex) {
-        return (int) results.get(trialIndex)[0];
+        return (int) trialResults.get(trialIndex).results()[0];
     }
     public double getAverageDuration(int trialIndex) {
-        return results.get(trialIndex)[1];
+        return trialResults.get(trialIndex).results()[1];
     }
     public double getMedian(int trialIndex) {
-        return results.get(trialIndex)[2];
+        return trialResults.get(trialIndex).results()[2];
     }
 }

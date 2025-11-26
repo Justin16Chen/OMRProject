@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="429.0" prefWidth="545.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.omrResults.ResultsController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="624.0" prefWidth="545.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.trialControlPanel.omrResults.ResultsController">
    <children>
       <Label layoutX="24.0" layoutY="14.0" text="Experiment Results">
          <font>
@@ -80,11 +80,14 @@
       <HBox alignment="TOP_CENTER" layoutX="24.0" layoutY="238.0" prefHeight="25.0" prefWidth="441.0" spacing="30.0">
          <children>
             <Button fx:id="prevButton" mnemonicParsing="false" onAction="#handlePrevExperimentClick" text="Previous Experiment" />
-            <Label fx:id="curExperimentShownLabel" text="Viewing experiment 1/x" />
+            <Label fx:id="curExperimentShownLabel" text="Viewing experiment 1/x">
+               <HBox.margin>
+                  <Insets top="5.0" />
+               </HBox.margin></Label>
             <Button fx:id="nextButton" mnemonicParsing="false" onAction="#handleNextExperimentClick" text="Next Experiment" />
          </children>
       </HBox>
-      <VBox layoutX="24.0" layoutY="319.0" prefHeight="55.0" prefWidth="441.0" spacing="5.0">
+      <VBox layoutX="24.0" layoutY="319.0" prefHeight="195.0" prefWidth="441.0" spacing="5.0">
          <children>
             <Label text="Export All Results">
                <font>
@@ -93,14 +96,38 @@
             </Label>
             <HBox prefHeight="100.0" prefWidth="200.0" spacing="20.0">
                <children>
-                  <Button mnemonicParsing="false" onAction="#handleChooseFilePathClick" text="Choose Path" />
-                  <Button fx:id="saveImagesButton" mnemonicParsing="false" onAction="#handleSaveImagesClick" text="Save" />
-                  <TextField fx:id="saveFilePathTextField" prefHeight="25.0" prefWidth="256.0" />
+                  <Label text="Experiment Name" />
+                  <TextField fx:id="experimentNameTextField" prefHeight="25.0" prefWidth="300.0" />
+               </children>
+               <VBox.margin>
+                  <Insets top="5.0" />
+               </VBox.margin>
+            </HBox>
+            <HBox prefHeight="100.0" prefWidth="200.0" spacing="20.0">
+               <children>
+                  <Button mnemonicParsing="false" onAction="#handleChooseFilePathClick" prefHeight="25.0" prefWidth="94.0" text="Choose Path" />
+                  <TextField fx:id="saveFilePathTextField" prefHeight="25.0" prefWidth="300.0" />
                </children>
             </HBox>
+            <Label text="Exporting:">
+               <VBox.margin>
+                  <Insets top="10.0" />
+               </VBox.margin>
+               <font>
+                  <Font size="16.0" />
+               </font>
+            </Label>
+            <Label fx:id="rawVideoLabel" text="raw images vid" />
+            <Label fx:id="visualizedVideoLabel" text="visualized images vid" />
+            <Label fx:id="resultsFileLabel" text="results file" />
          </children>
       </VBox>
-      <Label layoutX="187.0" layoutY="326.0" text="All experiments will be saved, not just one currently shown" textFill="#686868" />
+      <Label layoutX="187.0" layoutY="326.0" text="All tests will be saved, not just one currently shown" textFill="#686868" />
+      <Button fx:id="saveImagesButton" layoutX="145.0" layoutY="525.0" mnemonicParsing="false" onAction="#handleSaveImagesClick" prefHeight="35.0" prefWidth="200.0" text="Export All Results">
+         <font>
+            <Font size="16.0" />
+         </font>
+      </Button>
    </children>
    <padding>
       <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />

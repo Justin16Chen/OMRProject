@@ -39,7 +39,7 @@ public class CameraImageGrabber {
 
         numFramesGrabbed = 0;
         running = true;
-        grabThread = new Thread(this::grabLoopTesting, "frame grabber thread");
+        grabThread = new Thread(this::grabLoop, "frame grabber thread");
         grabThread.setDaemon(true);
         grabThread.start();
     }

@@ -17,9 +17,6 @@ public class RunTrialController extends CustomController {
     private Label nameLabel, stateLabel, trialLabel, cycleLabel, totalTimeLabel, testTimeLabel, restTimeLabel;
     @FXML
     private ProgressBar trialProgress, cycleProgress, testTimeProgress, restTimeProgress, totalTimeProgress;
-
-    @FXML
-    private Label cameraDataLabel;
     @FXML
     private ImageView cameraDataImageView;
 
@@ -28,7 +25,9 @@ public class RunTrialController extends CustomController {
         getStage().setOnCloseRequest(e -> {
             getCore().getOmrChamberController().stopShowingExperiments(true);
         });
-        showRawImages = true;
+        showRawImages = false;
+        toggleImageViewButton.setText("Showing Annotated Images");
+
     }
     @FXML
     private void handleStopEarlyClick() {
@@ -41,7 +40,7 @@ public class RunTrialController extends CustomController {
     @FXML
     private void handleToggleImageView() {
         showRawImages = !showRawImages;
-        toggleImageViewButton.setText(showRawImages ? "Show Raw Images" : "Show Annotated Images");
+        toggleImageViewButton.setText(showRawImages ? "Showing Raw Images" : "Showing Annotated Images");
     }
 
     public void updateUILabels() {
@@ -70,7 +69,6 @@ public class RunTrialController extends CustomController {
 
     public void updateCameraImageView() {
         Image image = showRawImages ? getCore().getCameraManager().getLatestImageFromGrabber() : getCore().getOmrChamberController().visualizedImageReader.getLatestImage();
-        cameraDataLabel.setText(image == null ? "Camera Data (None available)" : "Camera Data");
         cameraDataImageView.setImage(image);
     }
 

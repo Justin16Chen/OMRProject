@@ -3,20 +3,17 @@ package org.example.cameraCode;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javafx.application.Platform;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import org.example.trialControlPanel.parentClasses.Core;
 import org.opencv.core.Mat;
-import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.videoio.Videoio;
 
@@ -36,15 +33,9 @@ public class CameraManager {
         System.out.println("successfully loaded opencv dll");
     }
 
-    public enum SaveState {
-        READY,
-        WAITING,
-        IN_PROGRESS,
-        PERMANENTLY_STOPPED
-    }
     public enum SendState {
-        READY,
-        READY_IMPERFECTLY, // send all possible images on camera, but still haven't met imageIndexCap requirement b/c camera simply did not record enough images
+        FINISHED_SENDING_IMAGES,
+        IMPERFECTLY_FINISHED_SENDING_IMAGES, // send all possible images on camera, but still haven't met imageIndexCap requirement b/c camera simply did not record enough images
         IN_PROGRESS,
         STOPPED_EARLY,
         PERMANENTLY_STOPPED
@@ -55,7 +46,6 @@ public class CameraManager {
     public final ArrayList<Double> timeStampsMs;
     private final AtomicInteger numCameraImagesSaved, sendIndex;
     private int maxImageIndex; // index of last saved image - num images to save - maxImageIndex + 1
-    private volatile SaveState saveState;
     private volatile SendState sendState;
     private boolean connected;
     private boolean readImagesFromCamera;
@@ -72,8 +62,7 @@ public class CameraManager {
         readImagesFromCamera = true;
         numCameraImagesSaved = new AtomicInteger(0);
         sendIndex = new AtomicInteger(0);
-        sendState = SendState.READY;
-        saveState = SaveState.READY;
+        sendState = SendState.FINISHED_SENDING_IMAGES;
 
         cameraImageGrabber = new CameraImageGrabber(devicePort);
         connected = cameraImageGrabber.isConnected();
@@ -89,30 +78,18 @@ public class CameraManager {
     public void stopEverything() {
         readImagesFromCamera = false;
         sendState = SendState.PERMANENTLY_STOPPED;
-        saveState = SaveState.PERMANENTLY_STOPPED;
     }
     public int getSendIndex() { return sendIndex.get(); }
     public SendState getSendState() {
         return sendState;
     }
-    public SaveState getSaveState() {
-        return saveState;
+    public ArrayList<Mat> getRawImagesSoFar() {
+        return new ArrayList<>(images);
     }
-    public void saveImageData(String folder) {
-        saveState = SaveState.IN_PROGRESS;
-        new Thread(() -> {
-            for (int i = 0; i < images.size(); i++) {
-                Imgcodecs.imwrite(Path.of(folder, i + ".png").toString(), images.get(i));
-            }
-            saveState = SaveState.READY;
-            Platform.runLater(core.getStartMenuController()::updateButtonsEnabled);
-        }, "save image thread").start();
-    }
+
     public void clearOldImageData() {
         if (sendState == SendState.IN_PROGRESS)
             throw new IllegalStateException("cannot reset image index in CameraManager when it has not finished SENDING old images");
-        if (saveState == SaveState.IN_PROGRESS)
-            throw new IllegalStateException("cannot reset image index in CameraManager when it has not finished SAVING old images");
 
         numCameraImagesSaved.set(0);
         sendIndex.set(0);
@@ -139,9 +116,6 @@ public class CameraManager {
     }
     public boolean isReadingImagesFromCamera() {
         return readImagesFromCamera;
-    }
-    public void setReadImagesFromCamera(boolean readImagesFromCamera) {
-        this.readImagesFromCamera = readImagesFromCamera;
     }
 
     // start grabbing images on a separate thread and read and store the images at a fixed interval
@@ -199,7 +173,6 @@ public class CameraManager {
     // sending images to python program to be analyzed as trial is running
     public void startSendingImagesToSSD() {
         sendState = SendState.IN_PROGRESS;
-        saveState = SaveState.WAITING;
         new Thread(() -> {
             while (sendState == SendState.IN_PROGRESS) {
                 updateImageSending();
@@ -216,7 +189,7 @@ public class CameraManager {
         if (sendIndex.get() <= maxImageIndex)
             sendState = SendState.STOPPED_EARLY;
         else
-            sendState = SendState.READY;
+            sendState = SendState.FINISHED_SENDING_IMAGES;
         sendIndex.set(0);
     }
     // sends the currently stored images in the images list to the SSD for it to analyze
@@ -227,9 +200,9 @@ public class CameraManager {
             }
         }
         if (sendIndex.get() >= maxImageIndex + 1) // finished sending all
-            sendState = SendState.READY;
+            sendState = SendState.FINISHED_SENDING_IMAGES;
         else if (sendIndex.get() >= images.size() && !readImagesFromCamera) // also finished sending, but images are incomplete
-            sendState = SendState.READY_IMPERFECTLY;
+            sendState = SendState.IMPERFECTLY_FINISHED_SENDING_IMAGES;
 //        System.out.println("send state: " + getSendState() + " | save state: " + getSaveState() + " | visualized save state: " + visualizedImageReader.getState() + " | send idx: " + getSendIndex() + " | num images in list: " + images.size() + "/" + (maxImageIndex + 1));
     }
 
@@ -317,10 +290,6 @@ public class CameraManager {
         return bgra;
     }
 
-    // if this is true, the program can start saving the analyzed images from the SSD to the file system
-    public boolean finishedSendingImagesToSSD() {
-        return sendState == SendState.READY || sendState == SendState.READY_IMPERFECTLY;
-    }
     public CameraImageGrabber getImageGrabber() {
         return cameraImageGrabber;
     }
