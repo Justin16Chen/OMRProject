@@ -81,6 +81,8 @@ public class ResultsController extends CustomController {
 
     private int currentExperimentIndex;
     @FXML
+    private Label curExperimentShownLabel;
+    @FXML
     private Button prevButton;
     @FXML
     private Button nextButton;
@@ -113,6 +115,8 @@ public class ResultsController extends CustomController {
         lightBandBrightnessLabel.setText("" + result.endingPattern.getLightBrightness());
         darkBandBrightnessLabel.setText("" + result.endingPattern.getDarkBrightness());
         bandWidthLabel.setText("" + result.endingPattern.getBandWidth());
+
+        curExperimentShownLabel.setText("Viewing experiment " + (currentExperimentIndex + 1) + "/" + experimentResults.size());
     }
 
     private void updateButtonsEnabled() {
@@ -143,6 +147,53 @@ public class ResultsController extends CustomController {
     }
 
     private void saveResults() {
-        System.out.println("temp function to save OMR results");
+        try {
+            String folderPath = saveFilePathTextField.getText();
+            if (folderPath == null || folderPath.equals("Invalid File Path")) {
+                System.out.println("Invalid save path when saving OMR results");
+                return;
+            }
+
+            Path outputPath = Path.of(folderPath, "omrResults.txt");
+
+            StringBuilder builder = new StringBuilder();
+
+            for (int expIndex = 0; expIndex < experimentResults.size(); expIndex++) {
+                ExperimentResult result = experimentResults.get(expIndex);
+
+                builder.append("========== EXPERIMENT ")
+                        .append(expIndex + 1)
+                        .append(" ==========\n");
+
+                builder.append("Name: ").append(result.experiment.getName()).append("\n\n");
+
+                builder.append("Ending Pattern:\n");
+                builder.append("Speed: ").append(result.endingPattern.getSpeed()).append("\n");
+                builder.append("Light Brightness: ").append(result.endingPattern.getLightBrightness()).append("\n");
+                builder.append("Dark Brightness: ").append(result.endingPattern.getDarkBrightness()).append("\n");
+                builder.append("Band Width: ").append(result.endingPattern.getBandWidth()).append("\n\n");
+
+                builder.append("Trial Results:\n");
+
+                for (int i = 0; i < result.getNumTrials(); i++) {
+                    builder.append("Trial ").append(i + 1).append(":\n");
+                    builder.append("  Num OMR Instances: ").append(result.getNumOMR(i)).append("\n");
+                    builder.append("  Avg Duration (ms): ").append(result.getAverageDuration(i)).append("\n");
+                    builder.append("  Median Duration (ms): ").append(result.getMedian(i)).append("\n");
+                    builder.append("\n");
+                }
+
+                builder.append("Trials Until Failure: ")
+                        .append(result.getNumTrials() - 1)
+                        .append("\n\n");
+            }
+
+            Files.writeString(outputPath, builder.toString());
+            System.out.println("Saved OMR results to: " + outputPath.toAbsolutePath());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+
 }

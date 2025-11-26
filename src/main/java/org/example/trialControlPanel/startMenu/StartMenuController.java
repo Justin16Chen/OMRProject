@@ -57,18 +57,14 @@ public class StartMenuController extends CustomController {
             if (!o.equals(n))
                 previewCameraButton.setDisable(false);
         });
-        restTimeTextField.getTextField().textProperty().addListener((obs, oldVal, newVal) ->
-            updateButtonsEnabled()
-        );
+        restTimeTextField.getTextField().textProperty().addListener((obs, oldVal, newVal) -> updateButtonsEnabled());
 
         startMenuMonitorNumberLabel.setText("Not set");
         startMenuMonitorResolutionLabel.setText("Not set");
         startMenuMonitorSizeLabel.setText("Not set");
-        chamberMonitorNumberLabel.setText("");
-        chamberMonitorResolutionLabel.setText("");
-        chamberMonitorSizeLabel.setText("");
-
-
+        chamberMonitorNumberLabel.setText("Not set");
+        chamberMonitorResolutionLabel.setText("Not set");
+        chamberMonitorSizeLabel.setText("Not set");
     }
 
     @Override
