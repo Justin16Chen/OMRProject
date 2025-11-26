@@ -1,20 +1,18 @@
-import cv2
-from src.transforms import *
-from src.LSTMClassifier import LSTMClassifier
-from src.Loader import ChannelNormalize
-from src.ssd_model import SSD300, Backbone
 import torch
 import os
 import json
 from PIL import Image, ImageDraw, ImageFont
-import math
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import timedelta
 import math
 import time
 import socket
-import io
-import struct
+
+from src.pythonCode.src.LSTMClassifier import LSTMClassifier
+from src.pythonCode.src.Loader import ChannelNormalize
+from src.pythonCode.src.ssd_model import SSD300, Backbone
+from src.pythonCode.src.transforms import Compose, Resize, ToTensor, Normalization
+
 
 def find_box_center(box):
     return [0.5 *(box[0] + box[2]), 0.5 * (box[1] + box[3])]
@@ -40,19 +38,16 @@ def get_head_and_tail_data(numpy_predict_boxes, predict_classes, predict_scores,
             tail_poses.append(find_box_center(predict_boxes[i]))
             tail_confs.append(predict_scores[i])
 
-    dict = {
+    ssd_dict = {
         "ssd_successful": len(ear_poses) >= 2 and len(tail_poses) > 0,
         "head_angle": 0,
         "tail_angle": 0
     }
-    if not dict["ssd_successful"]:
-        return dict
+    if not ssd_dict["ssd_successful"]:
+        return ssd_dict
     # print("success: " + str(dict["ssd_successful"]) + ", num ears: " + str(len(ear_poses)) + ", num tails: " + str(len(tail_poses)))
-    print()
-    if not dict["ssd_successful"]:
-        return dict
 
-    # selecting the top ear positions with highest confidence if more than two is recognized by ssd
+    # selecting the top ear positions with the highest confidence if more than two is recognized by ssd
     if len(ear_poses) > 2:
         conf1, i1 = select_highest(ear_confs)
         ear_confs.pop(i1)
@@ -77,8 +72,8 @@ def get_head_and_tail_data(numpy_predict_boxes, predict_classes, predict_scores,
 
     return {
         "ssd_successful": True,
-        "head_angle": math.atan2(head_vec[1], head_vec[0]),
-        "tail_angle": math.atan2(tail_vec[1], tail_vec[0]),
+        "head_angle_rad": math.atan2(head_vec[1], head_vec[0]),
+        "tail_angle_rad": math.atan2(tail_vec[1], tail_vec[0]),
         "ear_poses": ear_poses,
         "ear_confs": ear_confs,
         "ears_center": ear_mid,
@@ -86,12 +81,6 @@ def get_head_and_tail_data(numpy_predict_boxes, predict_classes, predict_scores,
         "tail_conf": tail_confs[0]
     }
 
-def compensate_angle(ssd_outputs, current_index, output_index, phase_compensate_threshold):
-    angle_dif = ssd_outputs[current_index + 1][output_index] - ssd_outputs[current_index][output_index]
-    if abs(angle_dif) >= phase_compensate_threshold:
-        offset_amount = math.pi * 2 * -sign(angle_dif)
-        for j in range(current_index + 1, len(ssd_outputs)):
-            ssd_outputs[j][output_index] += offset_amount
 def mean(y):
     z = 0
     for x in y:
@@ -101,21 +90,21 @@ def sign(x):
     if x > 0: return 1
     if x < 0: return -1
     return 0
-def select_highest(list):
+def select_highest(l):
     highest = 0
     highest_i = 0
-    for i in range(len(list)):
-        if list[i] > highest:
-            highest = list[i]
+    for i in range(len(l)):
+        if l[i] > highest:
+            highest = l[i]
             highest_i = i
     return highest, highest_i
 
 def run_ssd(model, device, data_transform, original_img):
-    img, _ = data_transform(original_img)
+    transformed_img, _ = data_transform(original_img)
     # expand batch dimension
-    img = torch.unsqueeze(img, dim=0)
+    transformed_img = torch.unsqueeze(transformed_img, dim=0)
 
-    predictions = model(img.to(device))[0]  # bboxes_out, labels_out, scores_out
+    predictions = model(transformed_img.to(device))[0]  # bboxes_out, labels_out, scores_out
     # predict_boxes is a 2d list; each inner list holds the xmin, ymin, xmax, and ymax for a bounding box, respectively
     predict_boxes = predictions[0].to("cpu").numpy()
     predict_classes = predictions[1].to("cpu").numpy()
@@ -132,9 +121,7 @@ def shift_results(r, index, new):
     r[index, :-1] = r[index, 1:].clone()
     r[index, -1] = new
     return r
-def analyze_camera_img(img_i, original_img, model, ssd_input_transform, ci, lstm, lstm_input_transform, results, window_size, angle_offsets, fps, device):
-    a = time.time()
-    before = time.time()
+def analyze_camera_img(img_i, original_img, model, ssd_input_transform, ci, lstm, lstm_input_transform, results, window_size, angle_offsets_rad, fps, device):
     # print("time to open img " + str(img_i) + ": " + str(time.time() - before))
     w = original_img.size[0]
     h = original_img.size[1]
@@ -148,24 +135,28 @@ def analyze_camera_img(img_i, original_img, model, ssd_input_transform, ci, lstm
     cy = h * 0.8
     rh = h * 0.2
     rw = w * 0.37
-    top = cy - rh/2
-    text_left = cx - rw*0.45
-    text_inc = rh/5.8
+    top = cy - rh * 0.6
+    text_left = cx - rw*0.46
+    text_inc = rh/5.7
     draw = ImageDraw.Draw(original_img)
-    line_width=2
+    line_width = 2
     font_size = 20
     fnt = ImageFont.truetype("arialbd.ttf", font_size)
     draw.rectangle((cx - rw/2, cy-rh/2, cx+rw/2, cy+rh/2), fill=None, outline=(0, 10, 200), width=line_width)
     draw.text(xy=(text_left, top+text_inc), text="Frame: " + str(img_i), font=fnt, fill="black")
-    draw.text(xy=(text_left, top+text_inc*2), text="Time: " + str(timedelta(seconds=img_i/fps)), font=fnt, fill="black")
+
+    total_seconds = img_i/fps
+    minutes = total_seconds // 60
+    seconds = total_seconds % 60
+    draw.text(xy=(text_left, top+text_inc*2), text="Time: " + str(minutes) + ":" + str(math.floor(seconds * 100)/100), font=fnt, fill="black")
 
     cur_i = min(img_i, window_size - 1)
     # print("ssd successful: " + str(data["ssd_successful"]))
     # copying last frames data if ssd fails; if it fails on first frame, then it takes the default values
     if not data["ssd_successful"]:
         if img_i == 0:
-            results[0, img_i] = data["head_angle"]
-            results[1, img_i] = data["tail_angle"]
+            results[0, img_i] = 0
+            results[1, img_i] = 0
         elif img_i < window_size:
             results[0, img_i] = results[0, img_i - 1]
             results[1, img_i] = results[1, img_i - 1]
@@ -188,25 +179,22 @@ def analyze_camera_img(img_i, original_img, model, ssd_input_transform, ci, lstm
         draw.rectangle(xy=(tail[0]-box_r, tail[1]-box_r-label_h, tail[0]-box_r+label_w, tail[1]-box_r), fill=blue)
         draw.text(xy=(tail[0]-box_r, tail[1]-box_r-label_h), text="t: " + str(math.floor(data["tail_conf"]*100)) + "%", font=fnt, fill="black")
 
-        # converting to degrees
-        data["head_angle"] *= 180 / math.pi
-        data["tail_angle"] *= 180 / math.pi
-
         # correcting head and tail angle wraparound issue
+        # because atan2 returns angles on [-pi,pi] so there is a cut-off at pi radians
         if img_i > 0:
-            data["head_angle"] += angle_offsets[0]
-            data["tail_angle"] += angle_offsets[1]
+            data["head_angle"] += angle_offsets_rad[0]
+            data["tail_angle"] += angle_offsets_rad[1]
 
             dif = data["head_angle"] - results[0, cur_i-1]
-            if abs(dif) > angle_offsets[2]:
-                offset = -sign(dif) * 360
-                angle_offsets[0] += offset
+            if abs(dif) > angle_offsets_rad[2]:
+                offset = -sign(dif) * 2 * math.pi
+                angle_offsets_rad[0] += offset
                 data["head_angle"] += offset
 
             dif = data["tail_angle"] - results[1, cur_i - 1]
-            if abs(dif) > angle_offsets[2]:
+            if abs(dif) > angle_offsets_rad[2]:
                 offset = -sign(dif) * 360
-                angle_offsets[1] += offset
+                angle_offsets_rad[1] += offset
                 data["tail_angle"] += offset
 
         if img_i < window_size:
@@ -217,19 +205,15 @@ def analyze_camera_img(img_i, original_img, model, ssd_input_transform, ci, lstm
             shift_results(results, 1, data["tail_angle"])
 
     # drawing head and tail angle
-    draw.text(xy=(text_left, top+text_inc*3), text="Head Angle (deg): " + str(math.floor(results[0, cur_i].item()*100)/100), font=fnt, fill="black")
-    draw.text(xy=(text_left, top+text_inc*4), text="Tail Angle (deg): " + str(math.floor(results[1, cur_i].item()*100)/100), font=fnt, fill="black")
+    draw.text(xy=(text_left, top+text_inc*3), text="Head Angle: " + str(math.floor(results[0, cur_i].item()*100)/100), font=fnt, fill="black")
+    draw.text(xy=(text_left, top+text_inc*4), text="Tail Angle: " + str(math.floor(results[1, cur_i].item()*100)/100), font=fnt, fill="black")
 
     # print("starting sliding window")
     # sliding window approach
-    head_window = results[0, 0 : cur_i + 1]
-    tail_window = results[1, 0 : cur_i + 1]
-    if cur_i < window_size - 1:
-        pad = window_size - cur_i - 1
-        head_window = torch.cat([torch.zeros(pad), head_window], dim=0)
-        tail_window = torch.cat([torch.zeros(pad), tail_window], dim=0)
-    head_window = head_window.unsqueeze(-1)
-    tail_window = tail_window.unsqueeze(-1)
+    head_window = results[0].unsqueeze(-1)
+    tail_window = results[1].unsqueeze(-1)
+    print(head_window)
+    print(tail_window)
     signal = torch.cat([head_window, tail_window], dim=-1)
     signal = lstm_input_transform(signal).to(device)
     signal = signal.unsqueeze(0)
@@ -259,7 +243,6 @@ def connect_to_server(host, port):
 
 if __name__ == "__main__":
     # necessary file paths and variables
-    program_json_path = "../../liveData/programInfo.json"
     pascal_voc_path = "model/pascal_voc_classes.json"
     ssd_model_path = "model/ssd.pth"
     lstm_model_path = "model/lstm.pkl"
@@ -268,10 +251,10 @@ if __name__ == "__main__":
     RECEIVE_PORT = 65433
     SEND_PORT = 65432
 
-    # loading ssd
     model_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")  # using GPU if possible
     print("using " + str(model_device))
 
+    # loading ssd
     ssd_model = SSD300(backbone=Backbone(), num_classes=3)
     weights_dict = torch.load(ssd_model_path, map_location=model_device)
     weights_dict = weights_dict["model"] if "model" in weights_dict else weights_dict
@@ -303,19 +286,28 @@ if __name__ == "__main__":
     # lstm preprocessing settings
     lstm_window_size = 48
     analysis_results = torch.zeros((3, lstm_window_size)) # stores head and tail angles and whether omr is detected at specific frame BUT: FOR OMR DETECTION I JUST OVERWRITE VALUES AND ONLY STORE CURRENT PREDICTION AT [2,0]
-    angle_offset_data = torch.tensor([0, 0, 5 * 180 / math.pi]) # 0 is head offsets, 1 is tail offsets, 2 is threshold to offset
+    angle_offset_data_rad = torch.tensor([0, 0, 5]) # 0 is head offsets, 1 is tail offsets, 2 is threshold to offset
 
-    # initializing socket connections
-    receive_socket = connect_to_server(HOST, RECEIVE_PORT)
-    send_socket = connect_to_server(HOST, SEND_PORT)
+    use_sockets = False
+    no_socket_img_path = r"C:\Users\CHENY1\Documents\wt1_cw_highw_lowspeed" # file path that program resorts to in order to get images when no sockets are supposed to be used
+    no_socket_img_i = 0
 
-    # system variables
-    header = receive_socket.recv(12)
-    img_width = int.from_bytes(header[0:4], "big")
-    img_height = int.from_bytes(header[4:8], "big")
-    num_img_bytes = img_width * img_height * 3
-    camera_fps = int.from_bytes(header[8:12], "big")
-    print(f"camera data received width: {img_width} height: {img_height}")
+    if use_sockets:
+        # initializing socket connections
+        receive_socket = connect_to_server(HOST, RECEIVE_PORT)
+        send_socket = connect_to_server(HOST, SEND_PORT)
+
+        # system variables
+        header = receive_socket.recv(12)
+        img_width = int.from_bytes(header[0:4], "big")
+        img_height = int.from_bytes(header[4:8], "big")
+        num_img_bytes = img_width * img_height * 3
+        camera_fps = int.from_bytes(header[8:12], "big")
+        print(f"SOCKET camera data received width: {img_width} height: {img_height}")
+    else:
+        camera_fps = 24
+        print("not using sockets; default fps=24, getting images from " + no_socket_img_path)
+
 
     with torch.no_grad():
         # warming up model
@@ -323,34 +315,44 @@ if __name__ == "__main__":
         ssd_model(init_img)
 
         while True:
-            image_i_byte = receive_socket.recv(4)
-            timeA = time.time()
-            image_i = int.from_bytes(image_i_byte, "big")
+            if use_sockets:
+                image_i_byte = receive_socket.recv(4)
+                timeA = time.time()
+                image_i = int.from_bytes(image_i_byte, "big") # TODO : maybe image_i is always being sent as 0
 
-            byte_data = b''
-            while len(byte_data) < num_img_bytes:
-                # print("Expected bytes:", num_img_bytes)
-                # print("Received bytes:", len(byte_data))
+                byte_data = b''
+                while len(byte_data) < num_img_bytes:
+                    # print("Expected bytes:", num_img_bytes)
+                    # print("Received bytes:", len(byte_data))
+                    packet = receive_socket.recv(num_img_bytes - len(byte_data))
+                    byte_data += packet
+                receiveArr = np.frombuffer(byte_data, dtype=np.uint8).reshape((img_height, img_width, 3))
+                receiveArr = receiveArr[:, :, ::-1]
+                img = Image.fromarray(receiveArr)
+            else:
+                image_i = no_socket_img_i
+                img_path = os.path.join(no_socket_img_path, str(image_i) + ".png")
+                print("img_path: " + img_path)
+                img = Image.open(img_path)
 
-                packet = receive_socket.recv(num_img_bytes - len(byte_data))
-                byte_data += packet
-            arr = np.frombuffer(byte_data, dtype=np.uint8).reshape((img_height, img_width, 3))
-            arr = arr[:, :, ::-1]
-            img = Image.fromarray(arr)
-            # print("time to receive camera img: " + str(time.time() - timeA))
+
 
             if image_i == 0:
                 analysis_results = torch.zeros((3, lstm_window_size))
 
-            img = analyze_camera_img(image_i, img, ssd_model, ssd_transform, category_index, lstm_model, lstm_transform, analysis_results, lstm_window_size, angle_offset_data, camera_fps, model_device)
-            # img.show()
-
-            # print("time to analyze camera img: " + str(time.time() - timeA))
-
-            arr = np.array(img, dtype=np.uint8)
+            img = analyze_camera_img(image_i, img, ssd_model, ssd_transform, category_index, lstm_model, lstm_transform, analysis_results, lstm_window_size, angle_offset_data_rad, camera_fps, model_device)
 
             # i send back the annotated image and whether it shows omr or not
-            send_socket.sendall(round(analysis_results[2, 0].item()).to_bytes(4, "big"))
-            send_socket.sendall(arr.tobytes())
+            if use_sockets:
+                sendArr = np.array(img, dtype=np.uint8)
+                send_socket.sendall(round(analysis_results[2, 0].item()).to_bytes(4, "big"))
+                send_socket.sendall(sendArr.tobytes())
 
-            # print("time to process/send visualized img: " + str(time.time() - timeA))
+            # updating no socket logic
+            else:
+                no_socket_img_i += 1
+
+
+            print("sockets: " + str(use_sockets) + " | imgI: " + str(image_i) + " | lstm: " + str(analysis_results[2, 0])
+             + " | head: " + str(analysis_results[0, min(image_i, lstm_window_size-1)])
+             + " | tail: " + str(analysis_results[1, min(image_i, lstm_window_size-1)]))
