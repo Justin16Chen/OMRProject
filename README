@@ -1,0 +1,26 @@
+This file contains general information about some setup that is necessary
+for this code to run without errors
+
+FIRST: You must create a new runtime configuration
+1. click hamburger, then hover over 'Run' tab, then click 'Edit Configurations'
+2. click '+' sign, then click 'Application'
+3. name the application 'Main'
+4. click 'module not specified', then select your java version (mine works on java version 21)
+5. click '<no module>', then select untitled.main
+6. click 'Modify options' then click 'Add VM options'
+7. in the VM options textbox, enter: --module-path "[insert path to javafx lib file]" --add-modules javafx.controls,javafx.fxml,javafx.swing
+  - note: the javafx lib file path MUST BE IN QUOTES
+8. in the 'main class' textbox, enter org.example.Main
+9. click 'Apply' then click 'OK'
+Step 1 is Done!
+
+2. You need to setup your local.properties file
+OPENCV (these files are found when downloading java opencv)
+- opencv.jar.path = insert path to opencv jar
+- opencv.dll.path = insert path to opencv dll
+
+PYTHON (need to download python)
+1. pythonEnv.path = insert path to python executable
+  - i suggest downloading anaconda prompt, creating your own environment, and then downloading all necessary python libraries into there
+  - if you do so, there should be a python executable in that environment which you can use for this
+2. pythonWorkingDirectory.path = get path from this project's pythonCode file
