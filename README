@@ -1,26 +1,43 @@
 This file contains general information about some setup that is necessary
 for this code to run without errors
 
-FIRST: You must create a new runtime configuration
-1. click hamburger, then hover over 'Run' tab, then click 'Edit Configurations'
-2. click '+' sign, then click 'Application'
-3. name the application 'Main'
-4. click 'module not specified', then select your java version (mine works on java version 21)
-5. click '<no module>', then select untitled.main
-6. click 'Modify options' then click 'Add VM options'
-7. in the VM options textbox, enter: --module-path "[insert path to javafx lib file]" --add-modules javafx.controls,javafx.fxml,javafx.swing
-  - note: the javafx lib file path MUST BE IN QUOTES
-8. in the 'main class' textbox, enter org.example.Main
-9. click 'Apply' then click 'OK'
-Step 1 is Done!
+1. Download Javafx (ideally version 21)
+- Go to here: https://www.oracle.com/java/technologies/downloads/javafx/#javafx21-windows
+- select javaFX 21 and download the x64 SDK version
 
-2. You need to setup your local.properties file
-OPENCV (these files are found when downloading java opencv)
-- opencv.jar.path = insert path to opencv jar
-- opencv.dll.path = insert path to opencv dll
 
-PYTHON (need to download python)
-1. pythonEnv.path = insert path to python executable
-  - i suggest downloading anaconda prompt, creating your own environment, and then downloading all necessary python libraries into there
-  - if you do so, there should be a python executable in that environment which you can use for this
-2. pythonWorkingDirectory.path = get path from this project's pythonCode file
+1. Click hamburger, then hover over 'Run' tab, then click 'Edit Configurations'
+2. Click '+' sign, then click 'Gradle'
+3. Click the tasks and arguments textbox and type run
+4. Click apply then Ok
+
+2. You need to download ML and neural network libraries
+- install Anaconda Prompt
+- go into the parent folder of this project using cd ...
+- run this command: "conda env create -f environment.yml" (this gives anaconda prompt a list of all the libraries to download)
+
+3. You need to setup your local.properties file
+    OPENCV (these files are found when downloading java opencv; i used version 4.12.0)
+    - opencv.jar.path = insert path to opencv jar
+    - opencv.dll.path = insert path to opencv dll
+
+    PYTHON (need to download python)
+    1. pythonEnv.path
+        - go into your file system where anaconda prompt stores all the environments
+        - you should see an environment called omrEnv (click it)
+        - there is a python executable file inside omrEnv; use this file path
+    2. pythonWorkingDirectory.path
+        - copy the file path from this projects pythonCode file and use it
+
+3. Yay you're done! To run the program, click the green arrow at the top
+
+
+TIPS:
+ensure that your file paths in local.properties use forward slashes (/) NOT backward slashes (\)
+
+In your python files, you may see a "No python interpreter configured" error
+If so, right click the pythonCode folder and rename it to pythonCode2
+Then click the hamburger on the top left, click Project Structure, ensure that you are on the Modules tab on the left, and then click the + sign to add a new module
+Name it pythonCode, and for the environment, select the omrEnv from anaconda that you created earlier
+Save the changes, and then move all the files inside pythonCode2 into pythonCode
+Delete the pythonCode2 folder, and you should be good!

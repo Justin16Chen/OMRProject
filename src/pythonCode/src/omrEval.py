@@ -314,9 +314,11 @@ def connect_to_server(host, port):
 
 if __name__ == "__main__":
     # necessary file paths and variables
-    pascal_voc_path = r"C:\Users\czhao\Documents\omrProject\src\pythonCode\model\pascal_voc_classes.json"
-    ssd_model_path = r"C:\Users\czhao\Documents\omrProject\src\pythonCode\model\ssd.pth"
-    lstm_model_path = r"C:\Users\czhao\Documents\omrProject\src\pythonCode\model\best.pkl"
+    # resolved relative to the pythonCode directory (the parent of src/) so this runs on any machine
+    model_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "model")
+    pascal_voc_path = os.path.join(model_dir, "pascal_voc_classes.json")
+    ssd_model_path = os.path.join(model_dir, "ssd.pth")
+    lstm_model_path = os.path.join(model_dir, "best.pkl")
 
     HOST = "127.0.0.1"
     RECEIVE_PORT = 65433

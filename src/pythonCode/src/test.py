@@ -6,11 +6,8 @@ import torch.nn as nn
 import os
 import Loader
 from LSTMClassifier import LSTMClassifier
-import torch.optim as optim
-import copy
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-import matplotlib.pyplot as plt
 from torchmetrics.classification import BinaryAccuracy
 from utils import AverageMeter
 import numpy as np

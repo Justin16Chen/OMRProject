@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Map;
 import java.util.Properties;
 
 public class PythonRunner {
@@ -33,11 +34,14 @@ public class PythonRunner {
     private void run() throws IOException, InterruptedException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         String line;
-        while (process.isAlive()) {
-            line = reader.readLine();
-            if (line != null && !line.isEmpty())
+        while ((line = reader.readLine()) != null) {
+            if (!line.isEmpty())
                 System.out.println("python line: " + line);
         }
+        int exitCode = process.waitFor();
+        if (exitCode != 0)
+            System.out.println("PYTHON PROCESS EXITED WITH CODE " + exitCode
+                    + " - the java side will hang on 'Loading...' because nothing will connect to the sockets");
     }
 
     public void stopRunning() {
@@ -54,14 +58,54 @@ public class PythonRunner {
             System.out.println("FAILED TO OPEN LOCAL.PROPERTIES FILE");
             e.printStackTrace();
         }
-        String pythonPath = properties.getProperty("pythonEnv.path");
-        String pythonWorkingDir = properties.getProperty("pythonWorkingDirectory.path");
+        String pythonPath = unquote(properties.getProperty("pythonEnv.path"));
+        String pythonWorkingDir = unquote(properties.getProperty("pythonWorkingDirectory.path"));
 
         ProcessBuilder pb = new ProcessBuilder(pythonPath, "-u", "-m", "src.omrEval");
         pb.directory(new File(pythonWorkingDir)); // setting working directory to be the project root
         pb.redirectErrorStream(true); // merges error stream with normal output stream so that one buffered reader receives both errors and print statements
+        configureCondaEnvironment(pb, new File(pythonPath).getParentFile());
 
         return pb.start();
+    }
+
+    private static String unquote(String s) {
+        if (s == null)
+            return null;
+        s = s.trim();
+        if (s.length() >= 2 && s.startsWith("\"") && s.endsWith("\""))
+            s = s.substring(1, s.length() - 1);
+        return s;
+    }
+
+    // launching <env>/python.exe directly skips conda activation, so the env's native DLL directories are
+    // never added to PATH. numpy then dies during import with a bare "module not found" loader error - no
+    // traceback, no output - and the java side waits on a socket connection that will never happen.
+    private static void configureCondaEnvironment(ProcessBuilder pb, File envRoot) {
+        if (envRoot == null)
+            return;
+
+        String[] dllDirs = {"", "Library\\mingw-w64\\bin", "Library\\usr\\bin", "Library\\bin", "Scripts", "bin"};
+        StringBuilder path = new StringBuilder();
+        for (String dir : dllDirs) {
+            File f = dir.isEmpty() ? envRoot : new File(envRoot, dir);
+            if (f.isDirectory())
+                path.append(f.getAbsolutePath()).append(File.pathSeparator);
+        }
+
+        Map<String, String> env = pb.environment();
+        // environment variable names are case-insensitive on windows but the map is not, so find the real key
+        String pathKey = "PATH";
+        for (String key : env.keySet())
+            if (key.equalsIgnoreCase("PATH")) {
+                pathKey = key;
+                break;
+            }
+        env.put(pathKey, path + env.getOrDefault(pathKey, ""));
+
+        // conda's Library/bin ships its own OpenMP runtime that clashes with the one bundled in pip's torch;
+        // without this the torch import aborts the interpreter with "OMP: Error #15"
+        env.putIfAbsent("KMP_DUPLICATE_LIB_OK", "TRUE");
     }
 
     public static void main(String[] args) {
